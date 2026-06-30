@@ -155,7 +155,7 @@ function PortalDashboard({ firstName, profile, callHistory, completedCalls, avgS
         <div style={{ ...sh.banner, background:'#BA7517' }}>
           <span style={{ fontSize:'18px' }}>⭐</span>
           <div>
-            <div style={{ fontWeight:500, fontSize:'14px' }}>You're eligible for certification!</div>
+            <div style={{ fontWeight:500, fontSize:'14px' }}>You&apos;re eligible for certification!</div>
             <div style={{ fontSize:'12px', opacity:0.8, marginTop:'2px' }}>Contact your trainer to initiate the certificate issuance.</div>
           </div>
         </div>

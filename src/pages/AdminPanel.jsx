@@ -225,7 +225,7 @@ export default function AdminPanel() {
               ))}
               {staff.length === 0 && (
                 <div style={{ color:'var(--color-text-tertiary)', fontSize:'13px', fontStyle:'italic' }}>
-                  No staff profiles yet. Create accounts using the "Create account" tab.
+                  No staff profiles yet. Create accounts using the &ldquo;Create account&rdquo; tab.
                 </div>
               )}
             </div>
