@@ -1,7 +1,7 @@
 -- =============================================================
 --  MORPHEUS CRM — Database Schema v1.0
 --  Certified Training Standards · Albany, NY
---  morpheuscrm.com
+--  morpheuscr.com
 --
 --  Paste this entire file into the Supabase SQL Editor and run.
 --  Order matters — run top to bottom.

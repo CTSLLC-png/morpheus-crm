@@ -1,5 +1,5 @@
 # Morpheus CRM — Sprint 1 Deployment Guide
-**Certified Training Standards · Albany, NY · morpheuscrm.com**
+**Certified Training Standards · Albany, NY · morpheuscr.com**
 
 ---
 
@@ -31,8 +31,8 @@
    - Project URL → `VITE_SUPABASE_URL`
    - `anon` public key → `VITE_SUPABASE_ANON_KEY`
 5. Go to **Authentication → URL Configuration** → set:
-   - Site URL: `https://morpheuscrm.com`
-   - Redirect URLs: `https://morpheuscrm.com/reset-password`
+   - Site URL: `https://morpheuscr.com`
+   - Redirect URLs: `https://morpheuscr.com/reset-password`
 
 ---
 
@@ -69,7 +69,7 @@ Edit `.env.local`:
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 VITE_ANTHROPIC_API_KEY=your_anthropic_key_here
-VITE_APP_URL=https://morpheuscrm.com
+VITE_APP_URL=https://morpheuscr.com
 ```
 
 Get your Anthropic API key at: **console.anthropic.com → API Keys**
@@ -82,8 +82,8 @@ In Supabase Dashboard → **Authentication → Users → Add user**:
 
 | Email | Password | Role (in user_metadata) |
 |---|---|---|
-| `twilliams@morpheuscrm.com` | (set strong password) | `trainer` |
-| `admin@morpheuscrm.com` | (set strong password) | `super_admin` |
+| `twilliams@morpheuscr.com` | (set strong password) | `trainer` |
+| `admin@morpheuscr.com` | (set strong password) | `super_admin` |
 
 Or using the Supabase client (run once from your local machine):
 ```js
@@ -91,7 +91,7 @@ import { createClient } from '@supabase/supabase-js'
 const admin = createClient(URL, SERVICE_ROLE_KEY)
 
 await admin.auth.admin.createUser({
-  email: 'twilliams@morpheuscrm.com',
+  email: 'twilliams@morpheuscr.com',
   password: 'SecurePassword123!',
   user_metadata: { role: 'trainer' },
   email_confirm: true,
@@ -156,14 +156,14 @@ Add environment variables in **Vercel Dashboard → Project → Settings → Env
 - `VITE_APP_URL`
 
 **Custom domain:**
-Vercel Dashboard → Domains → Add `morpheuscrm.com`
+Vercel Dashboard → Domains → Add `morpheuscr.com`
 Point your domain registrar's nameservers to Vercel, or add the CNAME record provided.
 
 ---
 
 ## Step 7 — Verify the full loop
 
-1. Log in as a **trainer** at `morpheuscrm.com`
+1. Log in as a **trainer** at `morpheuscr.com`
 2. Navigate to **AI Call Simulator**
 3. Select a participant, generate a scenario, complete a call
 4. Confirm scores appear and "Saved to Morpheus" indicator fires

@@ -72,7 +72,7 @@ export async function generateProgressReportPDF({ participant, calls, eligibilit
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
   doc.setTextColor(139, 160, 184)
-  doc.text('CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscrm.com', lx + 35, 52)
+  doc.text('CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscr.com', lx + 35, 52)
 
   // Report type badge (right)
   doc.setFillColor(...BLUE)
@@ -304,7 +304,7 @@ export async function generateProgressReportPDF({ participant, calls, eligibilit
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(6.5)
     doc.setTextColor(...GRAY)
-    doc.text('MORPHEUS CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscrm.com', MAR, PH - 30)
+    doc.text('MORPHEUS CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscr.com', MAR, PH - 30)
     doc.text('This report is proprietary and confidential. For official workforce documentation use only.', MAR, PH - 20)
     doc.text(`Report ID: ${reportId}  ·  Page ${i} of ${pageCount}`, PW - MAR, PH - 30, { align: 'right' })
     doc.text(`© ${today.getFullYear()} Certified Training Standards. All rights reserved.`, PW - MAR, PH - 20, { align: 'right' })

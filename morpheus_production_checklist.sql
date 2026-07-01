@@ -1,7 +1,7 @@
 -- ═══════════════════════════════════════════════════════════════
 --  MORPHEUS CRM — Production Setup Checklist SQL
 --  Run these in Supabase SQL Editor after schema is deployed.
---  Certified Training Standards · Albany, NY · morpheuscrm.com
+--  Certified Training Standards · Albany, NY · morpheuscr.com
 -- ═══════════════════════════════════════════════════════════════
 
 -- ── 1. Verify all tables exist ──────────────────────────────────
@@ -53,7 +53,7 @@ ORDER BY event_object_table;
 
 -- Step A: Create via Supabase Auth (use Dashboard or CLI)
 -- supabase auth admin createUser \
---   --email admin@morpheuscrm.com \
+--   --email admin@morpheuscr.com \
 --   --password YOUR_SECURE_PASSWORD \
 --   --user-metadata '{"role":"super_admin","full_name":"CTS Admin"}'
 

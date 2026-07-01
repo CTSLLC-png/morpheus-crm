@@ -210,7 +210,7 @@ export async function generateCertificatePDF({ participant, certRecord }) {
   doc.setFontSize(7.5)
   doc.setTextColor(139, 175, 200)
   doc.text(
-    'Morpheus CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscrm.com',
+    'Morpheus CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscr.com',
     W / 2, H - 46, { align: 'center' }
   )
   doc.text(

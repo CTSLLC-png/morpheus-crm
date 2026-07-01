@@ -288,7 +288,7 @@ function SystemStatus() {
         </div>
       ))}
       <div style={{ marginTop:'8px', fontSize:'12px', color:'var(--color-text-tertiary)', lineHeight:'1.6' }}>
-        Morpheus CRM v1.0 · Sprint 3 complete · morpheuscrm.com
+        Morpheus CRM v1.0 · Sprint 3 complete · morpheuscr.com
       </div>
     </div>
   )

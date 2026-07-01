@@ -2,7 +2,7 @@
 """
 Morpheus CRM — Trainer Onboarding Guide Generator
 Sprint 4, Task 4-5
-Certified Training Standards · Albany, NY · morpheuscrm.com
+Certified Training Standards · Albany, NY · morpheuscr.com
 """
 
 from reportlab.lib.pagesizes import letter
@@ -59,7 +59,7 @@ def draw_footer(c):
     c.line(MAR, 40, W - MAR, 40)
     c.setFont("Helvetica", 6.5)
     c.setFillColor(GRAY)
-    c.drawString(MAR, 28, "Morpheus CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscrm.com")
+    c.drawString(MAR, 28, "Morpheus CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscr.com")
     c.drawRightString(W - MAR, 28, f"© {datetime.date.today().year} Certified Training Standards. Proprietary & Confidential.")
 
 def section_header(c, y, text, color=NAVY):
@@ -160,7 +160,7 @@ def generate_guide(out_path):
     c.setFillColor(GRAY)
     c.drawCentredString(W/2, H/2 + 76, "Morpheus CRM — Certified Training Standards")
     c.setFont("Helvetica", 10)
-    c.drawCentredString(W/2, H/2 + 56, "Albany, NY  ·  morpheuscrm.com")
+    c.drawCentredString(W/2, H/2 + 56, "Albany, NY  ·  morpheuscr.com")
 
     c.setStrokeColor(BLUE); c.setLineWidth(1)
     c.line(W/2 - 80, H/2 + 44, W/2 + 80, H/2 + 44)
@@ -192,7 +192,7 @@ def generate_guide(out_path):
     y = H - 80
 
     y = section_header(c, y, "1. Logging into Morpheus")
-    y = body_text(c, y, "Open your browser and go to morpheuscrm.com", indent=4)
+    y = body_text(c, y, "Open your browser and go to morpheuscr.com", indent=4)
     y = bullet(c, y, "Enter your trainer email and temporary password")
     y = bullet(c, y, "You will be prompted to set a new password on first login")
     y = bullet(c, y, "Trainers see the full workspace: Dashboard, AI Call Simulator, Participants, Cohorts & Reports, Score Matrix")
@@ -257,7 +257,7 @@ def generate_guide(out_path):
 
     y -= 10
     y = section_header(c, y, "6. Participant self-service portal")
-    y = body_text(c, y, "Participants log into morpheuscrm.com with their own credentials and see a separate portal:", indent=4)
+    y = body_text(c, y, "Participants log into morpheuscr.com with their own credentials and see a separate portal:", indent=4)
     y = bullet(c, y, "My Dashboard — greeting, stats, recent call history, certification badge if earned")
     y = bullet(c, y, "Practice Calls — self-directed AI mock call simulator, scores shown immediately on completion")
     y = bullet(c, y, "My Progress — category averages and full call log")
@@ -387,7 +387,7 @@ def generate_guide(out_path):
     y -= 10
     y = section_header(c, y, "14. Password resets")
     y = body_text(c, y, "If a participant or trainer cannot log in:", indent=4)
-    y = bullet(c, y, "Direct them to the 'Forgot password?' link on the morpheuscrm.com login page")
+    y = bullet(c, y, "Direct them to the 'Forgot password?' link on the morpheuscr.com login page")
     y = bullet(c, y, "A reset link will be sent to their email address")
     y = bullet(c, y, "If the email address is wrong, a super admin must update it in the Supabase dashboard")
 
@@ -397,7 +397,7 @@ def generate_guide(out_path):
 
     rows = [
         ["Action",                    "Where",                "Notes"],
-        ["Log in",                    "morpheuscrm.com",      "Email + password"],
+        ["Log in",                    "morpheuscr.com",      "Email + password"],
         ["Enroll participant",        "Participants → +Enroll","3-step form, CTS ID auto-assigned"],
         ["Create cohort",             "Cohorts → +New cohort","Set name, source, trainer, dates"],
         ["Run AI mock call",          "AI Call Simulator",    "Select participant, generate, start"],
@@ -433,7 +433,7 @@ def generate_guide(out_path):
     y = section_header(c, y, "Support")
     y = body_text(c, y, "Technical issues:   Contact your Morpheus super admin or program director.", indent=4)
     y = body_text(c, y, "LDSS documentation: Contact LDSS Albany Workforce Solutions or LDSS Schenectady Workforce Solutions directly.", indent=4)
-    y = body_text(c, y, "Platform:           morpheuscrm.com  ·  Certified Training Standards  ·  Albany, NY", indent=4)
+    y = body_text(c, y, "Platform:           morpheuscr.com  ·  Certified Training Standards  ·  Albany, NY", indent=4)
 
     c.save()
     print(f"Onboarding guide generated: {out_path}")
