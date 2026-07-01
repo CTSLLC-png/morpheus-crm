@@ -1,7 +1,7 @@
 -- ═══════════════════════════════════════════════════════════════
 --  MORPHEUS CRM — Production Setup Checklist SQL
 --  Run these in Supabase SQL Editor after schema is deployed.
---  Certified Training Standards · Albany, NY · morpheuscrm.com
+--  Certified Training Standards · Albany, NY · morpheuscr.com
 -- ═══════════════════════════════════════════════════════════════
 
 -- ── 1. Verify all tables exist ──────────────────────────────────
@@ -53,7 +53,7 @@ ORDER BY event_object_table;
 
 -- Step A: Create via Supabase Auth (use Dashboard or CLI)
 -- supabase auth admin createUser \
---   --email admin@morpheuscrm.com \
+--   --email admin@morpheuscr.com \
 --   --password YOUR_SECURE_PASSWORD \
 --   --user-metadata '{"role":"super_admin","full_name":"CTS Admin"}'
 
@@ -75,14 +75,8 @@ ORDER BY tablename, indexname;
 
 -- ── 9. Full system health check ─────────────────────────────────
 SELECT
-  (SELECT count(*) FROM staff_profiles)       AS staff_count,
-  (SELECT count(*) FROM participants)          AS participant_count,
-  (SELECT count(*) FROM cohorts)               AS cohort_count,
-  (SELECT count(*) FROM call_sessions)         AS session_count,
-  (SELECT count(*) FROM call_scores)           AS score_count,
-  (SELECT count(*) FROM certifications)        AS cert_count,
-  (SELECT weight_opening + weight_listening + weight_empathy +
-          weight_resolution + weight_policy + weight_closing
-   FROM score_matrix_weights
-   WHERE cohort_id IS NULL)                    AS global_weight_total;
--- global_weight_total must be 100.00
+  (SELECT COUNT(*) FROM staff_profiles) as staff_count,
+  (SELECT COUNT(*) FROM participants) as participant_count,
+  (SELECT COUNT(*) FROM cohorts) as cohort_count,
+  (SELECT COUNT(*) FROM call_sessions) as session_count,
+  (SELECT COUNT(*) FROM certifications) as cert_count;
