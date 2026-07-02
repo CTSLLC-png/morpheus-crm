@@ -4,19 +4,15 @@
 // post-call scoring. Each writes nothing to DB — DB logging is
 // handled by the callers in src/lib/db.js after the AI returns.
 
-const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY
-const BASE_URL = 'https://api.anthropic.com/v1/messages'
+// All AI calls route through the secure serverless proxy at
+// /api/claude — the Anthropic API key never reaches the browser.
+const BASE_URL = '/api/claude'
 const MODEL    = 'claude-sonnet-4-20250514'
 
 async function claudePost(body) {
   const res = await fetch(BASE_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: MODEL, max_tokens: 1000, ...body }),
   })
   if (!res.ok) {
