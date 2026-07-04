@@ -63,16 +63,32 @@ export default function ParticipantIntake({ cohorts = [], staffProfiles = [] }) 
     return true
   }
 
+  // Invoke an Edge Function and surface the real error message instead of
+  // the generic "Edge Function returned a non-2xx status code".
+  async function invokeEdgeFunction(name, body) {
+    const { data, error } = await supabase.functions.invoke(name, { body })
+    if (error) {
+      let msg = error.message
+      try {
+        const ctx = await error.context.json()
+        if (ctx?.error) msg = ctx.error
+      } catch { /* keep the generic message */ }
+      throw new Error(msg)
+    }
+    if (data?.error) throw new Error(data.error)
+    return data
+  }
+
   async function handleSubmit() {
     setSaving(true)
     setError(null)
     try {
-      // 1. Create Supabase auth user with participant role
-      const { data: authData, error: authErr } = await supabase.auth.admin
-        ? await supabase.functions.invoke('create-participant-user', {
-            body: { email: form.email, password: form.temp_password }
-          })
-        : { data: null, error: null }  // fallback: trainer creates manually
+      // 1. Create the participant's login. Failures now stop the flow and
+      //    show the real reason (previously they were silently ignored).
+      const authData = await invokeEdgeFunction('create-participant-user', {
+        email:    form.email,
+        password: form.temp_password,
+      })
 
       // 2. Insert participant record
       const participant = await createParticipant({
