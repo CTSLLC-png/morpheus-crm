@@ -91,16 +91,7 @@ export default function AdminPanel() {
         } catch { /* keep the generic message */ }
         throw new Error(msg)
       }
-        // Surface the real error from the function body instead of the
-        // generic "Edge Function returned a non-2xx status code".
-        let msg = fnErr.message
-        try {
-          const ctx = await fnErr.context.json()
-          if (ctx?.error) msg = ctx.error
-        } catch { /* keep the generic message */ }
-        throw new Error(msg)
-      }
-      if (data?.error) throw new Error(data.error)
+          if (data?.error) throw new Error(data.error)
 
       setSuccess(
         `${form.role === 'participant' ? 'Participant' : 'Staff'} account created for ${form.email}` +
