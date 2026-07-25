@@ -1,7 +1,6 @@
 {
   "$comment": "The episode backlog. The daily run takes the first entry with status 'queued', scripts it if needed, renders it, schedules it, then marks it 'published' with its project_id. Entries with a pre-written 'script' skip the authoring step - the first three are pre-written so the earliest automated runs are proven rather than improvised.",
-
-  "next_episode_number": 4,
+  "next_episode_number": 5,
   "produced": [
     {
       "episode": 1,
@@ -26,29 +25,38 @@
       "lane": "A",
       "status": "published",
       "note": "Established Maya and her drawing device. Best source for harvesting her character anchor - see CHARACTER_ANCHORS.md."
-    }
-  ],
-
-  "queue": [
+    },
     {
       "episode": 4,
-      "slug": "two-straws",
       "title": "Still Here: Two Straws at Wilson's",
+      "project_id": "07251456-q0m",
       "lane": "A",
-      "status": "queued",
-      "cast": ["maya", "maya_dad", "grandma_ruth"],
-      "location": "wilsons_bakery",
-      "theme": "A small ordinary object carries the whole weight of missing someone.",
-      "script": "There's a diner on the corner with a big yellow sign. Wilson's. You know the one.\n\nMaya used to go every Saturday. Her dad always ordered the same thing. One milkshake, two straws.\n\nShe's eight now. She still goes on Saturdays. Grandma Ruth takes her, and they sit in the little glass room out front, where the lights are strung up warm.\n\nMaya orders the milkshake. One milkshake, two straws.\n\nThe second straw just sits there.\n\nSome Saturdays, that's the hardest part of the whole week. Not the big things. The second straw.\n\nIf that happens to you, if a small thing knocks the wind out of you when you thought you were fine, that makes sense. Small things hold the most.\n\nSo Maya does what Maya does. She takes out her sketchbook, and she draws him. Right there, in the seat across from her. The grey sweatshirt. The smile lines. The big careful hands.\n\nAnd then she tells Grandma Ruth she's missing him today. Out loud. Because saying it makes it lighter.\n\nGrandma Ruth doesn't try to fix it. She just says, yeah, baby. Me too.\n\nTwo straws. One chair that's empty, and one that isn't.\n\nHe's still here. You're still here.",
-      "script_40s": "There's a diner on the corner with a big yellow sign. Wilson's. Maya used to go every Saturday with her dad. He always ordered the same thing. One milkshake, two straws.\n\nShe still goes. She still orders it that way. The second straw just sits there.\n\nSome Saturdays that's the hardest part of the whole week. Not the big things. The second straw.\n\nSo Maya opens her sketchbook, and she draws him into the seat across from her. Then she tells Grandma Ruth she's missing him today. Out loud. Because saying it makes it lighter.\n\nHe's still here. You're still here."
-    },
+      "status": "scheduled",
+      "slug": "two-straws",
+      "rendered_at": "2026-07-25",
+      "duration_seconds": 45,
+      "credits_spent": 50,
+      "script_source": "script_40s",
+      "anchors_used": [
+        "wilsons_bakery"
+      ],
+      "schedule_id": "17849932611525O7h-YOUTUBE",
+      "publish_at": "2026-07-26T13:00:00Z",
+      "privacy": "unlisted",
+      "note": "First episode produced through the pipeline. Scheduled UNLISTED pending creator review - neither the creator nor the agent could view the render, since the Opus CDN is blocked by this environment's egress policy. Flip to public in YouTube Studio after watching, and set the Made for Kids flag."
+    }
+  ],
+  "queue": [
     {
       "episode": 5,
       "slug": "the-question",
       "title": "Still Here: When Somebody Asks Where Your Dad Is",
       "lane": "A",
       "status": "queued",
-      "cast": ["maya", "grandma_ruth"],
+      "cast": [
+        "maya",
+        "grandma_ruth"
+      ],
       "location": "school_hallway",
       "theme": "You get to decide who knows. Having an answer ready makes the question smaller.",
       "script": "A kid at school asked Maya where her dad was.\n\nNot to be mean. Kids just ask things.\n\nAnd Maya froze. Because how do you answer that at a locker, in eleven seconds, before the bell?\n\nHere's something Grandma Ruth told her, and it's for you too.\n\nYou don't owe anybody the whole story. Not your classmates. Not the kid who asks twice. Nobody.\n\nYou get to pick who knows. That's yours.\n\nSo Maya made herself an answer she could say without her voice shaking. Just one line. My dad's away right now. I miss him.\n\nThat's it. That's a complete answer. It's true, and it's finished, and she doesn't have to add anything to it.\n\nSome days she says it and keeps walking. Some days she doesn't say anything at all, and that's allowed too.\n\nAnd the people she does want to tell, the ones who are safe, Grandma Ruth, her teacher, the counselor with the plant on her desk, she tells them the real version. The long one. The one with the missing in it.\n\nYou can have both. A short answer for the hallway, and a real one for the people who've earned it.\n\nHe's still here. You're still here.",
@@ -60,7 +68,11 @@
       "title": "Still Here: The Call Is Only Fifteen Minutes",
       "lane": "A",
       "status": "queued",
-      "cast": ["maya", "maya_dad", "grandma_ruth"],
+      "cast": [
+        "maya",
+        "maya_dad",
+        "grandma_ruth"
+      ],
       "location": "kitchen_table",
       "theme": "Short time with someone isn't small time. Prepare for it so it isn't wasted on nerves.",
       "script": "The phone calls are fifteen minutes.\n\nThat's not very long. You can't fit a whole week into fifteen minutes. You can barely fit a bad day.\n\nAnd the worst part? Sometimes Maya spends the first five minutes just being nervous. Then it's over, and she thinks of everything she meant to say on the walk back to her room.\n\nSo she started doing something.\n\nBefore the call, she writes down three things. Just three. On the back of a drawing, in pencil.\n\nOne thing that happened. One thing she's proud of. One question for him.\n\nThat's it. And when the phone rings, she's got them right there in her hand.\n\nLast time it was: I got picked for the mural. I didn't cry when the dog next door barked at me. And, what was your favorite thing to draw when you were eight?\n\nHe said trains. He said he was terrible at them.\n\nFifteen minutes isn't a lot of time. But it turns out you can put a whole lot inside it, if you know what you want to say before you start.\n\nHe's still here. You're still here.",
@@ -72,7 +84,10 @@
       "title": "Still Here: It's Okay to Be Mad at Him",
       "lane": "A",
       "status": "queued",
-      "cast": ["maya", "grandma_ruth"],
+      "cast": [
+        "maya",
+        "grandma_ruth"
+      ],
       "location": "maya_bedroom",
       "theme": "Anger at the absent parent is normal and doesn't cancel out love. Both fit.",
       "brief": "Maya is angry, not sad, and feels guilty about it. Beat 1: she's drawing and presses so hard the pencil tears the paper. Beat 2: name it - she's mad at him for not being here, and then immediately ashamed of being mad. Beat 3: Grandma Ruth, without fixing it, says being mad at somebody and loving them are not opposites; she was mad at him too. Beat 4: Maya finishes the drawing anyway, tear and all, and keeps it. Beat 5: land the title. Do NOT resolve the anger or make her apologize for it."
@@ -83,7 +98,9 @@
       "title": "Back in the Game: Showing Up Small Still Counts",
       "lane": "B",
       "status": "queued",
-      "cast": ["maya_dad"],
+      "cast": [
+        "maya_dad"
+      ],
       "location": "none",
       "theme": "Fathers overestimate the gesture required and so make none. Small and consistent beats big and rare.",
       "brief": "Parent-facing, direct address, no child narrator. Beat 1: name the trap - you think you need a grand gesture to make up for the time, so you wait until you can do something big. Beat 2: the cost of waiting - your kid isn't keeping score of size, they're keeping score of frequency. Beat 3: reframe - a letter with a bad drawing in it lands harder than a promise. Beat 4: one concrete action this week - write one letter, ask one question about their actual life, and answer the one they asked last time. Beat 5: it's not too late, and it doesn't have to be big. Unsentimental. No shame."
@@ -94,7 +111,11 @@
       "title": "Still Here: The Empty Chair at the Table",
       "lane": "A",
       "status": "queued",
-      "cast": ["maya", "grandma_ruth", "maya_dad"],
+      "cast": [
+        "maya",
+        "grandma_ruth",
+        "maya_dad"
+      ],
       "location": "kitchen_table",
       "theme": "Holidays and birthdays hurt more, and it helps to make the absence deliberate instead of pretending.",
       "brief": "A holiday meal. Beat 1: the table is set and there's one more chair than there are people. Beat 2: everyone is being careful not to mention it, which makes it louder. Beat 3: Grandma Ruth sets a place at it on purpose, and says out loud who it's for. Beat 4: Maya puts one of her drawings on the plate. Beat 5: land the title. The relief comes from naming the absence, not from filling it."
@@ -105,7 +126,10 @@
       "title": "Still Here: What to Do While You Wait for a Letter",
       "lane": "A",
       "status": "queued",
-      "cast": ["maya", "grandma_ruth"],
+      "cast": [
+        "maya",
+        "grandma_ruth"
+      ],
       "location": "maya_bedroom",
       "theme": "Mail is slow and silence feels like rejection when it isn't. Waiting is not being forgotten.",
       "brief": "Beat 1: Maya checks the mail every single day. Beat 2: nothing for eleven days, and the story she starts telling herself is that he stopped caring. Beat 3: Grandma Ruth explains, plainly and without excuses, that mail from there is slow and it is not a measure of love. Beat 4: Maya writes the next one anyway without waiting for a reply, and starts a stack of them. Beat 5: land the title. Do not promise a letter arrives."
