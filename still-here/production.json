@@ -20,21 +20,21 @@
     "enable_captions": true,
     "captions_note": "On. Children's content and many viewers watch muted.",
     "ratio": "9:16",
-    "ratio_status": "PENDING - 9:16 posts as a YouTube Short (best for daily cadence). 16:9 reads more like a traditional series. Creator decides.",
-    "target_duration_seconds": 40,
-    "duration_status": "PENDING - constrained by credits, see COSTS.md. 90s is the natural length for the 5-beat formula; 40s is what the current balance affords."
+    "ratio_status": "CONFIRMED 2026-07-25 - vertical, posts as a YouTube Short. Chosen for reach on a new channel.",
+    "target_duration_seconds": 45,
+    "duration_status": "CONFIRMED 2026-07-25 as an interim value. The agreed go-forward length is 60s, but the current 80-credit balance cannot cover it alongside anything else - raise this to 60 once the daily credit pool refills. See COSTS.md."
   },
 
   "voices": {
     "lane_a_child_facing": {
       "voice_id": "Callirrhoe",
       "name": "Laura",
-      "status": "PENDING - creator should audition against Grace (English_compelling_lady1) and Megan (Aoede)"
+      "status": "CONFIRMED 2026-07-25 - warm, unhurried, read-aloud storybook register"
     },
     "lane_b_parent_facing": {
       "voice_id": "English_magnetic_voiced_man",
       "name": "Michael",
-      "status": "PENDING - alternative is Daniel (English_Insightful_Speaker)"
+      "status": "CONFIRMED 2026-07-25 by default - not yet exercised, no Lane B episode has rendered under it. Alternative is Daniel (English_Insightful_Speaker)."
     }
   },
 
@@ -67,8 +67,9 @@
   },
 
   "schedule": {
-    "cadence": "daily",
-    "cadence_status": "BLOCKED on credit balance - see COSTS.md",
+    "cadence": "3x_weekly",
+    "cadence_cron_utc": "0 13 * * 1,3,5",
+    "cadence_status": "CONFIRMED 2026-07-25 - Mon/Wed/Fri at 60s, roughly 720 credits per month. Chosen over daily because a schedule that does not stall builds the channel better. STILL BLOCKED on the credit balance until the daily pool refills - see COSTS.md.",
     "publish_time_utc": "13:00",
     "publish_time_note": "09:00 America/New_York during EDT. Creator is Albany, NY."
   }
