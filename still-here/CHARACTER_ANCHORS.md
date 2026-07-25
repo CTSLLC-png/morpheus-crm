@@ -26,26 +26,43 @@ Two layers keep the cast consistent, and the series uses both:
 | Asset | ID | Status |
 |---|---|---|
 | Wilson's Bakery & Restaurant (location) | `3c98b196fca1a9e1` | ✅ In library |
-| Maya | — | ❌ Missing |
-| Maya's dad | — | ❌ Missing |
-| Grandma Ruth | — | ❌ Missing |
+| Maya | — | ❌ Missing — reference frame exists, not yet uploaded |
+| Maya's dad | — | ❌ Missing — reference frame exists, not yet uploaded |
+| Grandma Ruth | — | ❌ Missing — design still unverified |
+| Group leader | — | ❌ Missing — reference frame exists, not yet uploaded |
 
 Until the character anchors exist, episodes rely on the written canon alone.
-That is good enough to ship recognizable episodes, but faces will drift between
-them.
+Since the canon now matches the published designs, that ships recognizable
+episodes — but faces will still drift between them.
 
 ## Why this session could not create them
 
-The intended shortcut was to pull a clean frame of Maya from the already-
-finished episode *Still Here: Maya Draws the Memories That Keep Her Dad Close*
-(project `07221316-84o`) and register that frame as her anchor — she is already
-on-model there, so it costs nothing new.
+Two separate blocks, both environmental.
 
-That is blocked: `prod-ao-ext.cdn.opus.pro`, the host serving the rendered
-videos and thumbnails, is **denied by this environment's egress policy**
-(HTTP 403 on CONNECT). The video bytes cannot be reached from here, so no frame
-can be extracted. `ffmpeg` is also absent from the container, though that is the
-lesser problem.
+**Downloading frames is blocked.** The intended shortcut was to pull a clean
+frame of Maya from the finished episode *Still Here: Maya Draws the Memories
+That Keep Her Dad Close* (project `07221316-84o`). But
+`prod-ao-ext.cdn.opus.pro`, the host serving rendered video and thumbnails, is
+**denied by this environment's egress policy** (HTTP 403 on CONNECT). The bytes
+cannot be reached. `ffmpeg` is also absent from the container.
+
+**Pasted screenshots are not files.** The creator supplied three excellent
+reference frames — Maya drawing, Maya and her dad in the diner, and the story
+circle. Those arrived as images in the conversation, which the agent can *see*
+but cannot *read as bytes*: nothing was written to disk, so there is no file to
+PUT to a signed upload URL.
+
+Their content was still put to use. The character canon in `SERIES_BIBLE.md` §4
+and `lib/canon` was rewritten from those frames, replacing the earlier guessed
+designs. That closes most of the drift gap even with no anchor images
+registered.
+
+**To actually register them, the files have to reach the upload API.** Either:
+
+- Upload them directly in the AgentOpus web UI asset library (simplest), or
+- Save them into the repository (e.g. `still-here/refs/maya.png`) and push, so a
+  session with filesystem access can PUT the bytes and call
+  `agentopus_register_asset`.
 
 ## Three ways to create the anchors
 

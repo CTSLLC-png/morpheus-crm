@@ -29,39 +29,49 @@ QUEUE = os.path.join(ROOT, "episodes", "queue.json")
 # Measured against the existing episodes' scripts.
 WORDS_PER_SECOND = 2.3
 
-# Verbatim character canon from SERIES_BIBLE.md section 4. Injected into every
-# render so characters hold their design even when no anchor image exists.
+# Verbatim character canon from SERIES_BIBLE.md section 4, transcribed from
+# frames of the published episodes. Injected into every render so characters hold
+# their design even when no anchor image exists.
 # Keep in sync with the bible by hand — the bible is the source of truth.
 CANON = {
     "maya": (
-        "MAYA is a Black girl about eight years old, round cheeks, wide "
-        "expressive dark-brown eyes, dark brown coils in two puff-ball "
-        "ponytails tied with mismatched yellow elastics, mustard-yellow "
-        "long-sleeve tee, denim overalls with one strap loose, scuffed white "
-        "sneakers, always carrying a dog-eared sketchbook and a pencil stub. "
-        "Small for her age, thoughtful rather than sad."
+        "MAYA is a Black girl roughly six or seven years old, round full cheeks, "
+        "large warm dark-brown eyes, a small closed smile, tiny gold stud "
+        "earrings, dark brown hair in two large puff-ball ponytails tied with "
+        "pale near-white elastics. She wears a sage-green short-sleeve tee under "
+        "tan clay-brown overalls with visible metal clasp buttons, and carries a "
+        "sketchbook and pencil."
     ),
     "maya_dad": (
-        "MAYA'S DAD is a Black man in his early thirties, broad shoulders, "
-        "close-cropped hair, short beard, deep smile lines, warm brown eyes "
-        "matching Maya's, plain heather-grey crewneck sweatshirt, big careful "
-        "hands. He appears ONLY as a warm golden-lit memory, as Maya imagines "
-        "him, or as a pencil drawing in her sketchbook — never in custody."
+        "MAYA'S DAD is a Black man in his early to mid thirties, broad "
+        "shoulders, close-cropped hair, a short full beard and mustache, warm "
+        "brown eyes, an easy open smile. He wears a sage-green tee and a plain "
+        "pale-sage baseball cap with no logo or lettering of any kind. He "
+        "appears ONLY as a warm softly-lit memory, as Maya imagines him, or as a "
+        "pencil drawing in her sketchbook — never in custody."
     ),
     "grandma_ruth": (
         "GRANDMA RUTH is a Black woman in her early sixties, silver-grey hair "
         "in a low bun, reading glasses on a beaded chain, floral apron over a "
         "cardigan, steady and dry-humored and warm."
     ),
+    "group_leader": (
+        "THE GROUP LEADER is a woman in her late thirties with shoulder-length "
+        "brown curly hair, a rust-orange cardigan over a white top, seated on a "
+        "low wooden stool, calm and attentive."
+    ),
 }
 
 LOCATIONS = {
     "wilsons_bakery": (
         "LOCATION is Wilson's Bakery and Restaurant, the corner diner in the "
-        "attached reference image: bright yellow illuminated BAKERY & "
-        "RESTAURANT signage on both faces, glass-enclosed sidewalk seating "
-        "strung with warm white lights, golden light spilling onto a wet "
-        "street, brick building with fire escapes above."
+        "attached reference image: two bright yellow illuminated signs reading "
+        "\"Wilson's BAKERY & RESTAURANT\", one on each face of the corner, a "
+        "glass-enclosed sidewalk seating area wrapping the corner strung with "
+        "small warm white lights, warm yellow light spilling out and reflecting "
+        "off a wet street, dark brick building above. Keep the yellow signage "
+        "and the wrap-around glass seating - they are what make it read as "
+        "Wilson's. The Wilson's sign text is intended and must be preserved."
     ),
     "maya_bedroom": (
         "LOCATION is Maya's small bedroom: her drawings taped over most of one "
@@ -75,22 +85,42 @@ LOCATIONS = {
         "LOCATION is an ordinary elementary school hallway with lockers, "
         "cool daylight through high windows, other children blurred in motion."
     ),
+    "story_circle": (
+        "LOCATION is a bright room with a large window, potted plants, a low "
+        "bookshelf, and floor cushions arranged in a semicircle. Five or six "
+        "children sit on the cushions; the group leader sits on a low wooden "
+        "stool. Soft daylight, sage-and-peach palette."
+    ),
     "none": "",
 }
 
-# Hard prohibitions from SERIES_BIBLE.md sections 3 and 8, appended to every render.
+# Hard prohibitions from SERIES_BIBLE.md sections 3, 8, and 9, appended to every
+# render. The logo clause is not cosmetic - see the bible on why the caps stay plain.
 SAFETY_CLAUSE = (
     "Absolutely no prison imagery of any kind: no bars, cells, handcuffs, "
     "uniforms, guards, or institutional corridors. Nothing that would frighten "
-    "a child about where their parent is. Gentle, hopeful, emotionally honest, "
-    "never bleak."
+    "a child about where their parent is. No real-world brand logos, sports-team "
+    "marks, or lettering on clothing, caps, or props - this does NOT apply to the "
+    "Wilson's Bakery & Restaurant storefront signage, which is intended and must "
+    "be preserved. Gentle, hopeful, emotionally honest, never bleak."
 )
 
-STYLE_CLAUSE = (
+# The style sentence is read from production.json so it can never drift from the
+# style_name actually being rendered. See SERIES_BIBLE.md section 9.
+STYLE_CLAUSES = {
+    "watercolor": (
+        "Soft storybook watercolor illustration, pastel sage-and-peach palette, "
+        "wet-on-wet texture, gentle sepia outlines."
+    ),
+    "Animation": (
+        "Modern 3D feature animation with warm cinematic lighting, soft depth "
+        "of field, and expressive stylized characters."
+    ),
+}
+
+SERIES_CLAUSE = (
     "Episode of the \"Still Here\" animated series for children who have a "
-    "parent in prison. Modern 3D feature animation with warm cinematic "
-    "lighting, soft depth of field, and expressive stylized characters. "
-    "All characters are original to this series."
+    "parent in prison. All characters are original to this series."
 )
 
 
@@ -124,9 +154,20 @@ def pick_script(entry, target_seconds):
     return None, None
 
 
-def build_user_prompt(entry):
-    """Assemble the visual-context prompt: style, canon, location, safety."""
-    parts = [STYLE_CLAUSE]
+def build_user_prompt(entry, style_name):
+    """Assemble the visual-context prompt: style, canon, location, safety.
+
+    The style sentence is derived from the configured style_name so the prompt
+    can never describe a look different from the one being rendered.
+    """
+    style_clause = STYLE_CLAUSES.get(style_name)
+    if style_clause is None:
+        raise SystemExit(
+            "No style clause for style_name '%s'. Add one to STYLE_CLAUSES so "
+            "the prompt matches the render." % style_name
+        )
+
+    parts = [SERIES_CLAUSE, style_clause]
 
     cast = entry.get("cast") or []
     if cast:
@@ -211,7 +252,7 @@ def resolve(episode_number=None):
         "transition_video_model": render["transition_video_model"],
         "enable_captions": render["enable_captions"],
         "target_duration_seconds": target,
-        "user_prompt": build_user_prompt(entry),
+        "user_prompt": build_user_prompt(entry, render["style_name"]),
     }
     if script:
         params["script"] = script
