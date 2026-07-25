@@ -13,7 +13,8 @@
   "render": {
     "style_name": "Animation",
     "style_id": "3d-animation",
-    "style_note": "Modern 3D feature animation - warm cinematic lighting, soft bokeh, expressive stylized characters. The house look for the series.",
+    "style_status": "PENDING - UNRESOLVED, blocks rendering. Episodes 1-3 are in the 'watercolor' style; this value is 'Animation' (3D), which episode 4 used and which does not match them. Set this to the chosen house style and change style_status to CONFIRMED. See STYLE_DECISION.md.",
+    "style_note": "Modern 3D feature animation - warm cinematic lighting, soft bokeh, expressive stylized characters.",
     "image_model": "gemini-3-pro-image",
     "image_model_note": "Nano Banana Pro. Chosen for 'most consistent image quality' - character consistency across episodes matters more here than text rendering.",
     "transition_video_model": "seedance-1-5-pro-251215",

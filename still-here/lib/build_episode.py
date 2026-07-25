@@ -282,8 +282,8 @@ def check():
     problems = []
     notes = []
 
-    for key in ("ratio", "target_duration_seconds"):
-        status = production["render"].get(key + "_status", "")
+    for key in ("style_name", "ratio", "target_duration_seconds"):
+        status = production["render"].get(key.replace("_name", "") + "_status", "")
         if status.startswith("PENDING"):
             problems.append("render.%s is unconfirmed: %s" % (key, status))
 
