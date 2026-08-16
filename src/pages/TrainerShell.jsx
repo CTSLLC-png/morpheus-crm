@@ -1,8 +1,11 @@
-// src/pages/TrainerShell.jsx  v2  (Sprint 3)
-import { useState, useEffect } from 'react'
+// src/pages/TrainerShell.jsx  v3  (Morpheus OS module shell)
+import { useState, useEffect, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.jsx'
+import { useTenant } from '../hooks/useTenant.jsx'
+import { navForModules, routableModules, unimplementedModules } from '../modules/registry.jsx'
+import { ModuleBoundary } from '../modules/common/ModuleFrame.jsx'
 import { getDashboardStats, getCohortOverview, getParticipantPerformance } from '../lib/db.js'
 import ParticipantIntake   from './ParticipantIntake.jsx'
 import ParticipantProfile  from './ParticipantProfile.jsx'
@@ -10,14 +13,6 @@ import CohortManagement    from './CohortManagement.jsx'
 import CallSimulator       from './CallSimulator.jsx'
 import ScoreMatrix         from './ScoreMatrix.jsx'
 import AdminPanel          from './AdminPanel.jsx'
-
-const NAV_BASE = [
-  { path:'/',             label:'Dashboard',        icon:'grid'    },
-  { path:'/simulator',   label:'AI Call Simulator', icon:'monitor' },
-  { path:'/participants',label:'Participants',       icon:'users'   },
-  { path:'/cohorts',     label:'Cohorts & Reports', icon:'chart'   },
-  { path:'/matrix',      label:'Score Matrix',      icon:'table'   },
-]
 const ICONS = {
   grid:    <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/></svg>,
   monitor: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4a1 1 0 011-1h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" stroke="currentColor" strokeWidth="1.3"/><path d="M5 14h6M8 11v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
@@ -25,16 +20,29 @@ const ICONS = {
   chart:   <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 12L6 7l3 3 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   table:   <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M1 4h14M1 8h14M1 12h14M4 1v14M12 1v14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
   shield:  <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1l5 2v4c0 3-2 5.5-5 7C5 12.5 3 10 3 7V3l5-2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+  badge:   <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="4" stroke="currentColor" strokeWidth="1.3"/><path d="M5.5 9.5L4 15l4-2 4 2-1.5-5.5" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+  network: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="2" stroke="currentColor" strokeWidth="1.3"/><circle cx="3" cy="13" r="2" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="13" r="2" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3M8 8L4 11M8 8l4 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  clipboard: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="3" y="2.5" width="10" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M6 1.5h4v2H6z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M6 7h4M6 10h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  box:     <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 5l6-3 6 3v6l-6 3-6-3V5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M2 5l6 3 6-3M8 8v6" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
 }
 
 function scoreColor(s) { return s >= 80 ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D' }
 
 export default function TrainerShell() {
   const { user, role } = useAuth()
+  const { tenant, tenants, modules, isMultiTenant, selectTenant, loading: tenantLoading } = useTenant()
   const navigate = useNavigate()
   const location = useLocation()
   const isAdmin  = role === 'super_admin'
-  const NAV = isAdmin ? [...NAV_BASE, { path:'/admin', label:'Admin panel', icon:'shield' }] : NAV_BASE
+
+  // Navigation is data. Every item below comes from the modules this tenant
+  // has enabled in core.tenant_module — nothing here is hardcoded per client.
+  const moduleNav   = navForModules(modules)
+  const moduleRoutes = routableModules(modules)
+  const pending     = unimplementedModules(modules)
+  const NAV = isAdmin
+    ? [...moduleNav, { path:'/admin', label:'Admin panel', icon:'shield' }]
+    : moduleNav
 
   const [stats, setStats]               = useState(null)
   const [cohorts, setCohorts]           = useState([])
@@ -63,16 +71,43 @@ export default function TrainerShell() {
           <div style={sh.logoM}>M<span style={{color:'#5DCAA5'}}>.</span>orpheus</div>
           <div style={sh.logoSub}>morpheuscr.com</div>
         </div>
+        {isMultiTenant && (
+          <div style={sh.tenantArea}>
+            <div style={sh.navSec}>Organisation</div>
+            <select
+              style={sh.tenantSelect}
+              value={tenant?.id ?? ''}
+              onChange={e => { selectTenant(e.target.value); navigate('/') }}
+            >
+              {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        )}
+
         <nav style={sh.nav}>
-          <div style={sh.navSec}>Workspace</div>
+          <div style={sh.navSec}>{tenant?.name ?? 'Workspace'}</div>
+          {tenantLoading && <div style={sh.navHint}>Loading modules…</div>}
+          {!tenantLoading && NAV.length === 0 && (
+            <div style={sh.navHint}>No modules enabled for this organisation.</div>
+          )}
           {NAV.map(item => {
             const active = item.path==='/' ? location.pathname==='/' : location.pathname.startsWith(item.path)
             return (
-              <div key={item.path} style={{...sh.navItem,...(active?sh.navActive:{})}} onClick={() => navigate(item.path)}>
+              <div key={`${item.moduleKey ?? 'core'}${item.path}`}
+                   style={{...sh.navItem,...(active?sh.navActive:{})}}
+                   onClick={() => navigate(item.path)}>
                 <span style={{opacity:active?1:0.65}}>{ICONS[item.icon]}</span>{item.label}
               </div>
             )
           })}
+          {pending.length > 0 && (
+            <>
+              <div style={sh.navSec}>Coming soon</div>
+              {pending.map(m => (
+                <div key={m.key} style={sh.navPending} title={m.description}>{m.name}</div>
+              ))}
+            </>
+          )}
         </nav>
         <div style={sh.userArea}>
           <div style={{display:'flex',alignItems:'center',gap:'9px',marginBottom:'8px'}}>
@@ -107,6 +142,28 @@ export default function TrainerShell() {
             <Route path="/cohorts" element={<CohortManagement cohorts={cohorts}/>}/>
             <Route path="/matrix"  element={<ScoreMatrix/>}/>
             {isAdmin && <Route path="/admin" element={<AdminPanel/>}/>}
+
+            {/* Registry-driven modules. A route exists only because the tenant
+                enabled the module, so typing a URL for a disabled module 404s
+                rather than exposing another tenant's product surface. */}
+            {moduleRoutes.flatMap(m =>
+              (m.impl.nav ?? []).map(item => {
+                const Component = m.impl.component
+                return (
+                  <Route
+                    key={`${m.key}${item.path}`}
+                    path={`${item.path}/*`}
+                    element={
+                      <ModuleBoundary name={m.name}>
+                        <Suspense fallback={<div style={{padding:'30px',color:'#5B6B7F',fontSize:'13px'}}>Loading {m.name}…</div>}>
+                          <Component module={m} />
+                        </Suspense>
+                      </ModuleBoundary>
+                    }
+                  />
+                )
+              })
+            )}
           </Routes>
         </div>
       </main>
@@ -211,6 +268,10 @@ const sh = {
   logoSub:{fontSize:'10px',color:'rgba(255,255,255,0.3)',letterSpacing:'0.07em',marginTop:'2px'},
   nav:{padding:'12px 10px',flex:1,overflowY:'auto'},
   navSec:{fontSize:'10px',color:'rgba(255,255,255,0.3)',letterSpacing:'0.1em',textTransform:'uppercase',padding:'10px 8px 6px'},
+  navHint:{fontSize:'11px',color:'rgba(255,255,255,0.35)',padding:'6px 10px',fontStyle:'italic'},
+  navPending:{fontSize:'12px',color:'rgba(255,255,255,0.28)',padding:'7px 10px',cursor:'default'},
+  tenantArea:{padding:'6px 10px 2px',borderBottom:'1px solid rgba(255,255,255,0.06)'},
+  tenantSelect:{width:'100%',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.85)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'7px',padding:'6px 8px',fontSize:'12px',fontFamily:"'DM Sans',sans-serif",marginBottom:'8px',cursor:'pointer'},
   navItem:{display:'flex',alignItems:'center',gap:'9px',padding:'9px 10px',borderRadius:'8px',cursor:'pointer',fontSize:'13px',color:'rgba(255,255,255,0.55)',marginBottom:'1px',transition:'all 0.12s'},
   navActive:{background:'rgba(33,118,174,0.25)',color:'#fff',fontWeight:500},
   userArea:{padding:'12px',borderTop:'1px solid rgba(255,255,255,0.08)'},

@@ -3,6 +3,7 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
+import { TenantProvider } from './hooks/useTenant.jsx'
 import Login from './pages/Login.jsx'
 
 // Lazy-loaded shells (prevents bundle bloat on login screen)
@@ -44,6 +45,7 @@ function RoleRouter() {
 export default function App() {
   return (
     <AuthProvider>
+      <TenantProvider>
       <BrowserRouter>
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
@@ -60,6 +62,7 @@ export default function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
+      </TenantProvider>
     </AuthProvider>
   )
 }
