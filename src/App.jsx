@@ -10,6 +10,7 @@ import { lazy, Suspense } from 'react'
 const TrainerShell     = lazy(() => import('./pages/TrainerShell.jsx'))
 const ParticipantShell = lazy(() => import('./pages/ParticipantShell.jsx'))
 const ResetPassword    = lazy(() => import('./pages/ResetPassword.jsx'))
+const VerifyCredential = lazy(() => import('./pages/VerifyCredential.jsx'))
 
 function LoadingScreen() {
   return (
@@ -49,6 +50,9 @@ export default function App() {
           <Routes>
             <Route path="/login"          element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            {/* MORPHEUS.EDU — public credential verification (no auth) */}
+            <Route path="/verify"         element={<VerifyCredential />} />
+            <Route path="/verify/:code"   element={<VerifyCredential />} />
             <Route
               path="/*"
               element={
