@@ -10,10 +10,12 @@ import CohortManagement    from './CohortManagement.jsx'
 import CallSimulator       from './CallSimulator.jsx'
 import ScoreMatrix         from './ScoreMatrix.jsx'
 import AdminPanel          from './AdminPanel.jsx'
+import AcademyAdmin        from './AcademyAdmin.jsx'
 
 const NAV_BASE = [
   { path:'/',             label:'Dashboard',        icon:'grid'    },
   { path:'/simulator',   label:'AI Call Simulator', icon:'monitor' },
+  { path:'/academy',     label:'Claude Academy',    icon:'book'    },
   { path:'/participants',label:'Participants',       icon:'users'   },
   { path:'/cohorts',     label:'Cohorts & Reports', icon:'chart'   },
   { path:'/matrix',      label:'Score Matrix',      icon:'table'   },
@@ -25,6 +27,7 @@ const ICONS = {
   chart:   <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 12L6 7l3 3 5-6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   table:   <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M1 4h14M1 8h14M1 12h14M4 1v14M12 1v14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
   shield:  <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1l5 2v4c0 3-2 5.5-5 7C5 12.5 3 10 3 7V3l5-2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+  book:    <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 3.5A1.5 1.5 0 013.5 2H8v12H3.5A1.5 1.5 0 012 12.5v-9z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M14 3.5A1.5 1.5 0 0012.5 2H8v12h4.5a1.5 1.5 0 001.5-1.5v-9z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
 }
 
 function scoreColor(s) { return s >= 80 ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D' }
@@ -101,6 +104,7 @@ export default function TrainerShell() {
           <Routes>
             <Route path="/" element={<Dashboard stats={stats} cohorts={cohorts} navigate={navigate}/>}/>
             <Route path="/simulator" element={<CallSimulator role="trainer" participants={participants} staffProfileId={staffProfileId}/>}/>
+            <Route path="/academy/*" element={<AcademyAdmin staffProfileId={staffProfileId}/>}/>
             <Route path="/participants" element={<ParticipantsList participants={participants} navigate={navigate}/>}/>
             <Route path="/participants/new" element={<ParticipantIntake cohorts={cohorts} staffProfiles={[]}/>}/>
             <Route path="/participants/:id" element={<ParticipantProfile/>}/>
