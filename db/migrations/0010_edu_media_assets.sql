@@ -1,0 +1,28 @@
+-- 0010 — reusable media assets for lessons.
+-- Applied to production as `edu_media_assets_reusable`.
+--
+-- edu_media_asset (library) + edu_lesson_media (join), NOT columns on
+-- edu_lessons, because one produced video is expected to appear in
+-- several lessons -- an EmpowerCare HIPAA scenario and the CAP-C
+-- governance module can share a master. Columns on the lesson force a
+-- copy per use, and every copy is somewhere the caption file, duration
+-- or disclosure flag can drift out of sync.
+--
+-- PROVENANCE IS FIRST-CLASS. Creator Studio Cinema records
+-- evidence_level, source_note, and whether output used a synthetic voice
+-- requiring disclosure; EmpowerCare's regulatory_ref tracks the same
+-- idea for compliance claims. Both are "assert something, cite the
+-- source, track whether it is still current, gate release on human
+-- review". Those fields sit on the asset so a claim's backing travels
+-- with the media wherever it is reused.
+--
+-- edu_lesson_media.asset_id is ON DELETE RESTRICT on purpose: deleting
+-- an asset still attached to a lesson should fail loudly rather than
+-- silently blank a video out of a published course.
+--
+-- Views: v_lesson_media (render order per lesson),
+--        v_media_asset_usage (reuse report; lesson_count > 1 is real
+--        reuse, lesson_count = 0 is an orphan).
+--
+-- RLS matches the existing edu_* pattern: learners see published,
+-- staff manage everything, attachments follow the lesson's visibility.

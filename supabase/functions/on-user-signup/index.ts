@@ -6,7 +6,15 @@
 // What it does:
 // 1. Reads the "role" field passed in user metadata during signup
 // 2. Validates it is a permitted role
-// 3. Writes it back to user_metadata so RLS policies can read it
+// 3. Writes it to APP metadata, which RLS reads via current_user_role()
+//
+// The role MUST live in app_metadata, not user_metadata. user_metadata is
+// writable from the browser via supabase.auth.updateUser({ data: {...} }),
+// so a role stored there is self-grantable: any participant could make
+// themselves a super_admin and read edu_checkpoint_questions.correct_index
+// (the answer key) along with every other participant's progress.
+// app_metadata can only be written by the service role, which is why
+// current_user_role() reads it. See migration 0009.
 //
 // To create a participant account from the trainer admin panel:
 //   supabase.auth.admin.createUser({
@@ -36,8 +44,12 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Stamp the validated role back onto the user
+    // Stamp the validated role into app_metadata — the trusted,
+    // service-role-only field that current_user_role() reads.
+    // user_metadata keeps a copy for display purposes only; nothing
+    // security-relevant may ever read it.
     const { error } = await adminClient.auth.admin.updateUserById(user.id, {
+      app_metadata:  { role },
       user_metadata: { ...user.raw_user_meta_data, role },
     })
 
