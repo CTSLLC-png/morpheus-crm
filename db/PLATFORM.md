@@ -100,3 +100,33 @@ policy is later added for `anon`. Revoke write privileges on all 30
 passthrough views and leave `SELECT` only. Note the repo ships a
 hardcoded anon key in `src/lib/supabase.js` and the repository is
 public, so the anon key must be treated as known to the world.
+
+## Melrah Environmental — scope (confirmed by the owner)
+
+Melrah is **logistics operations and work-order dispatch** for a medical
+device reprocessing programme: collecting used devices from participating
+healthcare facilities, reprocessing them, running QC, releasing them back.
+
+**Melrah has no scoring matrix, by design.** The environmental collection
+course has not been built yet. Do not add one, and do not read
+`melrah.qc_inspection` as a training rubric — it is AQL-style acceptance
+sampling (`sample_size`, `defects_found`, `disposition`), which is a
+manufacturing QC concept, not an assessment.
+
+Operational spine:
+
+| Entity | Role |
+|---|---|
+| `account` → `facility` | Participating provider networks and their sites |
+| `work_order` | The dispatch unit — `COLLECTION` / `AUDIT` / `SWAP` |
+| `work_order_line` | Expected vs received quantity per device SKU |
+| `custody_event` | Chain of custody — the operational activity timeline |
+| `lot` / `lot_status` | Reprocessing batches, with cycle number against `device.max_cycles` |
+| `qc_inspection` | Sampling inspection and disposition per lot |
+| `nonconformance` | NCRs with severity, CAPA reference, open/closed |
+
+Work-order status flow observed in the seed data:
+`DRAFT → IN_TRANSIT → RECEIVED → RELEASED → CLOSED`, plus `CANCELLED`.
+
+All seeded rows are prefixed `DEMO —` and are pilot/demo data, not live
+operations. Any UI over this must say so.
