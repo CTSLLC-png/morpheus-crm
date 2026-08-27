@@ -1,0 +1,33 @@
+-- 0006 — correct v_facility_capture: yield rate must not count
+-- in-process lots as viability losses.
+-- Applied to production as `fix_yield_rate_excludes_in_process_lots`.
+--
+-- BUG: the original definition used coalesce(qty_released, 0), so a lot
+-- sitting in QUARANTINE or ON_HOLD -- qty_released still NULL because it
+-- has not been dispositioned -- was scored as a total loss. Riverbend
+-- reported 0.0% yield across 351 units when only one 30-unit lot had
+-- actually been REJECTED and 321 units were still in process. That
+-- misreads "not finished" as "everything failed", which is the exact
+-- wrong signal for a viability metric and would have pointed an
+-- investigation at material quality instead of QC throughput.
+--
+-- FIX: a lot counts toward yield only once it reaches a terminal
+-- disposition (qty_released is not null). In-process volume is surfaced
+-- as in_process_qty / lots_in_process rather than silently dropped, so
+-- the figure is explainable. yield_rate_pct is NULL, not 0, when nothing
+-- has been dispositioned yet.
+--
+-- New columns are appended rather than inserted mid-list, so
+-- create-or-replace works without dropping a view the app already reads.
+--
+-- The full view body as applied is reproduced in
+-- db/production_snapshot.sql on the next snapshot run; see that file for
+-- the canonical definition.
+--
+-- Verification after apply:
+--   select facility_name, capture_rate_pct, yield_rate_pct,
+--          lot_received, lot_released, in_process_qty, lots_in_process
+--   from melrah.v_facility_capture;
+--
+-- Expected for the demo data: Riverbend 90.9% capture, 0.0% yield on
+-- lot_received = 30 (not 351), with in_process_qty = 321 over 3 lots.
