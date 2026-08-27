@@ -53,8 +53,9 @@ export const LOCATIONS = [
     id: 'cliff-top-overlook',
     name: 'Cliff-Top Overlook',
     description: 'Dead-end overlook above the canyon — where the chase ends and the climax begins.',
-    status: 'pending',
-    src: null,
+    status: 'ready',
+    src: 'https://cdn.gamma.app/n8e5peu5ixl5398/design-anything/extXhUvtSsiV1MSH6FFEa/hdXinXXZ3yVABqkD5ukFn.jpg',
+    hosted: 'gamma',
   },
 ]
 
@@ -63,22 +64,25 @@ export const VEHICLES = [
     id: 'audi-rs8',
     name: 'Audi RS8 (hero car)',
     description: 'Matte black, blacked-out trim — Marcus’s car.',
-    status: 'pending',
-    src: null,
+    status: 'ready',
+    src: 'https://cdn.gamma.app/n8e5peu5ixl5398/design-anything/9jQ1Y1SFdgr1liv55YM9B/2CBoCN1WL3XZS7YtcOggR.jpg',
+    hosted: 'gamma',
   },
   {
     id: 'state-police-cruiser',
     name: 'State Police Cruiser',
     description: 'Black-and-white cruiser with roof light bar — the pursuit.',
-    status: 'pending',
-    src: null,
+    status: 'ready',
+    src: 'https://cdn.gamma.app/n8e5peu5ixl5398/design-anything/XWC9XUFQlmyqNAQcAAr1W/do8rb2YL876i05IqJfpbj.jpg',
+    hosted: 'gamma',
   },
   {
     id: 'hang-glider-pair',
     name: 'Hang Glider Pair',
     description: 'Red/orange and blue sails — the escape off the cliff.',
-    status: 'pending',
-    src: null,
+    status: 'ready',
+    src: 'https://cdn.gamma.app/n8e5peu5ixl5398/design-anything/cSqZwZ2PgBApfNRku5c1g/NvRJ8Xzqgu-gJrqy10OIq.jpg',
+    hosted: 'gamma',
   },
 ]
 
@@ -93,9 +97,17 @@ export const SHOT_LIST = [
   { id: 'shot-05', beat: 'Two gliders launch off the overlook into open air. Title card: UPDRAFT.', needs: ['marcus', 'simone', 'hang-glider-pair', 'cliff-top-overlook'] },
 ]
 
+export function anchorStatus(anchor) {
+  const statuses = anchor.shots.map(s => s.status)
+  if (statuses.every(s => s === 'ready')) return 'ready'
+  if (statuses.some(s => s === 'ready')) return 'pending'
+  return 'blocked'
+}
+
 function statusOf(assetId) {
-  const all = [...ANCHORS, ...LOCATIONS, ...VEHICLES]
-  const found = all.find(a => a.id === assetId)
+  const anchor = ANCHORS.find(a => a.id === assetId)
+  if (anchor) return anchorStatus(anchor)
+  const found = [...LOCATIONS, ...VEHICLES].find(a => a.id === assetId)
   return found?.status ?? 'blocked'
 }
 

@@ -116,7 +116,10 @@ export default function CreatorStudio() {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px' }}>
                   <span style={cs.plateDesc}>{l.description}</span>
-                  <StatusPill status={l.status} />
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    {l.hosted && <span style={cs.hostedTag}>via {l.hosted}</span>}
+                    <StatusPill status={l.status} />
+                  </div>
                 </div>
               </div>
             ))}
@@ -189,6 +192,7 @@ const cs = {
   plateLabel: { position: 'absolute', left: '10px', bottom: '10px', background: 'rgba(11,20,31,0.75)', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 600, color: '#fff' },
   plateDesc: { fontSize: '11px', color: 'rgba(232,239,246,0.5)', maxWidth: '75%' },
   pill: { fontSize: '9px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 },
+  hostedTag: { fontSize: '9px', color: 'rgba(232,239,246,0.35)', fontStyle: 'italic', flexShrink: 0 },
   shotGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' },
   shotCard: { background: '#101B29', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px' },
   shotId: { fontFamily: 'monospace', fontSize: '11px', color: 'rgba(232,239,246,0.4)' },
