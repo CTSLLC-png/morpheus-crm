@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import Markdown from '../lib/markdown.jsx'
+import LessonMedia from '../lib/lessonmedia.jsx'
 import { generateEduCertificatePDF } from '../lib/educert.js'
 import {
   getCourse, getProgress, markLessonComplete,
@@ -192,6 +193,7 @@ function LessonView({ course, module, lesson, isDone, bestScore, onComplete, onS
           {isDone && <span style={st.donePillSm}>✓ completed</span>}
         </div>
         <h1 style={st.lessonH1}>{lesson.title}</h1>
+        <LessonMedia lessonId={lesson.id} />
         <Markdown text={lesson.content_md} />
 
         {isCheckpoint

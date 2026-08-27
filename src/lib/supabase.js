@@ -55,9 +55,21 @@ export async function getSession() {
   return data.session
 }
 
-/** Get role from user metadata: 'super_admin' | 'trainer' | 'participant' */
+/**
+ * Role for the signed-in user: 'super_admin' | 'trainer' | 'participant'.
+ *
+ * Read from app_metadata, never user_metadata. user_metadata is writable
+ * from the browser via supabase.auth.updateUser({ data: … }), so a
+ * participant could hand themselves any role they liked. app_metadata is
+ * writable only by the service role, and is the same source
+ * public.current_user_role() reads for every edu_* RLS policy — see
+ * db/migrations/0009_harden_current_user_role.sql. Deliberately no
+ * fallback to user_metadata: a fallback would reopen that hole.
+ *
+ * This drives UI affordances only. Authorisation is enforced by RLS.
+ */
 export function getUserRole(user) {
-  return user?.user_metadata?.role ?? null
+  return user?.app_metadata?.role ?? null
 }
 
 /** Get current user object */
