@@ -1,0 +1,40 @@
+-- 0008 — the first REAL participating facilities (not demo).
+-- Applied to production as `melrah_ny_participating_facilities`.
+--
+-- Five New York health systems, six facilities, routed to the NY network
+-- from 0007. No DEMO prefix: these are real organisations, and the
+-- console's demo banner keys off that prefix, so they render as live.
+--
+--   Long Island Jewish Medical Center     Northwell Health      → NY-LIC  HUB
+--   Westchester Medical Center            WMC Health Network    → NY-POU  HUB
+--   Buffalo General Medical Center        Kaleida Health        → NY-NFL  HUB
+--   Oishei Children's Hospital            Kaleida Health        → NY-NFL  HUB
+--   Albany Medical Center                 Albany Med            → NY-AMS  DIRECT
+--   Samuel S. Stratton VA Medical Center  VA                    → NY-AMS  DIRECT
+--
+-- The two Albany facilities are routing_mode = DIRECT: Capital Region
+-- volume goes straight to the Amsterdam reprocessing facility rather
+-- than consolidating at a hub first.
+--
+-- network_type uses values the schema already allows (HEALTH_SYSTEM,
+-- IDN, HOSPITAL, ASC, VA, GPO, OTHER). The VA account uses the existing
+-- 'VA' type -- an earlier attempt invented 'FEDERAL' and was correctly
+-- rejected by account_network_type_check.
+--
+-- DELIBERATELY NULL: street address, postal code, contact name/email/
+-- phone, collection_frequency, est_annual_volume. Contractual and
+-- operational facts I do not have; a guessed address or pickup cadence
+-- would look authoritative in a chain-of-custody record and be wrong.
+-- City and state are set because the campuses are unambiguous.
+--
+-- BUFFALO: Buffalo General and Oishei Children's are legally distinct
+-- hospitals sharing the Buffalo Niagara Medical Campus under Kaleida
+-- Health, so they are two facilities under one account and can be
+-- scheduled separately. Collapse to one row if they share a dock.
+--
+-- Idempotent: melrah.account has no unique constraint on name, so every
+-- insert is guarded by NOT EXISTS rather than ON CONFLICT.
+--
+-- Adds melrah.v_facility_readiness / public.ml_facility_readiness so the
+-- onboarding gaps are visible instead of incomplete records looking
+-- finished. All six currently report ready_for_dispatch = false.
