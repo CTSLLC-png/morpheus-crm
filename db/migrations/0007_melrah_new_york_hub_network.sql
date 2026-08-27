@@ -1,0 +1,39 @@
+-- 0007 — the real Melrah network: New York State.
+-- Applied to production as `melrah_new_york_hub_network`.
+--
+-- Supersedes the four hubs seeded in 0004 (HUB-PDX/SEA/DFW/AUS), which
+-- were derived from the DEMO pilot geography rather than the business.
+-- The real operation is New York:
+--
+--   NY-LIC  Long Island City   → Metro New York
+--   NY-POU  Poughkeepsie       → Mid-Hudson
+--   NY-NFL  Niagara Falls      → Western New York
+--   NY-STR  (site TBD)         → Southern Tier
+--   NY-AMS  Amsterdam NY       → REPROCESSING FACILITY
+--
+-- Two structural facts 0004 could not express:
+--
+-- 1. hub.kind — Amsterdam is not a consolidation hub, it is where
+--    reprocessing happens. Modelling it as another hub row would
+--    conflate two different roles in one table.
+--
+-- 2. facility.routing_mode — the Capital Region goes DIRECT to
+--    Amsterdam, skipping consolidation. Without this, "direct" could
+--    only be expressed as hub_id IS NULL, which already means "not yet
+--    assigned". One NULL cannot carry two meanings. A direct-routed
+--    facility still carries a real hub_id (Amsterdam); routing_mode
+--    says how it gets there.
+--
+-- The 0004 hubs are renamed DEMO and deactivated rather than dropped:
+-- the demo seed hung inventory and movement-ledger rows off them, and
+-- deleting them would cascade that history away.
+--
+-- Street addresses are deliberately NULL — fictional locations have no
+-- place in a regulated chain-of-custody record. The Southern Tier city
+-- is NULL because the site has not been chosen; v_hub_network.site_pending
+-- surfaces that rather than hiding it behind a guess.
+--
+-- Verification:
+--   select code, name, kind, city, region, active, site_pending,
+--          facilities_served, units_on_hand
+--   from melrah.v_hub_network order by kind desc, code;

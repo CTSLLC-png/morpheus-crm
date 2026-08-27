@@ -130,3 +130,30 @@ Work-order status flow observed in the seed data:
 
 All seeded rows are prefixed `DEMO —` and are pilot/demo data, not live
 operations. Any UI over this must say so.
+
+### Melrah network topology (New York)
+
+| Code | Site | Role | Serves |
+|---|---|---|---|
+| `NY-LIC` | Long Island City | Consolidation | Metro New York |
+| `NY-POU` | Poughkeepsie | Consolidation | Mid-Hudson |
+| `NY-NFL` | Niagara Falls | Consolidation | Western New York |
+| `NY-STR` | *site not yet chosen* | Consolidation | Southern Tier |
+| `NY-AMS` | Amsterdam | **Reprocessing facility** | Capital Region, direct intake |
+
+Amsterdam is where reprocessing happens, not a collection hub —
+`hub.kind` separates `REPROCESSING` from `CONSOLIDATION`.
+
+Capital Region facilities route **direct** to Amsterdam rather than
+consolidating first. `facility.routing_mode` (`HUB` | `DIRECT`) carries
+that explicitly, so `facility.hub_id IS NULL` keeps its single meaning of
+"not yet assigned". A direct-routed facility still points at Amsterdam.
+
+`NY-STR` exists with a NULL city so Southern Tier facilities can be
+assigned to the region before the site is picked;
+`v_hub_network.site_pending` flags it. No hub has a street address yet —
+those must come from the real site leases before go-live.
+
+The four PNW/Texas hubs from migration 0004 were invented from the DEMO
+pilot geography. They are renamed `DEMO —` and deactivated, not deleted,
+because the demo inventory ledger references them.
