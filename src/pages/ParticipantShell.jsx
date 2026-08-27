@@ -7,6 +7,7 @@ import { signOut } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { getParticipantProfile, getCallHistory, checkCertEligibility } from '../lib/db.js'
 import { useCallSession, CALL_STATES } from '../hooks/useCallSession.js'
+import Academy from './Academy.jsx'
 
 const SCENARIO_TYPES = [
   'Billing dispute – frustrated customer',
@@ -49,8 +50,9 @@ export default function ParticipantShell() {
   }, [participantId])
 
   const NAV = [
-    { path: '/',       label: 'My Dashboard' },
-    { path: '/calls',  label: 'Practice Calls' },
+    { path: '/',        label: 'My Dashboard' },
+    { path: '/calls',   label: 'Practice Calls' },
+    { path: '/academy', label: 'Claude Academy' },
     { path: '/progress', label: 'My Progress' },
   ]
 
@@ -112,6 +114,7 @@ export default function ParticipantShell() {
             <Route path="/calls" element={
               <PracticeCallsPage participantId={participantId} onComplete={(newCall) => setCallHistory(prev => [newCall, ...prev])} />
             } />
+            <Route path="/academy/*" element={<Academy />} />
             <Route path="/progress" element={
               <ProgressPage completedCalls={completedCalls} avgScore={avgScore} />
             } />

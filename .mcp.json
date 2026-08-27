@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "opus": {
+      "type": "http",
+      "url": "https://api.opus.pro/api/agent-mcp",
+      "headers": {
+        "Authorization": "Bearer ${OPUS_API_KEY}"
+      }
+    }
+  }
+}
