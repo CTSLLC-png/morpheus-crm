@@ -12,6 +12,7 @@ import CallSimulator       from './CallSimulator.jsx'
 import ScoreMatrix         from './ScoreMatrix.jsx'
 import AdminPanel          from './AdminPanel.jsx'
 import AcademyAdmin        from './AcademyAdmin.jsx'
+import MelrahConsole, { melrahViewFor } from '../modules/melrah/MelrahConsole.jsx'
 
 const NAV_BASE = [
   { path:'/',             label:'Dashboard',        icon:'grid'    },
@@ -37,9 +38,10 @@ const ICONS = {
 // ── MorpheusOS service registry → application routes ───────────
 // `workforce.cer` IS this application: it owns the Morpheus CRM
 // screens at the root. `workforce.academy` owns the existing
-// MORPHEUS.EDU screens at /academy. Every other registered module is
-// real data in the platform with no interface built yet, so it routes
-// to an honest placeholder at /m/<module key>.
+// MORPHEUS.EDU screens at /academy. Everything else routes to
+// /m/<module key>, where the module either has a built interface
+// (Melrah's logistics services, see melrahViewFor) or falls
+// through to an honest placeholder that shows only registry facts.
 const MODULE_ROUTES = {
   'workforce.cer':     '/',
   'workforce.academy': '/academy',
@@ -274,13 +276,39 @@ export default function TrainerShell() {
             <Route path="/participants/:id" element={<ParticipantProfile/>}/>
             <Route path="/cohorts" element={<CohortManagement cohorts={cohorts}/>}/>
             <Route path="/matrix"  element={<ScoreMatrix/>}/>
-            <Route path="/m/:moduleKey" element={<ModulePlaceholder modules={modules} tenant={activeTenant}/>}/>
+            {/* Splat so a module with its own interface can route its
+                own sub-views (e.g. a work order detail page). */}
+            <Route path="/m/:moduleKey/*" element={<ModuleView modules={modules} tenant={activeTenant}/>}/>
             {isAdmin && <Route path="/admin" element={<AdminPanel/>}/>}
           </Routes>
         </div>
       </main>
     </div>
   )
+}
+
+/**
+ * Resolves /m/<module key> to whichever interface owns that service.
+ * A module only reaches a built UI when the registry actually returned
+ * it for this tenant; anything else keeps the placeholder, so modules
+ * that still lack a UI (workforce.empowercare, quality.inventory) are
+ * unaffected.
+ */
+function ModuleView({ modules, tenant }) {
+  const { moduleKey } = useParams()
+  const mod = modules.find(m => m.key === moduleKey)
+
+  if (mod && melrahViewFor(moduleKey)) {
+    return (
+      <MelrahConsole
+        moduleKey={moduleKey}
+        module={mod}
+        modules={modules}
+        tenant={tenant}
+      />
+    )
+  }
+  return <ModulePlaceholder modules={modules} tenant={tenant}/>
 }
 
 /**
