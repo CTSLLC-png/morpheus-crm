@@ -4,7 +4,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useTenant } from '../hooks/useTenant.jsx'
-import { navForModules, routableModules, unimplementedModules } from '../modules/registry.jsx'
+import { navForModules, routableModules, plannedModules, missingModules } from '../modules/registry.jsx'
 import { ModuleBoundary } from '../modules/common/ModuleFrame.jsx'
 import { getDashboardStats, getCohortOverview, getParticipantPerformance } from '../lib/db.js'
 import ParticipantIntake   from './ParticipantIntake.jsx'
@@ -13,6 +13,11 @@ import CohortManagement    from './CohortManagement.jsx'
 import CallSimulator       from './CallSimulator.jsx'
 import ScoreMatrix         from './ScoreMatrix.jsx'
 import AdminPanel          from './AdminPanel.jsx'
+import AcademyAdmin        from './AcademyAdmin.jsx'
+
+// NAV_BASE used to live here. Navigation now comes from the module registry,
+// which reads core.tenant_module — Claude Academy included. Its nav item and
+// route are declared in modules/registry.jsx under `workforce.academy`.
 const ICONS = {
   grid:    <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.3"/></svg>,
   monitor: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 4a1 1 0 011-1h10a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V4z" stroke="currentColor" strokeWidth="1.3"/><path d="M5 14h6M8 11v3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
@@ -24,6 +29,7 @@ const ICONS = {
   network: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="3" r="2" stroke="currentColor" strokeWidth="1.3"/><circle cx="3" cy="13" r="2" stroke="currentColor" strokeWidth="1.3"/><circle cx="13" cy="13" r="2" stroke="currentColor" strokeWidth="1.3"/><path d="M8 5v3M8 8L4 11M8 8l4 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
   clipboard: <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="3" y="2.5" width="10" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M6 1.5h4v2H6z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M6 7h4M6 10h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>,
   box:     <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 5l6-3 6 3v6l-6 3-6-3V5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M2 5l6 3 6-3M8 8v6" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+  book:    <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 3.5A1.5 1.5 0 013.5 2H8v12H3.5A1.5 1.5 0 012 12.5v-9z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M14 3.5A1.5 1.5 0 0012.5 2H8v12h4.5a1.5 1.5 0 001.5-1.5v-9z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
 }
 
 function scoreColor(s) { return s >= 80 ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D' }
@@ -39,7 +45,8 @@ export default function TrainerShell() {
   // has enabled in core.tenant_module — nothing here is hardcoded per client.
   const moduleNav   = navForModules(modules)
   const moduleRoutes = routableModules(modules)
-  const pending     = unimplementedModules(modules)
+  const pending     = plannedModules(modules)
+  const missing     = missingModules(modules)
   const NAV = isAdmin
     ? [...moduleNav, { path:'/admin', label:'Admin panel', icon:'shield' }]
     : moduleNav
@@ -100,6 +107,17 @@ export default function TrainerShell() {
               </div>
             )
           })}
+          {missing.length > 0 && (
+            <>
+              <div style={{...sh.navSec, color:'#F0A868'}}>Not wired into this build</div>
+              {missing.map(m => (
+                <div key={m.key} style={sh.navMissing}
+                     title={`${m.key} is enabled and AVAILABLE but has no entry in modules/registry.jsx — this build cannot render it.`}>
+                  ⚠ {m.name}
+                </div>
+              ))}
+            </>
+          )}
           {pending.length > 0 && (
             <>
               <div style={sh.navSec}>Coming soon</div>
@@ -136,6 +154,7 @@ export default function TrainerShell() {
           <Routes>
             <Route path="/" element={<Dashboard stats={stats} cohorts={cohorts} navigate={navigate}/>}/>
             <Route path="/simulator" element={<CallSimulator role="trainer" participants={participants} staffProfileId={staffProfileId}/>}/>
+            <Route path="/academy/*" element={<AcademyAdmin staffProfileId={staffProfileId}/>}/>
             <Route path="/participants" element={<ParticipantsList participants={participants} navigate={navigate}/>}/>
             <Route path="/participants/new" element={<ParticipantIntake cohorts={cohorts} staffProfiles={[]}/>}/>
             <Route path="/participants/:id" element={<ParticipantProfile/>}/>
@@ -270,6 +289,7 @@ const sh = {
   navSec:{fontSize:'10px',color:'rgba(255,255,255,0.3)',letterSpacing:'0.1em',textTransform:'uppercase',padding:'10px 8px 6px'},
   navHint:{fontSize:'11px',color:'rgba(255,255,255,0.35)',padding:'6px 10px',fontStyle:'italic'},
   navPending:{fontSize:'12px',color:'rgba(255,255,255,0.28)',padding:'7px 10px',cursor:'default'},
+  navMissing:{fontSize:'12px',color:'#F0A868',padding:'7px 10px',cursor:'help',background:'rgba(240,168,104,0.10)',borderRadius:'7px',marginBottom:'2px'},
   tenantArea:{padding:'6px 10px 2px',borderBottom:'1px solid rgba(255,255,255,0.06)'},
   tenantSelect:{width:'100%',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.85)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'7px',padding:'6px 8px',fontSize:'12px',fontFamily:"'DM Sans',sans-serif",marginBottom:'8px',cursor:'pointer'},
   navItem:{display:'flex',alignItems:'center',gap:'9px',padding:'9px 10px',borderRadius:'8px',cursor:'pointer',fontSize:'13px',color:'rgba(255,255,255,0.55)',marginBottom:'1px',transition:'all 0.12s'},

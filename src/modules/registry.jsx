@@ -29,6 +29,15 @@ export const MODULE_REGISTRY = {
     native: true,
     nav: CER_NAV,
   },
+  // Claude Academy (MORPHEUS.EDU). Like CER it predates the registry and its
+  // route needs shell-level data (staffProfileId), so it stays `native` and
+  // keeps rendering inside TrainerShell. Registering it here is what puts it
+  // back in the sidebar now that navigation is data-driven — a module that
+  // exists in core.module but not here would silently vanish from the nav.
+  'workforce.academy': {
+    native: true,
+    nav: [{ path: '/academy', label: 'Claude Academy', icon: 'book' }],
+  },
   'workforce.empowercare': {
     nav: [{ path: '/empowercare', label: 'EmpowerCare', icon: 'badge' }],
     component: lazy(() => import('./empowercare/index.jsx')),
@@ -55,12 +64,33 @@ export function resolveModules(modules) {
 }
 
 /**
- * Enabled in the registry but not built here yet — worth knowing about, but
- * never worth rendering a tab for. A tab that leads nowhere reads as a broken
- * product; an honest gap reads as a roadmap.
+ * Registered in core.module but absent from this file. Two very different
+ * cases, and conflating them is how a shipped module silently disappears:
+ *
+ *  - PLANNED  → genuinely not built. A roadmap item. Show it quietly.
+ *  - AVAILABLE → someone shipped this module and this build does not know
+ *    about it. That is a BUG in this file, not a roadmap item, and it must be
+ *    loud. Claude Academy hit exactly this: it was added to core.module and
+ *    wired into main while this branch was open, so a build without a registry
+ *    entry dropped it from the sidebar with no error anywhere.
  */
 export function unimplementedModules(modules) {
   return (modules ?? []).filter(m => !MODULE_REGISTRY[m.key])
+}
+
+export function plannedModules(modules) {
+  return unimplementedModules(modules).filter(m => m.status !== 'AVAILABLE')
+}
+
+export function missingModules(modules) {
+  const missing = unimplementedModules(modules).filter(m => m.status === 'AVAILABLE')
+  if (missing.length && typeof console !== 'undefined') {
+    console.error(
+      '[morpheus] Modules are enabled and AVAILABLE but missing from MODULE_REGISTRY — ' +
+      'they will not appear in navigation: ' + missing.map(m => m.key).join(', ')
+    )
+  }
+  return missing
 }
 
 export function navForModules(modules) {
