@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getParticipantProfile, getCallHistory, checkCertEligibility } from '../lib/db.js'
 import { generateProgressReportPDF } from '../lib/report.js'
+import { listAvailableModules, getParticipantModules, setParticipantModule } from '../lib/morpheus.js'
 
 const CATS = ['Opening','Listening','Empathy','Resolution','Policy','Closing']
 const SCORE_KEYS = ['score_opening','score_listening','score_empathy','score_resolution','score_policy','score_closing']
@@ -37,6 +38,10 @@ export default function ParticipantProfile() {
   const [loading, setLoading]         = useState(true)
   const [exporting, setExporting]     = useState(false)
   const [activeCall, setActiveCall]   = useState(null)  // expanded call detail
+  const [catalog, setCatalog]         = useState([])
+  const [assigned, setAssigned]       = useState(new Set())
+  const [assignMode, setAssignMode]   = useState('all')
+  const [savingKey, setSavingKey]     = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -57,6 +62,37 @@ export default function ParticipantProfile() {
     }
     load()
   }, [id])
+
+  // ── Program access ────────────────────────────────────────────
+  // `assigned` empty means "no explicit assignments", which the participant
+  // shell reads as "show everything". That is the pilot default, and the UI
+  // says so rather than leaving it to be inferred from empty chips.
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    Promise.all([listAvailableModules(), getParticipantModules(id)]).then(([cat, mine]) => {
+      if (cancelled) return
+      setCatalog(cat)
+      setAssigned(new Set(mine))
+      setAssignMode(mine.length ? 'assigned' : 'all')
+    })
+    return () => { cancelled = true }
+  }, [id])
+
+  async function toggleModule(key, on) {
+    setSavingKey(key)
+    try {
+      await setParticipantModule(id, key, on)
+      const next = new Set(assigned)
+      if (on) next.add(key); else next.delete(key)
+      setAssigned(next)
+      setAssignMode(next.size ? 'assigned' : 'all')
+    } catch (err) {
+      console.error(err)
+      window.alert(`Could not update program access: ${err.message}`)
+    }
+    setSavingKey(null)
+  }
 
   // Category averages across all scored calls
   const completedCalls = calls.filter(c => c.call_scores?.length > 0)
@@ -126,6 +162,38 @@ export default function ParticipantProfile() {
           <StatusBadge status={participant.status} cert={cert} eligible={eligible} />
           {cert && <div style={s.certNum}>Certified ✓</div>}
           {eligible && <div style={s.certPending}>Eligible for certification</div>}
+        </div>
+      </div>
+
+      {/* ── Program access ── */}
+      <div style={s.card}>
+        <div style={s.cardTitle}>Program access</div>
+        <div style={{ fontSize: '11.5px', color: '#5B6B7F', marginBottom: '10px', lineHeight: 1.5 }}>
+          Controls which programs this participant sees when they sign in.
+          {assignMode === 'all' && ' No assignments yet — they currently see every available program.'}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {catalog.length === 0 && <span style={{ fontSize: '12px', color: '#8BA0B8' }}>Loading programs…</span>}
+          {catalog.map(m => {
+            const on = assigned.has(m.key)
+            return (
+              <button
+                key={m.key}
+                onClick={() => toggleModule(m.key, !on)}
+                disabled={savingKey === m.key}
+                title={m.description ?? ''}
+                style={{
+                  padding: '7px 14px', borderRadius: '20px', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: 500, fontFamily: "'DM Sans',sans-serif",
+                  border: on ? '1px solid #0F6E56' : '1px solid #CBD8E6',
+                  background: on ? '#E1F5EE' : '#fff',
+                  color: on ? '#0F6E56' : '#5B6B7F',
+                  opacity: savingKey === m.key ? 0.5 : 1,
+                }}>
+                {on ? '✓ ' : ''}{m.name}
+              </button>
+            )
+          })}
         </div>
       </div>
 

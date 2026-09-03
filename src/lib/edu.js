@@ -37,6 +37,33 @@ export async function getCheckpointQuestions(moduleId) {
   return data
 }
 
+/**
+ * Staff: every checkpoint question in a course, grouped by module.
+ * One round trip rather than one per module — the whole bank is 64 rows.
+ * Includes correct_index and explanation, which the participant view must
+ * never receive; this is why it is a separate staff-only helper.
+ */
+export async function getCourseQuestionBank(courseId) {
+  const { data, error } = await supabase
+    .from('edu_checkpoint_questions')
+    .select('*, edu_modules!inner(id, title, sort_order, course_id)')
+    .eq('edu_modules.course_id', courseId)
+    .order('sort_order')
+  if (error) throw error
+
+  const byModule = new Map()
+  for (const q of data ?? []) {
+    const m = q.edu_modules
+    if (!byModule.has(m.id)) {
+      byModule.set(m.id, { id: m.id, title: m.title, sortOrder: m.sort_order, questions: [] })
+    }
+    byModule.get(m.id).questions.push(q)
+  }
+  return [...byModule.values()]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(m => ({ ...m, questions: m.questions.sort((a, b) => a.sort_order - b.sort_order) }))
+}
+
 // ── PROGRESS ───────────────────────────────────────────────────
 
 /** All completed lesson ids for a participant. */

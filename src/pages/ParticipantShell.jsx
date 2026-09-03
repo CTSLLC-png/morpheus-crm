@@ -6,6 +6,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { getParticipantProfile, getCallHistory, checkCertEligibility } from '../lib/db.js'
+import { loadParticipantModules } from '../lib/morpheus.js'
 import { useCallSession, CALL_STATES } from '../hooks/useCallSession.js'
 import Academy from './Academy.jsx'
 
@@ -33,6 +34,9 @@ export default function ParticipantShell() {
   const [profile, setProfile]         = useState(null)
   const [callHistory, setCallHistory] = useState([])
   const [eligibility, setEligibility] = useState(null)
+  // null = still resolving. Never render nav from a half-loaded state, or a
+  // participant briefly sees tabs disappear.
+  const [myModules, setMyModules] = useState(null)
 
   useEffect(() => {
     if (!participantId) return
@@ -47,13 +51,29 @@ export default function ParticipantShell() {
       setEligibility(e)
     }
     load()
+    loadParticipantModules().then(setMyModules)
   }, [participantId])
 
+  /**
+   * While assignments are loading, and if the lookup fails outright, show
+   * everything. A participant locked out of their own coursework by a failed
+   * request is far worse than one who briefly sees a tab they don't use.
+   */
+  function hasModule(key) {
+    if (!myModules) return true
+    return myModules.some(m => m.key === key)
+  }
+
+  // Navigation follows the participant's module assignments, the same way the
+  // trainer sidebar follows core.tenant_module. My Dashboard is always present;
+  // everything else is earned by an assignment. A participant with no
+  // assignments yet gets the full set rather than an empty shell, and
+  // morpheus_participant_bootstrap reports that as assignment_mode 'all'.
   const NAV = [
-    { path: '/',        label: 'My Dashboard' },
-    { path: '/calls',   label: 'Practice Calls' },
-    { path: '/academy', label: 'Claude Academy' },
-    { path: '/progress', label: 'My Progress' },
+    { path: '/', label: 'My Dashboard' },
+    ...(hasModule('workforce.cer')     ? [{ path: '/calls',   label: 'Practice Calls' }] : []),
+    ...(hasModule('workforce.academy') ? [{ path: '/academy', label: 'Claude Academy' }] : []),
+    ...(hasModule('workforce.cer')     ? [{ path: '/progress', label: 'My Progress' }] : []),
   ]
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
@@ -111,13 +131,19 @@ export default function ParticipantShell() {
                 navigate={navigate}
               />
             } />
-            <Route path="/calls" element={
-              <PracticeCallsPage participantId={participantId} onComplete={(newCall) => setCallHistory(prev => [newCall, ...prev])} />
-            } />
-            <Route path="/academy/*" element={<Academy />} />
-            <Route path="/progress" element={
-              <ProgressPage completedCalls={completedCalls} avgScore={avgScore} />
-            } />
+            {/* Routes are gated on assignment too, so an unassigned module
+                cannot be reached by typing its URL. */}
+            {hasModule('workforce.cer') && (
+              <Route path="/calls" element={
+                <PracticeCallsPage participantId={participantId} onComplete={(newCall) => setCallHistory(prev => [newCall, ...prev])} />
+              } />
+            )}
+            {hasModule('workforce.academy') && <Route path="/academy/*" element={<Academy />} />}
+            {hasModule('workforce.cer') && (
+              <Route path="/progress" element={
+                <ProgressPage completedCalls={completedCalls} avgScore={avgScore} />
+              } />
+            )}
           </Routes>
         </div>
       </main>

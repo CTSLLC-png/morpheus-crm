@@ -70,6 +70,60 @@ async function readKernelViaBridge() {
   return normalise(data?.tenants)
 }
 
+/**
+ * Modules the signed-in PARTICIPANT should see, from
+ * public.morpheus_participant_bootstrap(). The RPC is SECURITY INVOKER, so a
+ * participant can only ever resolve their own assignments.
+ *
+ * Returns null on failure rather than an empty array — the caller must be able
+ * to distinguish "assigned nothing" from "could not ask", and fall back to
+ * showing everything in the second case.
+ */
+export async function loadParticipantModules() {
+  try {
+    const { data, error } = await supabase.rpc('morpheus_participant_bootstrap')
+    if (error) throw error
+    return data?.modules ?? []
+  } catch {
+    return null
+  }
+}
+
+/** Staff: the AVAILABLE module catalogue, for assigning programs. */
+export async function listAvailableModules() {
+  const r = await fromModuleSchema('core', 'module', q => q.order('sort_order'))
+  return (r.data ?? []).filter(m => m.status === 'AVAILABLE')
+}
+
+/** Staff: module keys currently assigned to one participant. */
+export async function getParticipantModules(participantId) {
+  const { data, error } = await supabase
+    .from('participant_modules')
+    .select('module_key, enabled')
+    .eq('participant_id', participantId)
+    .eq('enabled', true)
+  if (error) throw error
+  return (data ?? []).map(r => r.module_key)
+}
+
+/** Staff: grant or remove one module for one participant. */
+export async function setParticipantModule(participantId, moduleKey, enabled) {
+  if (enabled) {
+    const { error } = await supabase
+      .from('participant_modules')
+      .upsert({ participant_id: participantId, module_key: moduleKey, enabled: true },
+              { onConflict: 'participant_id,module_key' })
+    if (error) throw error
+  } else {
+    const { error } = await supabase
+      .from('participant_modules')
+      .delete()
+      .eq('participant_id', participantId)
+      .eq('module_key', moduleKey)
+    if (error) throw error
+  }
+}
+
 /** Health probe for the /admin surface: which path is live, and is it healthy. */
 export async function kernelDiagnostics() {
   const probes = []
