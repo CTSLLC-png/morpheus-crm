@@ -16,12 +16,16 @@ import { lazy } from 'react'
 // rendering natively inside TrainerShell — marked `native: true` — so
 // generalising the shell carries no risk of regressing the one module that
 // users rely on today.
+// `order` places an item in the combined sidebar. Without it the sidebar would
+// be grouped strictly by module, which would move Claude Academy from its
+// long-standing third position down below CER's five items. Ordering is a
+// presentation concern, so it lives here rather than in core.module.sort_order.
 const CER_NAV = [
-  { path: '/',             label: 'Dashboard',         icon: 'grid'    },
-  { path: '/simulator',    label: 'AI Call Simulator', icon: 'monitor' },
-  { path: '/participants', label: 'Participants',      icon: 'users'   },
-  { path: '/cohorts',      label: 'Cohorts & Reports', icon: 'chart'   },
-  { path: '/matrix',       label: 'Score Matrix',      icon: 'table'   },
+  { path: '/',             label: 'Dashboard',         icon: 'grid',    order: 10 },
+  { path: '/simulator',    label: 'AI Call Simulator', icon: 'monitor', order: 20 },
+  { path: '/participants', label: 'Participants',      icon: 'users',   order: 40 },
+  { path: '/cohorts',      label: 'Cohorts & Reports', icon: 'chart',   order: 50 },
+  { path: '/matrix',       label: 'Score Matrix',      icon: 'table',   order: 60 },
 ]
 
 export const MODULE_REGISTRY = {
@@ -36,22 +40,22 @@ export const MODULE_REGISTRY = {
   // exists in core.module but not here would silently vanish from the nav.
   'workforce.academy': {
     native: true,
-    nav: [{ path: '/academy', label: 'Claude Academy', icon: 'book' }],
+    nav: [{ path: '/academy', label: 'Claude Academy', icon: 'book', order: 30 }],
   },
   'workforce.empowercare': {
-    nav: [{ path: '/empowercare', label: 'EmpowerCare', icon: 'badge' }],
+    nav: [{ path: '/empowercare', label: 'EmpowerCare', icon: 'badge', order: 70 }],
     component: lazy(() => import('./empowercare/index.jsx')),
   },
   'logistics.accounts': {
-    nav: [{ path: '/networks', label: 'Provider Networks', icon: 'network' }],
+    nav: [{ path: '/networks', label: 'Provider Networks', icon: 'network', order: 80 }],
     component: lazy(() => import('./melrah/Accounts.jsx')),
   },
   'logistics.workorders': {
-    nav: [{ path: '/work-orders', label: 'Work Orders', icon: 'clipboard' }],
+    nav: [{ path: '/work-orders', label: 'Work Orders', icon: 'clipboard', order: 90 }],
     component: lazy(() => import('./melrah/WorkOrders.jsx')),
   },
   'quality.inventory': {
-    nav: [{ path: '/inventory', label: 'Inventory & QC', icon: 'box' }],
+    nav: [{ path: '/inventory', label: 'Inventory & QC', icon: 'box', order: 100 }],
     component: lazy(() => import('./melrah/Inventory.jsx')),
   },
 }
@@ -94,9 +98,11 @@ export function missingModules(modules) {
 }
 
 export function navForModules(modules) {
-  return resolveModules(modules).flatMap(m =>
-    (m.impl.nav ?? []).map(item => ({ ...item, moduleKey: m.key, moduleName: m.name }))
-  )
+  return resolveModules(modules)
+    .flatMap(m => (m.impl.nav ?? []).map(item => ({ ...item, moduleKey: m.key, moduleName: m.name })))
+    // Sort by the item's own `order` so modules interleave into one coherent
+    // sidebar. Items without an order fall to the end in registry order.
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
 }
 
 export function routableModules(modules) {
