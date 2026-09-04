@@ -31,6 +31,19 @@ export default async function handler(req, res) {
     })
 
     const data = await upstream.json()
+
+    // Anthropic states the reason for a rejection in the response body.
+    // Log it: the browser turns any failure into one generic sentence, so
+    // without this line an upstream 400 leaves no record of its cause
+    // anywhere. The body carries no key or prompt content — just the
+    // error type, message and request_id.
+    if (!upstream.ok) {
+      console.error(
+        `[api/claude] Anthropic returned ${upstream.status}:`,
+        JSON.stringify(data?.error ?? data),
+      )
+    }
+
     return res.status(upstream.status).json(data)
   } catch (err) {
     return res.status(502).json({ error: `Proxy error: ${err.message}` })
