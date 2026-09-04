@@ -49,6 +49,10 @@ export function useCallSession({ participantId, cohortId = null, scoredBy = null
       setScenario(sc)
       setState(CALL_STATES.READY)
     } catch (e) {
+      // The message shown to the participant stays plain, but the real
+      // error carries the upstream status and body — keep it in the
+      // console so a failure is diagnosable from the browser.
+      console.error('[simulator] scenario generation failed:', e)
       setError('Failed to generate scenario. Check your connection and try again.')
       setState(CALL_STATES.ERROR)
     }
@@ -109,6 +113,7 @@ export function useCallSession({ participantId, cohortId = null, scoredBy = null
         .concat({ id: Date.now(), role: 'caller', name: scenario.caller_name, text: reply, ts: new Date().toISOString() })
       )
     } catch (e) {
+      console.error('[simulator] caller reply failed:', e)
       setMessages(prev => prev.filter(m => m.id !== typingId))
       setError('Connection error — your progress is saved. Try sending again.')
     }
@@ -144,6 +149,7 @@ export function useCallSession({ participantId, cohortId = null, scoredBy = null
       setCertified(result.certified)
       setState(CALL_STATES.COMPLETE)
     } catch (e) {
+      console.error('[simulator] scoring or save failed:', e)
       setError('Scoring failed. Your call transcript was saved. Please contact your trainer.')
       setState(CALL_STATES.ERROR)
     }

@@ -68,11 +68,15 @@ Edit \`.env.local\`:
 \`\`\`
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
-VITE_ANTHROPIC_API_KEY=your_anthropic_key_here
 VITE_APP_URL=https://morpheuscr.com
+ANTHROPIC_API_KEY=your_anthropic_key_here
 \`\`\`
 
 Get your Anthropic API key at: **console.anthropic.com → API Keys**
+
+> **Do not add a \`VITE_\` prefix to \`ANTHROPIC_API_KEY\`.** Vite inlines every
+> \`VITE_\`-prefixed variable into the browser bundle. The key is read
+> server-side by \`api/claude.js\`, which is the only place it belongs.
 
 ---
 
@@ -152,8 +156,10 @@ vercel
 Add environment variables in **Vercel Dashboard → Project → Settings → Environment Variables**:
 - \`VITE_SUPABASE_URL\`
 - \`VITE_SUPABASE_ANON_KEY\`
-- \`VITE_ANTHROPIC_API_KEY\`
 - \`VITE_APP_URL\`
+- \`ANTHROPIC_API_KEY\` — no \`VITE_\` prefix, and it must be enabled for the
+  **Production** environment, not Preview/Development alone. \`api/claude.js\`
+  returns a 500 naming this variable when it is missing.
 
 **Custom domain:**
 Vercel Dashboard → Domains → Add \`morpheuscr.com\`

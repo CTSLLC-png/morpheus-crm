@@ -7,7 +7,14 @@
 // All AI calls route through the secure serverless proxy at
 // /api/claude — the Anthropic API key never reaches the browser.
 const BASE_URL = '/api/claude'
-const MODEL    = 'claude-sonnet-4-20250514'
+
+// Model IDs are retired on a published schedule, and every request to a
+// retired ID fails — the whole simulator goes down on a date, not on a
+// deploy. The previous value here (Claude Sonnet 4) was retired on
+// 15 June 2026, which is what broke scenario generation.
+// Check before changing, and when the simulator breaks for no reason:
+// https://platform.claude.com/docs/en/about-claude/model-deprecations
+const MODEL    = 'claude-sonnet-5'
 
 async function claudePost(body) {
   const res = await fetch(BASE_URL, {
