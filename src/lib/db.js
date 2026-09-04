@@ -106,7 +106,11 @@ export async function saveCompletedCall({
   const eligible = await checkCertEligibility(participantId)
   let certified = false
 
-  if (eligible && !eligible.already_certified) {
+  // is_eligible is the gate: v_certification_eligibility sets it only at
+  // >= 5 completed calls with a >= 80 average. Testing the row's existence
+  // alone certified a participant on their first completed call, since the
+  // view returns a row as soon as one scored call exists.
+  if (eligible && eligible.is_eligible && !eligible.already_certified) {
     await issueCertification(participantId, eligible.avg_score, eligible.completed_calls, issuedBy)
     certified = true
   }
