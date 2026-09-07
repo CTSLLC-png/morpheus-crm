@@ -1,5 +1,10 @@
 node_modules/
 dist/
+
+# Claude Code creates isolated git worktrees here for background agents.
+# Transient infrastructure, not project content — committing a nested
+# worktree would corrupt clones.
+.claude/
 .env.local
 .env.*.local
 *.log
