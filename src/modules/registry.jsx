@@ -16,10 +16,18 @@ import { lazy } from 'react'
 // rendering natively inside TrainerShell — marked `native: true` — so
 // generalising the shell carries no risk of regressing the one module that
 // users rely on today.
-// `order` places an item in the combined sidebar. Without it the sidebar would
-// be grouped strictly by module, which would move Claude Academy from its
-// long-standing third position down below CER's five items. Ordering is a
-// presentation concern, so it lives here rather than in core.module.sort_order.
+// `order` places an item in the sidebar. Without it items would be grouped
+// strictly by module, in whatever order the modules happened to arrive.
+// Ordering is a presentation concern, so it lives here rather than in
+// core.module.sort_order.
+//
+// `order` still does all the ordering work now that the sidebar is split into
+// product-family sections: it orders items inside a section, and the lowest
+// order in a section is what orders the sections themselves. One consequence
+// is unavoidable and was accepted deliberately — Claude Academy (order 30) no
+// longer sits between the CER items, because grouping requires the ClearCall
+// items to be contiguous. It moves to the head of the ungrouped CTS section
+// directly below them.
 const CER_NAV = [
   { path: '/',             label: 'Dashboard',         icon: 'grid',    order: 10 },
   { path: '/simulator',    label: 'AI Call Simulator', icon: 'monitor', order: 20 },
@@ -28,9 +36,44 @@ const CER_NAV = [
   { path: '/matrix',       label: 'Score Matrix',      icon: 'table',   order: 60 },
 ]
 
+// ── Product families (brand groupings) ────────────────────────────────
+//
+// A family is presentational: it puts several modules under one heading in
+// the sidebar. It is NOT a tenant and NOT an entitlement — CER and
+// EmpowerCare both live in the `cts` tenant and are still enabled one
+// core.tenant_module row at a time.
+//
+// The database is the source of truth: core.module.family (sql/0004). This
+// map only supplies the DISPLAY NAME for a family key, so a family the
+// database knows about but this build does not still renders (under its raw
+// key) instead of vanishing — the same never-lock-the-user-out rule that
+// governs missingModules() below.
+export const PRODUCT_FAMILIES = {
+  clearcall: { name: 'ClearCall' },
+}
+
+/**
+ * Which family a module belongs to.
+ *
+ * core.module.family wins whenever it is set. The `family` declared on a
+ * registry entry is a pre-migration default only: sql/0004 has to be reviewed
+ * and applied by a human, and until it is, every module arrives with
+ * family = undefined and the sidebar would show no grouping at all.
+ *
+ * The trade-off, stated plainly: once 0004 is applied, clearing family on a
+ * module in the database will NOT un-group it in this build, because the
+ * registry default takes over again. Un-grouping CER or EmpowerCare therefore
+ * means deleting the `family` line here too. That is the safe direction to
+ * fail — the grouping the business asked for survives a partial rollout.
+ */
+function familyOf(module) {
+  return module.family ?? MODULE_REGISTRY[module.key]?.family ?? null
+}
+
 export const MODULE_REGISTRY = {
   'workforce.cer': {
     native: true,
+    family: 'clearcall',
     nav: CER_NAV,
   },
   // Claude Academy (MORPHEUS.EDU). Like CER it predates the registry and its
@@ -38,11 +81,16 @@ export const MODULE_REGISTRY = {
   // keeps rendering inside TrainerShell. Registering it here is what puts it
   // back in the sidebar now that navigation is data-driven — a module that
   // exists in core.module but not here would silently vanish from the nav.
+  //
+  // No `family`: Claude Academy / CAP-C is a CTS product, not a ClearCall
+  // one, and must present OUTSIDE the ClearCall group. Do not "tidy" this by
+  // giving it one.
   'workforce.academy': {
     native: true,
     nav: [{ path: '/academy', label: 'Claude Academy', icon: 'book', order: 30 }],
   },
   'workforce.empowercare': {
+    family: 'clearcall',
     nav: [{ path: '/empowercare', label: 'EmpowerCare', icon: 'badge', order: 70 }],
     component: lazy(() => import('./empowercare/index.jsx')),
   },
@@ -99,10 +147,62 @@ export function missingModules(modules) {
 
 export function navForModules(modules) {
   return resolveModules(modules)
-    .flatMap(m => (m.impl.nav ?? []).map(item => ({ ...item, moduleKey: m.key, moduleName: m.name })))
+    .flatMap(m => (m.impl.nav ?? []).map(item => ({
+      ...item,
+      moduleKey: m.key,
+      moduleName: m.name,
+      family: familyOf(m),
+    })))
     // Sort by the item's own `order` so modules interleave into one coherent
     // sidebar. Items without an order fall to the end in registry order.
     .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+}
+
+const LAST = 9999
+
+/**
+ * The sidebar as SECTIONS: one per product family, plus one ungrouped
+ * section for everything with no family.
+ *
+ * `order` still does all the ordering work, exactly as before — this only
+ * changes how the already-ordered items are bucketed:
+ *
+ *   * inside a section, items are sorted by their own `order`;
+ *   * sections are sorted by the lowest `order` in each of them.
+ *
+ * So on the `cts` tenant ClearCall leads (Dashboard is order 10) and the
+ * ungrouped CTS section follows (Claude Academy, order 30). On a tenant with
+ * no families — melrah today — there is exactly one ungrouped section and the
+ * sidebar is byte-for-byte what it was before.
+ *
+ * `extras` are shell-owned items that belong to no module (the Admin panel).
+ * They are ungrouped and, having no `order`, sort last.
+ */
+export function navSectionsForModules(modules, extras = []) {
+  const items = [...navForModules(modules), ...extras]
+  const sections = new Map()
+
+  for (const item of items) {
+    const key = item.family ?? null
+    if (!sections.has(key)) {
+      sections.set(key, {
+        key,
+        // A null name means "render this section under the tenant's own
+        // name", which is what the sidebar header already did for everything.
+        name: key ? (PRODUCT_FAMILIES[key]?.name ?? key) : null,
+        items: [],
+      })
+    }
+    sections.get(key).items.push(item)
+  }
+
+  return [...sections.values()]
+    .map(s => ({
+      ...s,
+      items: [...s.items].sort((a, b) => (a.order ?? LAST) - (b.order ?? LAST)),
+    }))
+    .map(s => ({ ...s, order: s.items[0]?.order ?? LAST }))
+    .sort((a, b) => a.order - b.order)
 }
 
 export function routableModules(modules) {

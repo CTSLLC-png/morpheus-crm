@@ -33,6 +33,10 @@ function normalise(tenants) {
         schema: m.schema ?? m.schema_name ?? null,
         category: m.category ?? null,
         status: m.status,
+        // Brand grouping (core.module.family, sql/0004). Undefined until that
+        // migration is applied, and null for a module that belongs to no
+        // family — the registry treats both the same way.
+        family: m.family ?? null,
         sortOrder: m.sort_order ?? 999,
         enabled: m.enabled === true,
         config: m.config ?? {},
@@ -41,7 +45,14 @@ function normalise(tenants) {
   }))
 }
 
-/** Preferred path once `core` is exposed to the Data API. */
+/**
+ * Preferred path once `core` is exposed to the Data API.
+ *
+ * Selects core.module.family, which sql/0004 adds. If that migration has not
+ * been applied the select errors, loadWorkspace() falls through to the bridge,
+ * and the shell still renders — modules simply arrive with family = null and
+ * the registry supplies its pre-migration default. Degradation, not breakage.
+ */
 async function readKernelDirect() {
   const { data, error } = await supabase
     .schema('core')
@@ -49,7 +60,7 @@ async function readKernelDirect() {
     .select(`
       enabled, config,
       tenant:tenant_id ( id, slug, name, legal_entity, industry, status ),
-      module:module_key ( key, name, description, schema_name, category, status, sort_order )
+      module:module_key ( key, name, description, schema_name, category, status, sort_order, family )
     `)
   if (error) throw error
 

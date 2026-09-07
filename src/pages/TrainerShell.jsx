@@ -4,7 +4,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from '../lib/supabase.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useTenant } from '../hooks/useTenant.jsx'
-import { navForModules, routableModules, plannedModules, missingModules } from '../modules/registry.jsx'
+import { navSectionsForModules, routableModules, plannedModules, missingModules } from '../modules/registry.jsx'
 import { ModuleBoundary } from '../modules/common/ModuleFrame.jsx'
 import { getDashboardStats, getCohortOverview, getParticipantPerformance } from '../lib/db.js'
 import ParticipantIntake   from './ParticipantIntake.jsx'
@@ -43,13 +43,21 @@ export default function TrainerShell() {
 
   // Navigation is data. Every item below comes from the modules this tenant
   // has enabled in core.tenant_module — nothing here is hardcoded per client.
-  const moduleNav   = navForModules(modules)
+  //
+  // Sections group modules by product family (core.module.family): CER and
+  // EmpowerCare sit under "ClearCall", Claude Academy stays outside it under
+  // the tenant's own name. A tenant with no families gets one unnamed
+  // section, i.e. exactly the sidebar it had before.
   const moduleRoutes = routableModules(modules)
-  const pending     = plannedModules(modules)
-  const missing     = missingModules(modules)
-  const NAV = isAdmin
-    ? [...moduleNav, { path:'/admin', label:'Admin panel', icon:'shield' }]
-    : moduleNav
+  const pending      = plannedModules(modules)
+  const missing      = missingModules(modules)
+  const sections = navSectionsForModules(
+    modules,
+    isAdmin ? [{ path: '/admin', label: 'Admin panel', icon: 'shield' }] : []
+  )
+  // Flat list, kept for the topbar title lookup — grouping is a sidebar
+  // concern and must not change which page thinks it is current.
+  const NAV = sections.flatMap(s => s.items)
 
   const [stats, setStats]               = useState(null)
   const [cohorts, setCohorts]           = useState([])
@@ -92,21 +100,36 @@ export default function TrainerShell() {
         )}
 
         <nav style={sh.nav}>
-          <div style={sh.navSec}>{tenant?.name ?? 'Workspace'}</div>
-          {tenantLoading && <div style={sh.navHint}>Loading modules…</div>}
-          {!tenantLoading && NAV.length === 0 && (
-            <div style={sh.navHint}>No modules enabled for this organisation.</div>
+          {tenantLoading && (
+            <>
+              <div style={sh.navSec}>{tenant?.name ?? 'Workspace'}</div>
+              <div style={sh.navHint}>Loading modules…</div>
+            </>
           )}
-          {NAV.map(item => {
-            const active = item.path==='/' ? location.pathname==='/' : location.pathname.startsWith(item.path)
-            return (
-              <div key={`${item.moduleKey ?? 'core'}${item.path}`}
-                   style={{...sh.navItem,...(active?sh.navActive:{})}}
-                   onClick={() => navigate(item.path)}>
-                <span style={{opacity:active?1:0.65}}>{ICONS[item.icon]}</span>{item.label}
-              </div>
-            )
-          })}
+          {!tenantLoading && NAV.length === 0 && (
+            <>
+              <div style={sh.navSec}>{tenant?.name ?? 'Workspace'}</div>
+              <div style={sh.navHint}>No modules enabled for this organisation.</div>
+            </>
+          )}
+          {sections.map(section => (
+            <div key={section.key ?? '_ungrouped'}>
+              {/* A section with no family is the tenant's own; it keeps the
+                  header the sidebar has always shown. A named family (today:
+                  ClearCall) gets its own. */}
+              <div style={sh.navSec}>{section.name ?? tenant?.name ?? 'Workspace'}</div>
+              {section.items.map(item => {
+                const active = item.path==='/' ? location.pathname==='/' : location.pathname.startsWith(item.path)
+                return (
+                  <div key={`${item.moduleKey ?? 'core'}${item.path}`}
+                       style={{...sh.navItem,...(active?sh.navActive:{})}}
+                       onClick={() => navigate(item.path)}>
+                    <span style={{opacity:active?1:0.65}}>{ICONS[item.icon]}</span>{item.label}
+                  </div>
+                )
+              })}
+            </div>
+          ))}
           {missing.length > 0 && (
             <>
               <div style={{...sh.navSec, color:'#F0A868'}}>Not wired into this build</div>
