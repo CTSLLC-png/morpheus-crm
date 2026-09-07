@@ -14,6 +14,8 @@ import CallSimulator       from './CallSimulator.jsx'
 import ScoreMatrix         from './ScoreMatrix.jsx'
 import AdminPanel          from './AdminPanel.jsx'
 import AcademyAdmin        from './AcademyAdmin.jsx'
+import EnrolmentCodes      from './EnrolmentCodes.jsx'
+import VendorAdmin         from './VendorAdmin.jsx'
 
 // NAV_BASE used to live here. Navigation now comes from the module registry,
 // which reads core.tenant_module — Claude Academy included. Its nav item and
@@ -51,9 +53,20 @@ export default function TrainerShell() {
   const moduleRoutes = routableModules(modules)
   const pending      = plannedModules(modules)
   const missing      = missingModules(modules)
+  // Access administration is not a module — it is how people get into any of
+  // them — so it is passed as an extra rather than declared in the registry.
+  // Both screens are shown to trainers as well as super admins, matching the
+  // database: cohort_invite_code_staff_all, vendor_staff_all, vendor_user_staff_all
+  // and vendor_cohort_staff_all all admit `trainer`. Showing a trainer a page
+  // the database would refuse them, or hiding one it allows, are both worse
+  // than agreeing with the policy.
   const sections = navSectionsForModules(
     modules,
-    isAdmin ? [{ path: '/admin', label: 'Admin panel', icon: 'shield' }] : []
+    [
+      { path: '/codes',   label: 'Enrolment codes', icon: 'clipboard', order: 200 },
+      { path: '/vendors', label: 'Partner access',  icon: 'network',   order: 210 },
+      ...(isAdmin ? [{ path: '/admin', label: 'Admin panel', icon: 'shield' }] : []),
+    ]
   )
   // Flat list, kept for the topbar title lookup — grouping is a sidebar
   // concern and must not change which page thinks it is current.
@@ -183,6 +196,8 @@ export default function TrainerShell() {
             <Route path="/participants/:id" element={<ParticipantProfile/>}/>
             <Route path="/cohorts" element={<CohortManagement cohorts={cohorts}/>}/>
             <Route path="/matrix"  element={<ScoreMatrix/>}/>
+            <Route path="/codes"   element={<EnrolmentCodes staffProfileId={staffProfileId}/>}/>
+            <Route path="/vendors" element={<VendorAdmin staffProfileId={staffProfileId}/>}/>
             {isAdmin && <Route path="/admin" element={<AdminPanel/>}/>}
 
             {/* Registry-driven modules. A route exists only because the tenant

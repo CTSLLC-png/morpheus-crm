@@ -11,6 +11,10 @@ const ROLES = [
   { value: 'participant', label: 'Participant',  desc: 'Self-service portal, practice calls' },
   { value: 'trainer',     label: 'Trainer',      desc: 'Manage cohorts, run sessions, score calls' },
   { value: 'super_admin', label: 'Super Admin',  desc: 'Full access including this panel' },
+  // A vendor login is inert until it is attached to a partner organisation in
+  // Partner access — the role picks the portal, the vendor_user row grants the
+  // data. create-morpheus-user deliberately does not create that row.
+  { value: 'vendor',      label: 'Partner',      desc: 'Read-only portal — attach to an organisation in Partner access' },
 ]
 
 const PROGRAM_SOURCES = [
@@ -93,12 +97,21 @@ export default function AdminPanel() {
       }
           if (data?.error) throw new Error(data.error)
 
+      const kind = form.role === 'participant' ? 'Participant'
+                 : form.role === 'vendor'      ? 'Partner' : 'Staff'
       setSuccess(
-        `${form.role === 'participant' ? 'Participant' : 'Staff'} account created for ${form.email}` +
-        (form.role === 'participant' ? ` · CTS ID: ${data.cts_id}` : '')
+        `${kind} account created for ${form.email}` +
+        (form.role === 'participant' ? ` · CTS ID: ${data.cts_id}` : '') +
+        // A vendor login sees nothing until it is attached to an organisation.
+        // Say so at the moment of creation, with the user id they will need to
+        // paste into Partner access — auth.users is not client-readable, so
+        // this response is the only place they can get it.
+        (form.role === 'vendor'
+          ? ` · Now attach user ${data.user_id} to an organisation in Partner access.`
+          : '')
       )
       setForm({ email:'', password:'', role:'participant', full_name:'', title:'', program_source:'LDSS Albany' })
-      if (form.role !== 'participant') loadStaff()
+      if (form.role === 'trainer' || form.role === 'super_admin') loadStaff()
     } catch(e) {
       setError(e.message)
     } finally {
@@ -120,6 +133,7 @@ export default function AdminPanel() {
         {[
           { key:'accounts', label:'Create account' },
           { key:'staff',    label:'Staff directory' },
+          { key:'roles',    label:'Account roles' },
           { key:'system',   label:'System status' },
         ].map(t => (
           <button key={t.key}
@@ -195,13 +209,15 @@ export default function AdminPanel() {
 
             <div style={{ display:'flex', gap:'10px', marginTop:'4px' }}>
               <button type="submit" style={s.btnPrimary} disabled={creating}>
-                {creating ? 'Creating…' : `Create ${form.role === 'participant' ? 'participant' : 'staff'} account`}
+                {creating ? 'Creating…' : `Create ${ROLES.find(r => r.value === form.role)?.label.toLowerCase() ?? ''} account`}
               </button>
             </div>
 
             <div style={s.hint}>
               {form.role === 'participant'
                 ? 'A CTS ID will be auto-generated. The participant should change their password on first login.'
+                : form.role === 'vendor'
+                ? 'This login sees nothing until you attach it to a partner organisation in Partner access. The role decides which portal they land in; the organisation membership decides what they can read.'
                 : 'Staff account will have access to the trainer or admin portal immediately after creation.'}
             </div>
           </form>
@@ -242,6 +258,9 @@ export default function AdminPanel() {
         </div>
       )}
 
+      {/* ── Account roles ── */}
+      {tab === 'roles' && <RoleHealth />}
+
       {/* ── System status ── */}
       {tab === 'system' && (
         <div style={s.card}>
@@ -249,6 +268,101 @@ export default function AdminPanel() {
           <SystemStatus />
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Which role each account actually has, from the database's point of view.
+ *
+ * This exists because the role split was invisible: the app read
+ * user_metadata, RLS read app_metadata, and nothing ever showed an operator
+ * that the two disagreed — so accounts that could not read their own data
+ * looked, from every screen, completely normal.
+ *
+ * The `app_metadata` column is the one that matters. `claimed` is
+ * user_metadata, which the user can write to themselves; it is shown only so a
+ * mismatch is legible, and must never be acted on.
+ *
+ * Backed by public.staff_user_role_health(), added in sql/0009. Until that
+ * migration is applied the RPC does not exist, so the panel says so rather
+ * than showing an error the operator cannot act on.
+ */
+function RoleHealth() {
+  const [rows, setRows]   = useState(null)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    supabase.rpc('staff_user_role_health').then(({ data, error }) => {
+      if (error) setError(error.message)
+      else setRows(data ?? [])
+    })
+  }, [])
+
+  if (error) {
+    return (
+      <div style={s.card}>
+        <div style={s.cardTitle}>Account roles</div>
+        <div style={s.hint}>
+          Not available yet. This panel needs <code>public.staff_user_role_health()</code>,
+          which is added by <code>sql/0009_role_metadata.sql</code>. Apply that migration to
+          turn it on.
+          <div style={{ marginTop: '8px', opacity: 0.7 }}>{error}</div>
+        </div>
+      </div>
+    )
+  }
+  if (!rows) return <div style={s.card}>Loading…</div>
+
+  const unstamped = rows.filter(r => !r.app_metadata_role)
+  const mismatched = rows.filter(r => r.app_metadata_role && r.claimed_role &&
+                                      r.app_metadata_role !== r.claimed_role)
+
+  return (
+    <div style={s.card}>
+      <div style={s.cardTitle}>Account roles</div>
+      <div style={s.hint}>
+        <strong>Enforced</strong> is <code>app_metadata</code> — the only role Row Level
+        Security can see, and the only one that grants anything. <strong>Claimed</strong> is{' '}
+        <code>user_metadata</code>, which the account holder can set on themselves; it is
+        shown for diagnosis only. An account with no enforced role can sign in but will be
+        sent to the enrolment screen.
+      </div>
+
+      {(unstamped.length > 0 || mismatched.length > 0) && (
+        <div style={{ ...s.errorBox, background:'#FDF3E3', color:'#7A5510' }}>
+          {unstamped.length > 0 && <div>{unstamped.length} account(s) have no enforced role.</div>}
+          {mismatched.length > 0 && <div>{mismatched.length} account(s) claim a different role than they hold.</div>}
+        </div>
+      )}
+
+      <div style={{ overflowX:'auto' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
+          <thead><tr>
+            {['Email','Enforced','Claimed','Participant','Partner','Staff profile'].map(h => (
+              <th key={h} style={s.th}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.user_id} style={{ borderBottom:'1px solid #F2F6FB' }}>
+                <td style={s.td}>{r.email}</td>
+                <td style={s.td}>
+                  {r.app_metadata_role
+                    ? <strong>{r.app_metadata_role}</strong>
+                    : <span style={{ color:'#993C1D' }}>none</span>}
+                </td>
+                <td style={{ ...s.td, color: r.claimed_role !== r.app_metadata_role ? '#BA7517' : '#8BA0B8' }}>
+                  {r.claimed_role ?? '—'}
+                </td>
+                <td style={s.td}>{r.is_participant ? 'yes' : '—'}</td>
+                <td style={s.td}>{r.is_vendor_user ? 'yes' : '—'}</td>
+                <td style={s.td}>{r.is_staff_profile ? 'yes' : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
@@ -328,6 +442,8 @@ const s = {
   errorBox:   { background:'#FAECE7', color:'#993C1D', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', lineHeight:'1.5' },
   successBox: { background:'#E1F5EE', color:'#0F6E56', borderRadius:'8px', padding:'10px 14px', fontSize:'13px', lineHeight:'1.5', fontWeight:500 },
   hint:       { fontSize:'11px', color:'var(--color-text-tertiary)', lineHeight:'1.6', marginTop:'4px' },
+  th:         { textAlign:'left', padding:'9px 12px', fontSize:'10px', textTransform:'uppercase', letterSpacing:'0.07em', color:'#8BA0B8', borderBottom:'1px solid #E8EFF6', whiteSpace:'nowrap' },
+  td:         { padding:'9px 12px', color:'var(--color-text-primary)', whiteSpace:'nowrap' },
   staffList:  { display:'flex', flexDirection:'column', gap:'8px' },
   staffRow:   { display:'flex', alignItems:'center', gap:'12px', padding:'10px 14px', background:'var(--color-background-secondary)', borderRadius:'10px' },
   staffAvatar:{ width:'36px', height:'36px', borderRadius:'50%', background:'#0D1B2A', color:'#5DCAA5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:600, flexShrink:0, fontFamily:'monospace' },
