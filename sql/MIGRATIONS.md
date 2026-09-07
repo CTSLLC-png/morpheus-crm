@@ -35,6 +35,7 @@ that both touch cohorts; the hard dependencies are:
 | `0006_cohort_invite_codes.sql` | `public.cohorts`, `public.participants`, `public.cohort_enrollments`, `public.staff_profiles` |
 | `0007_vendor_access.sql` | `public.cohorts`, `public.cohort_enrollments`, `empowercare.enrollment`, `empowercare.attendance` |
 | `0008_engagement_tracking.sql` | **`core.module` — and `0004` should be applied first** so the FK on `module_key` resolves against the same catalogue the app groups by |
+| `0009_role_metadata.sql` | `public.participants`, `public.vendor`, `public.vendor_user` (so **`0007` first**), `public.current_user_role()` |
 
 `0004` also carries an application dependency in the other direction:
 `src/lib/morpheus.js` selects `core.module.family` on the direct-kernel path.
@@ -404,6 +405,117 @@ if any reporting has started to reference it.
 
 ---
 
+## 0009 — `0009_role_metadata.sql`
+
+Makes `app_metadata.role` a value the database maintains for itself, instead of
+one that an unwired edge function was supposed to write.
+
+**The problem.** There were two "role" fields and they disagreed.
+`public.current_user_role()` — and therefore every role-based RLS policy —
+reads `auth.users.raw_app_meta_data->>'role'`, writable only by the service
+role. The React client read `raw_user_meta_data->>'role'`, which **the account
+holder can write to themselves with the anon key**
+(`supabase.auth.updateUser({ data: { role: … } })`). Every account-creation
+path wrote only the second one.
+
+The application side of that fix is in this branch (client and edge functions
+both moved to `app_metadata`). This migration fixes the part code cannot:
+**nothing populates `app_metadata` at all.** Verified against the live project
+on 2026-09-07 with `SELECT` only:
+
+* there is no non-internal trigger on `auth.users` and no database webhook, so
+  `supabase/functions/on-user-signup` has **never run** — the Auth Hook its
+  header claimed ("after user is created") is not a hook Supabase Auth offers;
+* the four existing accounts all have `app_metadata.role` set and matching
+  `user_metadata` — four accounts stamped by hand, not a mechanism;
+* `public.participants` has 2 rows, both with `user_id IS NULL`.
+
+**What it does.** Derives the role from facts already in the database, at the
+moment those facts are created:
+
+| Fact | Role |
+|---|---|
+| a `public.participants` row gains a `user_id` | `participant` |
+| a `public.vendor_user` row for an **ACTIVE** `public.vendor` | `vendor` |
+
+Both rows are created by a staff action or by `redeem_cohort_invite()`, which
+is itself gated by a bearer code — neither is a claim the user can make about
+themselves, which is precisely what disqualified `user_metadata`.
+
+Staff roles are **not** derived. `trainer` and `super_admin` come only from
+`create-morpheus-user`, which requires an authenticated `super_admin` caller. A
+`staff_profiles` row is deliberately not treated as evidence: it cannot tell
+trainer from super_admin, and inferring privilege from a profile table is the
+same class of mistake this file undoes.
+
+**Two safety properties, both load-bearing:**
+
+1. **Fill-only.** If `app_metadata` already carries a role the trigger leaves
+   it alone. It can never demote a trainer, and re-running is a no-op — which
+   is what makes the backfill safe to repeat.
+2. **It cannot break an INSERT.** The `UPDATE auth.users` is wrapped in an
+   exception block. If `postgres` lacks privilege on `auth.users` — a Supabase
+   grant that could change under us — it raises a `WARNING` to the Postgres log
+   and the INSERT proceeds. Worst case this migration silently does nothing,
+   which is exactly where the system is today. Worst case is **not** that
+   participant intake starts failing in production.
+
+Because of (2), **a successful apply does not prove the stamp works.** Verify:
+
+```sql
+-- as a trainer or super_admin session
+SELECT email, app_metadata_role, claimed_role, is_participant, is_vendor_user
+  FROM public.staff_user_role_health();
+```
+
+or, from the app, Admin panel → **Account roles**. Any row with
+`app_metadata_role` null after a participant or vendor has been created means
+the trigger is being refused; check the Postgres log for
+`stamp_user_role could not stamp`.
+
+Also adds `public.staff_user_role_health()`, a `SECURITY DEFINER` function
+(not a view — a `security_invoker` view over `auth.users` would just raise
+`permission denied for table users` for `authenticated`, which has no grant on
+the `auth` schema and must not be given one). Its `WHERE` clause is the
+authorization: it returns zero rows to anyone who is not staff.
+
+Section 6 of the file is **optional hardening, left commented out**: three
+functions (`redeem_cohort_invite`, `vendor_roster`,
+`vendor_empowercare_status`) carry Postgres's default `EXECUTE` grant to
+`PUBLIC` and are therefore callable by `anon`. None leaks anything today —
+`redeem_cohort_invite` raises `28000` without `auth.uid()`, and the two vendor
+functions resolve `current_vendor_id()` to NULL for anon and return zero rows —
+so this is surface reduction, not a fix. Review it on its own merits.
+
+**Rollback.**
+
+```sql
+BEGIN;
+DROP TRIGGER  IF EXISTS participants_stamp_role ON public.participants;
+DROP TRIGGER  IF EXISTS vendor_user_stamp_role  ON public.vendor_user;
+DROP FUNCTION IF EXISTS public.tg_participant_stamp_role();
+DROP FUNCTION IF EXISTS public.tg_vendor_user_stamp_role();
+DROP FUNCTION IF EXISTS public.stamp_user_role(uuid, text);
+DROP FUNCTION IF EXISTS public.staff_user_role_health();
+COMMIT;
+```
+
+Roles already stamped into `app_metadata` are left in place — they are correct,
+and removing them would lock those users out. To undo an individual stamp:
+
+```sql
+UPDATE auth.users
+   SET raw_app_meta_data = raw_app_meta_data - 'role'
+ WHERE id = '<user id>';
+```
+
+After rolling back, `app_metadata` is only written by the edge functions again,
+so a self-registered participant will have no role — the client still places
+them correctly via the membership fallback in `src/lib/identity.js`, and the
+Admin panel → Account roles tab will show the gap.
+
+---
+
 ## How these were verified
 
 `0004`–`0008` were applied and exercised against a **local, throwaway
@@ -434,3 +546,31 @@ read with `SELECT` only. Checks that passed:
 * no view in `public`, `core` or `empowercare` is missing
   `security_invoker=true`; all eight new tables have RLS enabled; no vendor
   policy exists on any forbidden table
+
+### `0009` — not executed anywhere
+
+Be aware of the gap. `0009` has **not been run against any database**, local or
+remote. The session that wrote it had no PostgreSQL instance available and was
+under a hard read-only constraint on `ymavrmekxiwdphdyteau`, so every claim it
+makes about production comes from `SELECT` against the live catalogues
+(`pg_policies`, `pg_proc`, `pg_trigger`, `information_schema.columns`,
+`auth.users` aggregates) and nothing was written.
+
+Reviewer, please confirm on a throwaway instance before applying:
+
+* it applies cleanly, and applying it twice is a no-op;
+* inserting a `participants` row with a `user_id` stamps `participant`, and
+  inserting one whose user already has `trainer` does **not** overwrite it;
+* attaching a user to an ACTIVE vendor stamps `vendor`; attaching to a
+  SUSPENDED vendor stamps nothing;
+* **revoking the function's privilege on `auth.users` makes the INSERT still
+  succeed**, with a `WARNING` in the log — this is the property the whole
+  design rests on;
+* `staff_user_role_health()` returns rows to a trainer and **zero** rows to a
+  participant and to a vendor.
+
+The specific thing to watch on the real project is privilege: `auth.users` is
+owned by `supabase_auth_admin`, and whether a `SECURITY DEFINER` function owned
+by `postgres` may update it is a Supabase grant, not something this file
+controls. If it may not, the migration is inert (by design) and the edge
+functions plus the client-side membership fallback carry the load on their own.
