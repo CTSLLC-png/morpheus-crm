@@ -2,7 +2,7 @@
 // ── Morpheus CRM — Login page ───────────────────────────────────
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { signIn, sendPasswordReset } from '../lib/supabase.js'
 
 export default function Login() {
@@ -74,12 +74,20 @@ export default function Login() {
                 {loading ? 'Signing in…' : 'Sign in'}
               </button>
             </form>
-            <button
-              style={styles.link}
-              onClick={() => { setMode('reset'); setError(null) }}
-            >
-              Forgot password?
-            </button>
+            <div style={styles.linkRow}>
+              <button
+                style={styles.link}
+                onClick={() => { setMode('reset'); setError(null) }}
+              >
+                Forgot password?
+              </button>
+              {/* Until now there was no way into the product at all without a
+                  trainer creating your login by hand. A participant holding an
+                  enrolment code can now register themselves. */}
+              <Link to="/register" style={styles.link}>
+                Have an enrolment code? Register
+              </Link>
+            </div>
           </>
         ) : (
           <>
@@ -153,6 +161,7 @@ const styles = {
   },
   error: { fontSize: '13px', color: '#993C1D', background: '#FAECE7', borderRadius: '8px', padding: '10px 12px' },
   success: { fontSize: '13px', color: '#0F6E56', background: '#E1F5EE', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px', lineHeight: '1.6' },
-  link: { background: 'none', border: 'none', color: '#2176AE', fontSize: '13px', cursor: 'pointer', padding: '0', fontFamily: "'DM Sans', sans-serif" },
+  linkRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' },
+  link: { background: 'none', border: 'none', color: '#2176AE', fontSize: '13px', cursor: 'pointer', padding: '0', fontFamily: "'DM Sans', sans-serif", textDecoration: 'none' },
   footer: { marginTop: '28px', paddingTop: '18px', borderTop: '1px solid #E8EFF6', fontSize: '12px', color: '#8BA0B8', textAlign: 'center', lineHeight: '1.6' },
 }
