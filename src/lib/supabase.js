@@ -55,9 +55,80 @@ export async function getSession() {
   return data.session
 }
 
-/** Get role from user metadata: 'super_admin' | 'trainer' | 'participant' */
+// ── Role: app_metadata is the single source of truth ───────────
+//
+// There are two places a role could live on a Supabase user and they are NOT
+// equivalent:
+//
+//   user.app_metadata  → auth.users.raw_app_meta_data
+//                        Writable ONLY by the service role. This is what
+//                        public.current_user_role() reads, so it is what
+//                        every RLS policy in this database actually enforces.
+//
+//   user.user_metadata → auth.users.raw_user_meta_data
+//                        Writable by the END USER with nothing but the anon
+//                        key: supabase.auth.updateUser({ data: { role: … } }).
+//
+// This client used to read user_metadata. That meant the UI's idea of "who
+// you are" was a value the user could set on themselves, and it disagreed
+// with the database's idea, which is the bug this module exists to close.
+//
+// Rule: authorization reads app_metadata and nothing else. user_metadata is
+// still written by the account-creation paths, but only as a display mirror
+// (full_name, and a copy of role for human legibility in the dashboard).
+// Nothing in this app may branch on it.
+
+/** Every role the app knows. An unlisted value is treated as no role at all. */
+export const KNOWN_ROLES = ['super_admin', 'trainer', 'participant', 'vendor']
+
+/**
+ * The signed-in user's role, from app_metadata only.
+ * Returns null for "no role the app recognises" — callers must treat that as
+ * "not authorised", never as a default.
+ */
 export function getUserRole(user) {
+  const role = user?.app_metadata?.role ?? null
+  return KNOWN_ROLES.includes(role) ? role : null
+}
+
+/**
+ * What user_metadata claims. Display and diagnostics ONLY — never gate
+ * anything on this. Exported so the staff admin screen can show an operator
+ * when the two surfaces disagree instead of leaving it invisible.
+ */
+export function getClaimedRole(user) {
   return user?.user_metadata?.role ?? null
+}
+
+/** Sign up with email + password. The registered email IS the username. */
+export async function signUp(email, password, fullName) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    // Goes to raw_user_meta_data. Deliberately carries NO role: a role
+    // asserted by the browser is worthless, and accepting one here would
+    // invite exactly the confusion this module removes.
+    options: { data: fullName ? { full_name: fullName } : {} },
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * Re-mint the access token so freshly stamped app_metadata reaches the client.
+ *
+ * RLS does not need this — current_user_role() reads auth.users live — but the
+ * browser's `user` object comes from the JWT, which was minted before the role
+ * was written. Failure is non-fatal: the caller falls back to resolving
+ * identity from the database.
+ */
+export async function refreshSession() {
+  try {
+    const { data } = await supabase.auth.refreshSession()
+    return data?.session ?? null
+  } catch {
+    return null
+  }
 }
 
 /** Get current user object */
