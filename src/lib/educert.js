@@ -1,5 +1,5 @@
 // src/lib/educert.js
-// ── MORPHEUS.EDU — CAP-C credential certificate PDF ────────────
+// ── MORPHEUS.EDU — credential certificate PDF ──────────────────
 // Generates the branded certificate for an edu_credentials record.
 // Every certificate carries the registry code and the public verify
 // URL, so the paper is only ever as good as the live registry entry.
@@ -14,6 +14,57 @@ const RULE  = [203, 216, 230]
 const GRAY  = [100, 115, 130]
 const LIGHT = [140, 155, 170]
 const WHITE = [255, 255, 255]
+
+/**
+ * The short issuer mark stamped in the centre of the seal.
+ *
+ * An issuer already written as an acronym ("CTS LLC") keeps that acronym;
+ * a spelled-out name ("Certified Training Standards") is reduced to its
+ * initials. Legal suffixes are dropped either way, and the result is capped
+ * at four characters because the seal centre is small.
+ */
+function issuerMark(credential) {
+  const words = String(credential.issuer_org ?? '')
+    .split(/[^A-Za-z]+/).filter(Boolean)
+    .filter(w => !/^(llc|inc|ltd|corp|co|plc|gmbh)$/i.test(w))
+  if (!words.length) return 'CTS'
+
+  // A single all-caps token is already an acronym — initialising it would
+  // turn "CTS LLC" into "C".
+  const mark = (words.length === 1 && words[0] === words[0].toUpperCase())
+    ? words[0]
+    : words.map(w => w[0].toUpperCase()).join('')
+  return mark.slice(0, 4)
+}
+
+/**
+ * Two short seal lines derived from the credential.
+ *
+ * Uses `meta.seal_lines` when the record carries an explicit override,
+ * otherwise derives them from the credential name. Kept to two lines
+ * because the seal is only 40pt across.
+ */
+function sealTextFor(credential) {
+  const explicit = credential.meta?.seal_lines
+  if (Array.isArray(explicit) && explicit.length) return explicit.slice(0, 2).map(String)
+
+  // The issuer already has its own line on the seal, so drop issuer words
+  // from the derived text — otherwise CTS credentials read "CTS / CTS / ...".
+  const issuerWords = new Set(
+    String(credential.issuer_org ?? '').toLowerCase().split(/[^a-z]+/).filter(Boolean),
+  )
+  const words = String(credential.credential_name ?? '')
+    .replace(/\(.*?\)/g, ' ')            // drop parenthetical codes
+    .replace(/[^A-Za-z ]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2
+      && !/^(the|and|for|certified|certification)$/i.test(w)
+      && !issuerWords.has(w.toLowerCase()))
+
+  if (!words.length) return ['CERTIFIED', '']
+  if (words.length === 1) return [words[0].toUpperCase(), '']
+  return [words[0].toUpperCase(), words.slice(1, 3).join(' ').toUpperCase()]
+}
 
 /**
  * @param {object} credential  Row from edu_credentials:
@@ -81,10 +132,14 @@ export function generateEduCertificatePDF(credential, verifyBase) {
   doc.setTextColor(...GOLD)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
-  doc.text('CTS', sx, sy - 12, { align: 'center' })
+  doc.text(issuerMark(credential), sx, sy - 12, { align: 'center' })
   doc.setFontSize(6.5)
-  doc.text('CLAUDE AI', sx, sy + 1, { align: 'center' })
-  doc.text('PRACTITIONER', sx, sy + 10, { align: 'center' })
+  // Seal wording comes from the course, so every credential in the registry
+  // — CAP-C, ClearCall CSR, whatever CTS issues next — gets its own seal
+  // rather than one course's wording stamped on all of them.
+  const sealLines = sealTextFor(credential)
+  doc.text(sealLines[0], sx, sy + 1, { align: 'center' })
+  if (sealLines[1]) doc.text(sealLines[1], sx, sy + 10, { align: 'center' })
   doc.setFontSize(7)
   doc.text(String(new Date(credential.issued_at).getFullYear()), sx, sy + 21, { align: 'center' })
 

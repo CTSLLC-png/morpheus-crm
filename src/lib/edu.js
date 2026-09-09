@@ -6,6 +6,24 @@ import { supabase } from './supabase.js'
 
 // ── COURSE CONTENT ─────────────────────────────────────────────
 
+/**
+ * Every course the caller may see, ordered for display.
+ *
+ * RLS does the filtering: participants receive published courses only,
+ * staff receive drafts too. That means the same call powers the learner
+ * picker and the trainer selector without a role check here — see the
+ * "Authenticated can read published courses" policy.
+ */
+export async function listCourses() {
+  const { data, error } = await supabase
+    .from('edu_courses')
+    .select('id, code, title, subtitle, credential_name, credential_prefix, hours, issuer_org, is_published')
+    .order('is_published', { ascending: false })
+    .order('code')
+  if (error) throw error
+  return data ?? []
+}
+
 /** Full course tree: course → modules → lessons (content included). */
 export async function getCourse(code = 'CAP-C') {
   const { data: course, error } = await supabase
