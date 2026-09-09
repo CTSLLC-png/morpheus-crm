@@ -1,14 +1,15 @@
 // src/pages/Academy.jsx
-// ── MORPHEUS.EDU — Claude Academy (participant course player) ──
-// CAP-C course: module list → lesson viewer → checkpoint quizzes,
-// progress tracking, and the participant's issued credentials.
+// ── MORPHEUS.EDU — Academy (participant course player) ─────────
+// Any course in the registry the participant may see: module list →
+// lesson viewer → checkpoint quizzes, progress, and their credentials.
+// Multi-course, so CAP-C and ClearCall CSR share one player.
 
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import Markdown from '../lib/markdown.jsx'
 import { generateEduCertificatePDF } from '../lib/educert.js'
 import {
-  getCourse, getProgress, markLessonComplete,
+  listCourses, getCourse, getProgress, markLessonComplete,
   getCheckpointQuestions, getCheckpointAttempts, saveCheckpointAttempt,
   getMyCredentials,
 } from '../lib/edu.js'
@@ -18,27 +19,42 @@ const KIND_COLOR = { lesson: '#2176AE', lab: '#0F6E56', checkpoint: '#BA7517' }
 
 export default function Academy() {
   const { participantId } = useAuth()
-  const [course, setCourse]       = useState(null)
+  const [courses, setCourses]     = useState(null)   // catalogue: null = loading
+  const [code, setCode]           = useState(null)   // selected course code
+  const [course, setCourse]       = useState(null)   // full tree of the selected course
   const [doneIds, setDoneIds]     = useState(new Set())
   const [attempts, setAttempts]   = useState([])
   const [creds, setCreds]         = useState([])
   const [view, setView]           = useState({ page: 'overview' }) // overview | lesson {moduleIdx, lessonIdx}
   const [error, setError]         = useState(null)
 
+  // Catalogue + the participant's own records. Loaded once; switching
+  // course re-fetches only the tree, since progress and credentials are
+  // per-participant and already cover every course.
   useEffect(() => {
     if (!participantId) return
     Promise.all([
-      getCourse('CAP-C'),
+      listCourses(),
       getProgress(participantId),
       getCheckpointAttempts(participantId),
       getMyCredentials(participantId),
-    ]).then(([c, g, a, cr]) => {
-      setCourse(c)
+    ]).then(([cs, g, a, cr]) => {
+      setCourses(cs)
+      // Prefer a course with content over an empty shell, so a learner
+      // never lands on a blank page when a second course is mid-build.
+      setCode(prev => prev ?? cs[0]?.code ?? null)
       setDoneIds(new Set(g.map(x => x.lesson_id)))
       setAttempts(a)
       setCreds(cr)
     }).catch(e => setError(e.message))
   }, [participantId])
+
+  useEffect(() => {
+    if (!code) return
+    setCourse(null)
+    setView({ page: 'overview' })
+    getCourse(code).then(setCourse).catch(e => setError(e.message))
+  }, [code])
 
   const bestByModule = useMemo(() => {
     const best = {}
@@ -46,8 +62,10 @@ export default function Academy() {
     return best
   }, [attempts])
 
-  if (error)   return <div style={st.error}>Could not load the Academy: {error}</div>
-  if (!course) return <div style={st.loading}>Loading Claude Academy…</div>
+  if (error)               return <div style={st.error}>Could not load the Academy: {error}</div>
+  if (courses && !courses.length)
+    return <div style={st.empty}>No courses are open to you yet. Your trainer assigns coursework from the Academy.</div>
+  if (!courses || !course) return <div style={st.loading}>Loading the Academy…</div>
 
   const available = course.modules.filter(m => m.status === 'available')
   const allLessons = available.flatMap(m => m.edu_lessons ?? [])
@@ -90,6 +108,20 @@ export default function Academy() {
 
   return (
     <div>
+      {/* Course picker — only when there is a choice to make */}
+      {courses.length > 1 && (
+        <div style={st.courseTabs}>
+          {courses.map(c => (
+            <div key={c.code}
+              style={{ ...st.courseTab, ...(c.code === code ? st.courseTabActive : {}) }}
+              onClick={() => setCode(c.code)}>
+              {c.title}
+              {!c.is_published && <span style={st.draftPill}>draft</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Course hero */}
       <div style={st.hero}>
         <div style={st.heroKicker}>MORPHEUS.EDU · {course.issuer_org}</div>
@@ -164,8 +196,9 @@ export default function Academy() {
       })}
 
       <div style={st.disclaimer}>
-        CAP-C is developed and issued independently by CTS LLC. It is not produced, endorsed, or
-        certified by Anthropic. Claude is a trademark of Anthropic, PBC.
+        {course.code} is developed and issued independently by {course.issuer_org}.
+        {' '}It is not produced, endorsed, or certified by Anthropic.
+        {' '}Claude is a trademark of Anthropic, PBC.
       </div>
     </div>
   )
@@ -291,6 +324,10 @@ const st = {
   loading:  { padding: '40px', color: '#8BA0B8', fontSize: '13px' },
   error:    { background: '#FAECE7', color: '#993C1D', borderRadius: '10px', padding: '14px 16px', fontSize: '13px' },
   empty:    { color: '#8BA0B8', fontSize: '13px', fontStyle: 'italic' },
+  courseTabs:{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' },
+  courseTab:{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 14px', borderRadius: '10px', border: '1px solid #CBD8E6', background: '#fff', color: '#4A6080', fontSize: '12.5px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.12s' },
+  courseTabActive:{ background: '#0D1B2A', borderColor: '#0D1B2A', color: '#fff' },
+  draftPill:{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 6px', borderRadius: '8px', background: '#FAEEDA', color: '#BA7517' },
   hero:     { background: '#0D1B2A', borderRadius: '16px', padding: '24px', marginBottom: '14px', color: '#fff' },
   heroKicker:{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5DCAA5', fontFamily: "'DM Mono',monospace", marginBottom: '6px' },
   heroTitle:{ fontSize: '22px', fontWeight: 300 },

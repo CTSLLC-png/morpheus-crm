@@ -4,7 +4,7 @@
 // EDU.REGISTRY credential registry with issue/revoke controls.
 
 import { useState, useEffect } from 'react'
-import { getCourse, getAcademyOverview, getCredentialRegistry, issueCredential, revokeCredential,
+import { listCourses, getCourse, getAcademyOverview, getCredentialRegistry, issueCredential, revokeCredential,
          getCourseQuestionBank } from '../lib/edu.js'
 import { generateEduCertificatePDF } from '../lib/educert.js'
 
@@ -19,6 +19,8 @@ function scoreColor(s) {
 }
 
 export default function AcademyAdmin({ staffProfileId }) {
+  const [courses, setCourses]   = useState(null)
+  const [code, setCode]         = useState(null)
   const [course, setCourse]     = useState(null)
   const [rows, setRows]         = useState([])
   const [registry, setRegistry] = useState([])
@@ -28,9 +30,18 @@ export default function AcademyAdmin({ staffProfileId }) {
   const [busy, setBusy]         = useState(null)
   const [error, setError]       = useState(null)
 
+  // Staff see drafts as well as published courses — RLS decides, listCourses
+  // just asks. Selecting a course reloads everything scoped to it.
+  useEffect(() => {
+    listCourses()
+      .then(cs => { setCourses(cs); setCode(prev => prev ?? cs[0]?.code ?? null) })
+      .catch(e => setError(e.message))
+  }, [])
+
   async function load() {
+    if (!code) return
     try {
-      const c = await getCourse('CAP-C')
+      const c = await getCourse(code)
       setCourse(c)
       const [ov, reg, qb] = await Promise.all([
         getAcademyOverview(c.id),
@@ -42,7 +53,7 @@ export default function AcademyAdmin({ staffProfileId }) {
       setBank(qb)
     } catch (e) { setError(e.message) }
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { setCourse(null); setOpenModule(null); load() }, [code])
 
   async function handleIssue(row) {
     if (!course) return
@@ -67,23 +78,42 @@ export default function AcademyAdmin({ staffProfileId }) {
     try { await revokeCredential(cred.id); await load() } catch (e) { setError(e.message) }
   }
 
-  if (error)   return <div style={st.error}>Academy error: {error}</div>
-  if (!course) return <div style={st.loading}>Loading Academy…</div>
+  if (error)                return <div style={st.error}>Academy error: {error}</div>
+  if (courses && !courses.length)
+    return <div style={st.loading}>No courses in the registry yet.</div>
+  if (!courses || !course)  return <div style={st.loading}>Loading Academy…</div>
 
   const availableModules = course.modules.filter(m => m.status === 'available')
-  const credentialed = new Set(registry.filter(r => r.status === 'active').map(r => r.participant_id))
+  // Everything on this page is scoped to the selected course, the registry
+  // included — otherwise the issued count contradicts the course header.
+  const courseRegistry = registry.filter(r => r.course_id === course.id)
+  const credentialed = new Set(courseRegistry.filter(r => r.status === 'active').map(r => r.participant_id))
   const totalLessons = course.modules.reduce((n, m) => n + (m.edu_lessons?.length ?? 0), 0)
   const totalQuestions = bank.reduce((n, m) => n + m.questions.length, 0)
 
   return (
     <div>
+      {/* Course selector — drafts included, so a course can be built before release */}
+      {courses.length > 1 && (
+        <div style={st.courseTabs}>
+          {courses.map(c => (
+            <div key={c.code}
+              style={{ ...st.courseTab, ...(c.code === code ? st.courseTabActive : {}) }}
+              onClick={() => setCode(c.code)}>
+              {c.code}
+              {!c.is_published && <span style={st.draftPill}>draft</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Header stats */}
       <div style={st.statRow}>
         {[
           { label: 'Course', value: course.code, sub: course.credential_name },
           { label: 'Modules live', value: availableModules.length, sub: `${course.modules.length} total (rest post-pilot)` },
           { label: 'Learners active', value: rows.filter(r => r.lessonsDone > 0).length, sub: `${rows.length} enrolled in Morpheus` },
-          { label: 'Credentials issued', value: registry.filter(r => r.status === 'active').length, sub: 'EDU.REGISTRY' },
+          { label: 'Credentials issued', value: courseRegistry.filter(r => r.status === 'active').length, sub: 'EDU.REGISTRY' },
         ].map((m, i) => (
           <div key={i} style={st.stat}>
             <div style={st.statLabel}>{m.label}</div>
@@ -100,7 +130,7 @@ export default function AcademyAdmin({ staffProfileId }) {
           ['questions',  `Question bank (${totalQuestions})`],
           ['matrix',     'Score matrix'],
           ['progress',   'Learner progress'],
-          ['registry',   `Credential registry (${registry.length})`],
+          ['registry',   `Credential registry (${courseRegistry.length})`],
         ].map(([k, label]) => (
           <div key={k} style={{ ...st.tab, ...(tab === k ? st.tabActive : {}) }} onClick={() => setTab(k)}>{label}</div>
         ))}
@@ -289,8 +319,8 @@ export default function AcademyAdmin({ staffProfileId }) {
               ))}
             </tr></thead>
             <tbody>
-              {registry.map((c, i) => (
-                <tr key={c.id} style={{ borderBottom: i < registry.length - 1 ? '1px solid #F0F4F8' : 'none' }}>
+              {courseRegistry.map((c, i) => (
+                <tr key={c.id} style={{ borderBottom: i < courseRegistry.length - 1 ? '1px solid #F0F4F8' : 'none' }}>
                   <td style={st.tdMono}>
                     <a href={`/verify/${c.credential_code}`} target="_blank" rel="noreferrer" style={{ color: '#2176AE', textDecoration: 'none' }}>
                       {c.credential_code}
@@ -313,7 +343,7 @@ export default function AcademyAdmin({ staffProfileId }) {
                   </td>
                 </tr>
               ))}
-              {registry.length === 0 && <tr><td colSpan={7} style={st.emptyRow}>No credentials issued yet. Issue one from the Learner progress tab.</td></tr>}
+              {courseRegistry.length === 0 && <tr><td colSpan={7} style={st.emptyRow}>No credentials issued for this course yet. Issue one from the Learner progress tab.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -321,8 +351,8 @@ export default function AcademyAdmin({ staffProfileId }) {
 
       <div style={st.note}>
         Every credential is a permanent registry record, publicly verifiable at
-        <b> {window.location.origin}/verify/&lt;code&gt;</b>. CAP-C is issued by CTS LLC and is
-        not an Anthropic certification.
+        <b> {window.location.origin}/verify/&lt;code&gt;</b>. {course.code} is issued by
+        {' '}{course.issuer_org} and is not an Anthropic certification.
       </div>
     </div>
   )
@@ -339,6 +369,10 @@ const st = {
   tabs:    { display: 'flex', gap: '4px', marginBottom: '12px' },
   tab:     { padding: '7px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, color: '#4A6080', cursor: 'pointer', border: '1px solid transparent' },
   tabActive:{ background: '#fff', border: '1px solid #CBD8E6', color: '#0D1B2A' },
+  courseTabs:{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' },
+  courseTab:{ display: 'flex', alignItems: 'center', gap: '7px', padding: '7px 14px', borderRadius: '10px', border: '1px solid #CBD8E6', background: '#fff', color: '#4A6080', fontSize: '12px', fontWeight: 600, letterSpacing: '0.03em', cursor: 'pointer' },
+  courseTabActive:{ background: '#0D1B2A', borderColor: '#0D1B2A', color: '#fff' },
+  draftPill:{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 6px', borderRadius: '8px', background: '#FAEEDA', color: '#BA7517' },
   tableCard:{ background: '#fff', border: '1px solid #CBD8E6', borderRadius: '16px', overflow: 'hidden' },
   table:   { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
   th:      { padding: '9px 14px', textAlign: 'left', fontWeight: 500, fontSize: '11px', color: '#4A6080', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD8E6' },
