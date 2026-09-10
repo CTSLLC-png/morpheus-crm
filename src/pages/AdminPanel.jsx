@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
+import { SITE_HOST } from '../lib/site.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 
 const ROLES = [
@@ -297,7 +298,7 @@ function SystemStatus() {
         </div>
       ))}
       <div style={{ marginTop:'8px', fontSize:'12px', color:'var(--color-text-tertiary)', lineHeight:'1.6' }}>
-        Morpheus CRM v1.0 · Sprint 3 complete · morpheuscr.com
+        Morpheus CRM v1.0 · Sprint 3 complete · {SITE_HOST}
       </div>
     </div>
   )

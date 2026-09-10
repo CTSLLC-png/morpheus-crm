@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from '../lib/supabase.js'
+import { SITE_HOST } from '../lib/site.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useTenant } from '../hooks/useTenant.jsx'
 import { navForModules, routableModules, plannedModules, missingModules } from '../modules/registry.jsx'
@@ -76,7 +77,7 @@ export default function TrainerShell() {
       <aside style={sh.sidebar}>
         <div style={sh.logoArea}>
           <div style={sh.logoM}>M<span style={{color:'#5DCAA5'}}>.</span>orpheus</div>
-          <div style={sh.logoSub}>morpheuscr.com</div>
+          <div style={sh.logoSub}>{SITE_HOST}</div>
         </div>
         {isMultiTenant && (
           <div style={sh.tenantArea}>
