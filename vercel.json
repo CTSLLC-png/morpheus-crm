@@ -2,6 +2,14 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "morpheuscr.com" }],
+      "destination": "https://www.morpheuscr.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
   "headers": [
     {

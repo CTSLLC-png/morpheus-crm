@@ -31,8 +31,8 @@
    - Project URL → `VITE_SUPABASE_URL`
    - `anon` public key → `VITE_SUPABASE_ANON_KEY`
 5. Go to **Authentication → URL Configuration** → set:
-   - Site URL: `https://morpheuscr.com`
-   - Redirect URLs: `https://morpheuscr.com/reset-password`
+   - Site URL: `https://www.morpheuscr.com`
+   - Redirect URLs: `https://www.morpheuscr.com/reset-password`
 
 ---
 
@@ -68,7 +68,7 @@ Edit \`.env.local\`:
 \`\`\`
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
-VITE_APP_URL=https://morpheuscr.com
+VITE_APP_URL=https://www.morpheuscr.com
 ANTHROPIC_API_KEY=your_anthropic_key_here
 \`\`\`
 
@@ -162,14 +162,15 @@ Add environment variables in **Vercel Dashboard → Project → Settings → Env
   returns a 500 naming this variable when it is missing.
 
 **Custom domain:**
-Vercel Dashboard → Domains → Add \`morpheuscr.com\`
+Vercel Dashboard → Domains → both \`www.morpheuscr.com\` (canonical) and \`morpheuscr.com\`.
+\`www\` is the address everything is attached to; the apex 308-redirects to it from the edge (see the \`redirects\` block in \`vercel.json\`), so certificates, auth redirects and shared links all resolve to one host.
 Point your domain registrar's nameservers to Vercel, or add the CNAME record provided.
 
 ---
 
 ## Step 7 — Verify the full loop
 
-1. Log in as a **trainer** at \`morpheuscr.com\`
+1. Log in as a **trainer** at \`www.morpheuscr.com\`
 2. Navigate to **AI Call Simulator**
 3. Select a participant, generate a scenario, complete a call
 4. Confirm scores appear and "Saved to Morpheus" indicator fires
