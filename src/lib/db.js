@@ -60,6 +60,12 @@ export async function completeCallSession(sessionId, transcriptArray) {
  * Returns the inserted score record.
  */
 export async function saveCallScores(sessionId, scores, aiFeedback, trainerNotes = null) {
+  // A governance-floor breach is stored with its evidence so the fail can be
+  // reviewed on appeal. Null when the assessor found none.
+  const floorBreach = scores.floors?.length
+    ? { codes: scores.floors.map(f => f.code), rationale: scores.floors.map(f => f.evidence).join(' | ') }
+    : null
+
   const { data, error } = await supabase
     .from('call_scores')
     .insert({
@@ -73,6 +79,7 @@ export async function saveCallScores(sessionId, scores, aiFeedback, trainerNotes
       total_score:      scores.total,
       ai_feedback:      aiFeedback,
       trainer_notes:    trainerNotes,
+      floor_breach:     floorBreach,
       scored_at:        new Date().toISOString(),
     })
     .select()
@@ -85,33 +92,39 @@ export async function saveCallScores(sessionId, scores, aiFeedback, trainerNotes
 /**
  * Full call save pipeline — call this after scoring is complete.
  * 1. Marks session as Completed with transcript
- * 2. Saves scores
- * 3. Checks certification eligibility
- * 4. Issues cert if eligible
- * Returns { sessionId, scores, certified }
+ * 2. Saves scores, including any governance-floor breach
+ * 3. Reports certification readiness
+ *
+ * It does NOT issue the credential. Ratified 2026-09-09: the AI assessor
+ * decides pass/fail per call, a human issues the credential. That keeps a
+ * named person behind every permanent registry record.
+ *
+ * (This also removes a defect in the previous version, which issued a
+ * certificate whenever the eligibility row merely existed — it never checked
+ * is_eligible, so a single scored call could trigger issuance.)
+ *
+ * Returns { sessionId, scoreRecord, eligibility, awaitingIssue }
  */
 export async function saveCompletedCall({
   sessionId,
   participantId,
   transcriptArray,
   scores,
-  issuedBy = null,   // staff_profile id; null if self-scored
 }) {
   await completeCallSession(sessionId, transcriptArray)
   const scoreRecord = await saveCallScores(
     sessionId, scores, scores.feedback, null
   )
 
-  // Check eligibility via the view
-  const eligible = await checkCertEligibility(participantId)
-  let certified = false
+  const eligibility = await checkCertEligibility(participantId)
 
-  if (eligible && !eligible.already_certified) {
-    await issueCertification(participantId, eligible.avg_score, eligible.completed_calls, issuedBy)
-    certified = true
+  return {
+    sessionId,
+    scoreRecord,
+    eligibility,
+    // Surfaced so a trainer can be prompted to review and issue.
+    awaitingIssue: Boolean(eligibility?.is_eligible && !eligibility?.already_certified),
   }
-
-  return { sessionId, scoreRecord, certified }
 }
 
 // ── CERTIFICATION ──────────────────────────────────────────────
