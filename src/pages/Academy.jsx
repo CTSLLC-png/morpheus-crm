@@ -64,10 +64,35 @@ export default function Academy() {
     return best
   }, [attempts])
 
+  // Built once and rendered in both the loading and loaded states: changing
+  // course clears `course` while the new one loads, and unmounting the picker
+  // in that gap would drop keyboard focus to the body.
+  const coursePicker = courses && courses.length > 1 ? (
+    <Tabs
+      label="Course"
+      idPrefix="learner-course"
+      value={code}
+      onChange={setCode}
+      style={st.courseTabs}
+      itemStyle={st.courseTab}
+      activeItemStyle={st.courseTabActive}
+      items={courses.map(c => ({
+        value: c.code,
+        label: (<>{c.title}{!c.is_published && <span style={st.draftPill}>draft</span>}</>),
+      }))}
+    />
+  ) : null
+
   if (error)               return <div style={st.error}>Could not load the Academy: {error}</div>
   if (courses && !courses.length)
     return <div style={st.empty}>No courses are open to you yet. Your trainer assigns coursework from the Academy.</div>
-  if (!courses || !course) return <div style={st.loading}>Loading the Academy…</div>
+  if (!courses || !course)
+    return (
+      <div>
+        {coursePicker}
+        <div style={st.loading} role="status">Loading the Academy…</div>
+      </div>
+    )
 
   const available = course.modules.filter(m => m.status === 'available')
   const allLessons = available.flatMap(m => m.edu_lessons ?? [])
@@ -111,21 +136,7 @@ export default function Academy() {
   return (
     <div>
       {/* Course picker — only when there is a choice to make */}
-      {courses.length > 1 && (
-        <Tabs
-          label="Course"
-          idPrefix="learner-course"
-          value={code}
-          onChange={setCode}
-          style={st.courseTabs}
-          itemStyle={st.courseTab}
-          activeItemStyle={st.courseTabActive}
-          items={courses.map(c => ({
-            value: c.code,
-            label: (<>{c.title}{!c.is_published && <span style={st.draftPill}>draft</span>}</>),
-          }))}
-        />
-      )}
+      {coursePicker}
 
       {/* Course hero */}
       <div style={st.hero}>

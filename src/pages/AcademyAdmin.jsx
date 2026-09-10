@@ -80,10 +80,37 @@ export default function AcademyAdmin({ staffProfileId }) {
     try { await revokeCredential(cred.id); await load() } catch (e) { setError(e.message) }
   }
 
+  // The picker is built once and rendered in both the loading and loaded
+  // states. Selecting a course clears `course` while the new one is fetched,
+  // and if the picker unmounted in that gap the browser would drop focus to
+  // the body — so a keyboard user would lose their place every time they
+  // changed course.
+  const coursePicker = courses && courses.length > 1 ? (
+    <Tabs
+      label="Course"
+      idPrefix="course"
+      value={code}
+      onChange={setCode}
+      style={st.courseTabs}
+      itemStyle={st.courseTab}
+      activeItemStyle={st.courseTabActive}
+      items={courses.map(c => ({
+        value: c.code,
+        label: (<>{c.code}{!c.is_published && <span style={st.draftPill}>draft</span>}</>),
+      }))}
+    />
+  ) : null
+
   if (error)                return <div style={st.error}>Academy error: {error}</div>
   if (courses && !courses.length)
     return <div style={st.loading}>No courses in the registry yet.</div>
-  if (!courses || !course)  return <div style={st.loading}>Loading Academy…</div>
+  if (!courses || !course)
+    return (
+      <div>
+        {coursePicker}
+        <div style={st.loading} role="status">Loading Academy…</div>
+      </div>
+    )
 
   const availableModules = course.modules.filter(m => m.status === 'available')
   // Everything on this page is scoped to the selected course, the registry
@@ -96,21 +123,7 @@ export default function AcademyAdmin({ staffProfileId }) {
   return (
     <div>
       {/* Course selector — drafts included, so a course can be built before release */}
-      {courses.length > 1 && (
-        <Tabs
-          label="Course"
-          idPrefix="course"
-          value={code}
-          onChange={setCode}
-          style={st.courseTabs}
-          itemStyle={st.courseTab}
-          activeItemStyle={st.courseTabActive}
-          items={courses.map(c => ({
-            value: c.code,
-            label: (<>{c.code}{!c.is_published && <span style={st.draftPill}>draft</span>}</>),
-          }))}
-        />
-      )}
+      {coursePicker}
 
       {/* Header stats */}
       <div style={st.statRow}>
