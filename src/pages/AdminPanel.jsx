@@ -238,8 +238,7 @@ export default function AdminPanel() {
                   <div style={s.staffInfo}>
                     <div style={s.staffName}>{sp.full_name}</div>
                     <div style={s.staffMeta}>
-                      {sp.title && <span>{sp.title}</span>}
-                      {sp.email  && <span>{sp.email}</span>}
+                      {[sp.title, sp.email].filter(Boolean).join('  ·  ')}
                     </div>
                   </div>
                   <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
@@ -353,6 +352,6 @@ const s = {
   staffAvatar:{ width:'36px', height:'36px', borderRadius:'50%', background:'#0D1B2A', color:'#5DCAA5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:600, flexShrink:0, fontFamily:'monospace' },
   staffInfo:  { flex:1 },
   staffName:  { fontSize:'13px', fontWeight:500, color:'var(--color-text-primary)' },
-  staffMeta:  { fontSize:'11px', color:'var(--color-text-tertiary)', marginTop:'1px' },
+  staffMeta:  { fontSize:'11px', color:'var(--color-text-tertiary)', marginTop:'2px' },
   staffBadge: { fontSize:'10px', fontWeight:600, padding:'2px 9px', borderRadius:'10px', background:'#E6F1FB', color:'#0C447C' },
 }
