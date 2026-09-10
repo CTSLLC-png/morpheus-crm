@@ -237,16 +237,27 @@ export function generateEduCertificatePDF(credential, verifyBase) {
   doc.setTextColor(139, 175, 200)
   doc.text(
     `MORPHEUS.EDU  ·  ${credential.issuer_org}  ·  Albany, NY  ·  ${SITE_HOST}`,
-    W / 2, H - 56, { align: 'center' }
+    W / 2, H - 60, { align: 'center' }
   )
+  // The disclaimer belongs to the issuing course. Hardcoding CAP-C's wording
+  // printed an Anthropic notice on every certificate, including ClearCall,
+  // which has nothing to do with Anthropic — on a permanent artifact.
   doc.setFontSize(6.8)
+  const disclaimer = credential.disclaimer
+    ?? credential.edu_courses?.disclaimer
+    ?? `This credential is developed and issued independently by ${credential.issuer_org}.`
+
+  // Lay the footer out from the disclaimer's actual height. A disclaimer long
+  // enough to wrap (ClearCall's does) would otherwise print its second line
+  // straight through the copyright notice.
+  const lines = doc.splitTextToSize(disclaimer, W - 140)
+  const LEAD = 8
+  let fy = H - 49
+  doc.text(lines, W / 2, fy, { align: 'center' })
+  fy += lines.length * LEAD + 3
   doc.text(
-    'This credential is developed and issued independently by CTS LLC and is not produced, endorsed, or certified by Anthropic.',
-    W / 2, H - 43, { align: 'center' }
-  )
-  doc.text(
-    `Claude is a trademark of Anthropic, PBC.  ·  © ${new Date().getFullYear()} CTS LLC. This certificate is valid only while its registry record is active.`,
-    W / 2, H - 32, { align: 'center' }
+    `© ${new Date().getFullYear()} ${credential.issuer_org}. This certificate is valid only while its registry record is active.`,
+    W / 2, fy, { align: 'center' }
   )
 
   const filename = `CTS_Certificate_${credential.credential_code}.pdf`

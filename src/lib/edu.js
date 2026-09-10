@@ -17,7 +17,7 @@ import { supabase } from './supabase.js'
 export async function listCourses() {
   const { data, error } = await supabase
     .from('edu_courses')
-    .select('id, code, title, subtitle, credential_name, credential_prefix, hours, issuer_org, is_published')
+    .select('id, code, title, subtitle, credential_name, credential_prefix, hours, issuer_org, is_published, disclaimer')
     .order('is_published', { ascending: false })
     .order('code')
   if (error) throw error
@@ -136,7 +136,9 @@ export async function saveCheckpointAttempt(participantId, moduleId, score, answ
 export async function getMyCredentials(participantId) {
   const { data, error } = await supabase
     .from('edu_credentials')
-    .select('*')
+    // The disclaimer is printed on the certificate, so it has to travel with
+    // the credential rather than being assumed by the PDF generator.
+    .select('*, edu_courses(disclaimer)')
     .eq('participant_id', participantId)
     .order('issued_at', { ascending: false })
   if (error) throw error
@@ -147,7 +149,7 @@ export async function getMyCredentials(participantId) {
 export async function getCredentialRegistry() {
   const { data, error } = await supabase
     .from('edu_credentials')
-    .select('*')
+    .select('*, edu_courses(disclaimer)')
     .order('issued_at', { ascending: false })
   if (error) throw error
   return data
