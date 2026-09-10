@@ -6,6 +6,13 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { SITE_HOST } from '../lib/site.js'
+
+// auth.users app_metadata role -> what a human should read.
+const ROLE_LABEL = {
+  super_admin: 'Super admin',
+  trainer:     'Trainer',
+  participant: 'Participant',
+}
 import { useAuth } from '../hooks/useAuth.jsx'
 
 const ROLES = [
@@ -25,6 +32,7 @@ export default function AdminPanel() {
   const { user } = useAuth()
   const [tab, setTab]         = useState('accounts')
   const [staff, setStaff]     = useState([])
+  const [staffError, setStaffError] = useState(null)
   const [authUsers, setAuthUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -46,15 +54,20 @@ export default function AdminPanel() {
 
   async function loadStaff() {
     setLoading(true)
+    setStaffError(null)
     try {
-      const { data, error } = await supabase
-        .from('staff_profiles')
-        .select('*, auth_user:user_id(email)')
-        .order('full_name')
+      // The account email lives in auth.users, which the Data API does not
+      // expose — embedding it from staff_profiles 400s. staff_directory() is
+      // the server-side join, restricted to super admins.
+      const { data, error } = await supabase.rpc('staff_directory')
       if (error) throw error
       setStaff(data ?? [])
     } catch(e) {
-      console.error(e)
+      // Never fall through to the empty state on a failed read: "no staff
+      // exist" and "we could not ask" must not look the same to an admin.
+      console.error('[admin] staff directory failed:', e)
+      setStaffError(e.message ?? 'Could not load the staff directory.')
+      setStaff([])
     } finally {
       setLoading(false)
     }
@@ -226,14 +239,20 @@ export default function AdminPanel() {
                     <div style={s.staffName}>{sp.full_name}</div>
                     <div style={s.staffMeta}>
                       {sp.title && <span>{sp.title}</span>}
+                      {sp.email  && <span>{sp.email}</span>}
                     </div>
                   </div>
                   <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
-                    <span style={s.staffBadge}>Trainer</span>
+                    <span style={s.staffBadge}>{ROLE_LABEL[sp.role] ?? 'No role set'}</span>
                   </div>
                 </div>
               ))}
-              {staff.length === 0 && (
+              {staffError && (
+                <div style={{ color:'#993C1D', fontSize:'13px', lineHeight:'1.6' }}>
+                  Could not load the staff directory: {staffError}
+                </div>
+              )}
+              {!staffError && staff.length === 0 && (
                 <div style={{ color:'var(--color-text-tertiary)', fontSize:'13px', fontStyle:'italic' }}>
                   No staff profiles yet. Create accounts using the &ldquo;Create account&rdquo; tab.
                 </div>

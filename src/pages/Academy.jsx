@@ -8,6 +8,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../hooks/useAuth.jsx'
 import Markdown from '../lib/markdown.jsx'
 import { generateEduCertificatePDF } from '../lib/educert.js'
+import { verifyUrlFor } from '../lib/site.js'
 import {
   listCourses, getCourse, getProgress, markLessonComplete,
   getCheckpointQuestions, getCheckpointAttempts, saveCheckpointAttempt,
@@ -143,7 +144,7 @@ export default function Academy() {
               {c.credential_code} · issued {new Date(c.issued_at).toLocaleDateString()}
             </div>
             <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '4px' }}>
-              Anyone can verify this credential at <b>{window.location.origin}/verify/{c.credential_code}</b>
+              Anyone can verify this credential at <b>{verifyUrlFor(c.credential_code)}</b>
             </div>
           </div>
           <span style={{ ...st.credStatus, background: c.status === 'active' ? 'rgba(255,255,255,0.18)' : '#993C1D' }}>
@@ -196,9 +197,10 @@ export default function Academy() {
       })}
 
       <div style={st.disclaimer}>
-        {course.code} is developed and issued independently by {course.issuer_org}.
-        {' '}It is not produced, endorsed, or certified by Anthropic.
-        {' '}Claude is a trademark of Anthropic, PBC.
+        {/* Comes from the course record: an Anthropic disclaimer belongs on
+            CAP-C and would be a non-sequitur on a call centre credential. */}
+        {course.disclaimer
+          ?? `${course.code} is developed and issued independently by ${course.issuer_org}.`}
       </div>
     </div>
   )

@@ -93,9 +93,9 @@ export default function VerifyCredential() {
         )}
 
         <div style={st.footer}>
-          This registry is operated by CTS LLC · Albany, NY. CAP-C and related credentials are
-          developed and issued independently by CTS LLC and are not produced, endorsed, or
-          certified by Anthropic. Claude is a trademark of Anthropic, PBC.
+          This registry is operated by CTS LLC · Albany, NY.
+          {' '}{result?.disclaimer
+            ?? 'Credentials in this registry are developed and issued independently by their issuing organisation.'}
         </div>
       </div>
     </div>

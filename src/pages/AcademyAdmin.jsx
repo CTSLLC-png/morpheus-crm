@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { listCourses, getCourse, getAcademyOverview, getCredentialRegistry, issueCredential, revokeCredential,
          getCourseQuestionBank } from '../lib/edu.js'
 import { generateEduCertificatePDF } from '../lib/educert.js'
+import { SITE_URL } from '../lib/site.js'
 
 function pctColor(p) { return p >= 80 ? '#0F6E56' : p >= 40 ? '#BA7517' : '#8BA0B8' }
 
@@ -351,8 +352,8 @@ export default function AcademyAdmin({ staffProfileId }) {
 
       <div style={st.note}>
         Every credential is a permanent registry record, publicly verifiable at
-        <b> {window.location.origin}/verify/&lt;code&gt;</b>. {course.code} is issued by
-        {' '}{course.issuer_org} and is not an Anthropic certification.
+        <b> {SITE_URL}/verify/&lt;code&gt;</b>.
+        {' '}{course.disclaimer ?? `${course.code} is issued independently by ${course.issuer_org}.`}
       </div>
     </div>
   )
