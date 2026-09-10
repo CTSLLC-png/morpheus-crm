@@ -10,13 +10,13 @@ import { generateEduCertificatePDF } from '../lib/educert.js'
 import { SITE_URL } from '../lib/site.js'
 import { BARE_BUTTON, Tabs, TabPanel } from '../components/a11y.jsx'
 
-function pctColor(p) { return p >= 80 ? '#0F6E56' : p >= 40 ? '#BA7517' : '#8BA0B8' }
+function pctColor(p) { return p >= 80 ? '#0F6E56' : p >= 40 ? '#BA7517' : '#5D768A' }
 
 /** Checkpoint pass mark. Mirrors saveCheckpointAttempt's `passed = score >= 80`. */
 const PASS_MARK = 80
 
 function scoreColor(s) {
-  if (s === undefined || s === null) return '#8BA0B8'
+  if (s === undefined || s === null) return '#5D768A'
   return s >= PASS_MARK ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D'
 }
 
@@ -286,7 +286,7 @@ export default function AcademyAdmin({ staffProfileId }) {
             <span style={{ color: '#0F6E56', marginLeft: '12px' }}>■ passed</span>
             <span style={{ color: '#BA7517', marginLeft: '10px' }}>■ 60–79</span>
             <span style={{ color: '#993C1D', marginLeft: '10px' }}>■ below 60</span>
-            <span style={{ color: '#8BA0B8', marginLeft: '10px' }}>· not attempted</span>
+            <span style={{ color: '#5D768A', marginLeft: '10px' }}>· not attempted</span>
           </div>
         </div>
       )}
@@ -377,13 +377,13 @@ export default function AcademyAdmin({ staffProfileId }) {
 }
 
 const st = {
-  loading: { padding: '40px', color: '#8BA0B8', fontSize: '13px' },
+  loading: { padding: '40px', color: '#5D768A', fontSize: '13px' },
   error:   { background: '#FAECE7', color: '#993C1D', borderRadius: '10px', padding: '14px 16px', fontSize: '13px' },
   statRow: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px', marginBottom: '16px' },
   stat:    { background: '#fff', border: '1px solid #CBD8E6', borderRadius: '12px', padding: '14px 16px' },
-  statLabel:{ fontSize: '10px', color: '#8BA0B8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '5px' },
+  statLabel:{ fontSize: '10px', color: '#5D768A', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '5px' },
   statVal: { fontSize: '24px', fontWeight: 300, color: '#0D1B2A', fontFamily: "'DM Mono',monospace", lineHeight: 1 },
-  statSub: { fontSize: '10.5px', color: '#8BA0B8', marginTop: '5px' },
+  statSub: { fontSize: '10.5px', color: '#5D768A', marginTop: '5px' },
   tabs:    { display: 'flex', gap: '4px', marginBottom: '12px' },
   tab:     { padding: '7px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 500, color: '#4A6080', cursor: 'pointer', border: '1px solid transparent' },
   tabActive:{ background: '#fff', border: '1px solid #CBD8E6', color: '#0D1B2A' },
@@ -402,21 +402,21 @@ const st = {
   statusPill:{ fontSize: '10px', fontWeight: 600, padding: '2px 9px', borderRadius: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' },
   btnSm:   { padding: '5px 12px', border: 'none', borderRadius: '7px', background: '#0D1B2A', color: '#fff', fontSize: '11px', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" },
   btnDanger:{ padding: '4px 10px', border: '1px solid #E8C4B8', borderRadius: '7px', background: '#fff', color: '#993C1D', fontSize: '11px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" },
-  emptyRow:{ padding: '24px', textAlign: 'center', color: '#8BA0B8', fontStyle: 'italic' },
-  note:    { fontSize: '10.5px', color: '#8BA0B8', lineHeight: 1.6, padding: '14px 4px' },
+  emptyRow:{ padding: '24px', textAlign: 'center', color: '#5D768A', fontStyle: 'italic' },
+  note:    { fontSize: '10.5px', color: '#5D768A', lineHeight: 1.6, padding: '14px 4px' },
 
   // curriculum / question bank
   moduleCard:{ background: '#fff', border: '1px solid #CBD8E6', borderRadius: '12px', marginBottom: '8px', overflow: 'hidden' },
   moduleHead:{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', cursor: 'pointer' },
-  moduleNum: { fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#8BA0B8', minWidth: '22px' },
+  moduleNum: { fontFamily: "'DM Mono',monospace", fontSize: '12px', color: '#5D768A', minWidth: '22px' },
   moduleTitle:{ fontSize: '13.5px', fontWeight: 500, color: '#0D1B2A' },
   moduleSub: { fontSize: '11.5px', color: '#5B6B7F', marginTop: '2px' },
-  moduleMeta:{ fontSize: '11px', color: '#8BA0B8', whiteSpace: 'nowrap' },
-  chevron:   { fontSize: '11px', color: '#8BA0B8', width: '12px', textAlign: 'center' },
+  moduleMeta:{ fontSize: '11px', color: '#5D768A', whiteSpace: 'nowrap' },
+  chevron:   { fontSize: '11px', color: '#5D768A', width: '12px', textAlign: 'center' },
   lessonList:{ borderTop: '1px solid #F0F4F8', background: '#FBFCFE', padding: '4px 0' },
   lessonRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 16px 8px 50px', fontSize: '12.5px', color: '#0D1B2A', borderBottom: '1px solid #F4F7FA' },
-  lessonNum: { fontFamily: "'DM Mono',monospace", fontSize: '10.5px', color: '#8BA0B8', minWidth: '28px' },
-  lessonMeta:{ fontSize: '10.5px', color: '#8BA0B8', minWidth: '70px', textAlign: 'right' },
+  lessonNum: { fontFamily: "'DM Mono',monospace", fontSize: '10.5px', color: '#5D768A', minWidth: '28px' },
+  lessonMeta:{ fontSize: '10.5px', color: '#5D768A', minWidth: '70px', textAlign: 'right' },
   kindPill:  { fontSize: '9.5px', fontWeight: 600, padding: '2px 8px', borderRadius: '10px', background: '#EEF2F7', color: '#4A6080', textTransform: 'uppercase', letterSpacing: '0.04em' },
 
   questionBlock:{ padding: '12px 16px 14px 50px', borderBottom: '1px solid #F4F7FA' },
@@ -428,5 +428,5 @@ const st = {
   explanation:  { fontSize: '11.5px', color: '#5B6B7F', marginTop: '7px', paddingLeft: '18px', borderLeft: '2px solid #E6EDF5', lineHeight: 1.5 },
 
   tdScore:  { padding: '10px 14px', textAlign: 'center', fontFamily: "'DM Mono',monospace", fontSize: '12px' },
-  matrixLegend:{ fontSize: '10.5px', color: '#8BA0B8', padding: '10px 16px', borderTop: '1px solid #F0F4F8' },
+  matrixLegend:{ fontSize: '10.5px', color: '#5D768A', padding: '10px 16px', borderTop: '1px solid #F0F4F8' },
 }

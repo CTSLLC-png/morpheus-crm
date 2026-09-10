@@ -9,7 +9,7 @@ const STATUS_COLORS = {
   Active:     { bg: '#E1F5EE', color: '#0F6E56' },
   Scheduled:  { bg: '#E6F1FB', color: '#0C447C' },
   Completed:  { bg: '#F1EFE8', color: '#5F5E5A' },
-  Archived:   { bg: '#F1EFE8', color: '#8BA0B8' },
+  Archived:   { bg: '#F1EFE8', color: '#5D768A' },
 }
 
 const PROGRAM_SOURCES = ['LDSS Albany','LDSS Schenectady','Reentry / Incarcerated','Direct Enrollment']
@@ -228,16 +228,16 @@ const s = {
   cohortStats: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px', marginBottom: '12px' },
   cstat: { textAlign: 'center', background: '#F7F9FC', borderRadius: '8px', padding: '8px 4px' },
   cstatVal: { fontSize: '20px', fontWeight: 300, color: '#0D1B2A', fontFamily: "'DM Mono', monospace" },
-  cstatLabel: { fontSize: '10px', color: '#8BA0B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' },
+  cstatLabel: { fontSize: '10px', color: '#5D768A', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' },
   cohortTrainer: { fontSize: '12px', color: '#4A6080', marginBottom: '3px' },
-  cohortDates: { fontSize: '11px', color: '#8BA0B8', fontFamily: "'DM Mono', monospace", marginBottom: '12px' },
+  cohortDates: { fontSize: '11px', color: '#5D768A', fontFamily: "'DM Mono', monospace", marginBottom: '12px' },
   cohortActions: { display: 'flex', gap: '7px' },
   enrollPanel: { background: '#F7F9FC', border: '1px solid #E8EFF6', borderRadius: '10px', padding: '12px', marginTop: '12px' },
   enrollTitle: { fontSize: '11px', fontWeight: 600, color: '#4A6080', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' },
   enrollList: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' },
   enrollRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', background: '#fff', borderRadius: '6px', border: '1px solid #E8EFF6' },
   enrollName: { flex: 1, fontSize: '12px', fontWeight: 500, color: '#0D1B2A' },
-  enrollSource: { fontSize: '11px', color: '#8BA0B8' },
+  enrollSource: { fontSize: '11px', color: '#5D768A' },
   enrollBtn: { padding: '3px 10px', border: 'none', borderRadius: '5px', background: '#0D1B2A', color: '#fff', fontSize: '11px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   modal: { position: 'fixed', inset: 0, background: 'rgba(13,27,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
   modalCard: { background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' },

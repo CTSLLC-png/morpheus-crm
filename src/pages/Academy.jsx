@@ -220,7 +220,7 @@ function LessonView({ course, module, lesson, isDone, bestScore, onComplete, onS
     <div style={{ maxWidth: '760px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
         <button style={st.btn} onClick={onBack}>← Course</button>
-        <span style={{ fontSize: '12px', color: '#8BA0B8' }}>
+        <span style={{ fontSize: '12px', color: '#5D768A' }}>
           Module {module.sort_order} · {module.title}
         </span>
       </div>
@@ -230,7 +230,7 @@ function LessonView({ course, module, lesson, isDone, bestScore, onComplete, onS
           <span style={{ ...st.kindPill, color: KIND_COLOR[lesson.kind], borderColor: KIND_COLOR[lesson.kind] }}>
             {KIND_LABEL[lesson.kind]}
           </span>
-          <span style={{ fontSize: '11px', color: '#8BA0B8' }}>{lesson.duration_minutes} min</span>
+          <span style={{ fontSize: '11px', color: '#5D768A' }}>{lesson.duration_minutes} min</span>
           {isDone && <span style={st.donePillSm}>✓ completed</span>}
         </div>
         <h1 style={st.lessonH1}>{lesson.title}</h1>
@@ -336,9 +336,9 @@ function CheckpointQuiz({ moduleId, bestScore, onSubmit, onDone }) {
 
 // ── Styles ────────────────────────────────────────────────────
 const st = {
-  loading:  { padding: '40px', color: '#8BA0B8', fontSize: '13px' },
+  loading:  { padding: '40px', color: '#5D768A', fontSize: '13px' },
   error:    { background: '#FAECE7', color: '#993C1D', borderRadius: '10px', padding: '14px 16px', fontSize: '13px' },
-  empty:    { color: '#8BA0B8', fontSize: '13px', fontStyle: 'italic' },
+  empty:    { color: '#5D768A', fontSize: '13px', fontStyle: 'italic' },
   courseTabs:{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' },
   courseTab:{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 14px', borderRadius: '10px', border: '1px solid #CBD8E6', background: '#fff', color: '#4A6080', fontSize: '12.5px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.12s' },
   courseTabActive:{ background: '#0D1B2A', borderColor: '#0D1B2A', color: '#fff' },
@@ -358,10 +358,10 @@ const st = {
   moduleHead:{ display: 'flex', alignItems: 'flex-start', gap: '14px' },
   moduleNum:{ fontFamily: "'DM Mono',monospace", fontSize: '20px', fontWeight: 500, color: '#5DCAA5', flexShrink: 0, paddingTop: '2px' },
   moduleTitle:{ fontSize: '15px', fontWeight: 600, color: '#0D1B2A' },
-  moduleSub:{ fontSize: '12px', color: '#8BA0B8', marginTop: '2px' },
-  moduleMins:{ fontSize: '10px', color: '#8BA0B8', marginTop: '4px' },
+  moduleSub:{ fontSize: '12px', color: '#5D768A', marginTop: '2px' },
+  moduleMins:{ fontSize: '10px', color: '#5D768A', marginTop: '4px' },
   moduleSummary:{ fontSize: '12.5px', color: '#4A6080', lineHeight: 1.65, margin: '10px 0 12px', paddingLeft: '38px' },
-  outlinePill:{ fontSize: '10px', fontWeight: 600, padding: '3px 10px', borderRadius: '12px', background: '#F0F4F8', color: '#8BA0B8' },
+  outlinePill:{ fontSize: '10px', fontWeight: 600, padding: '3px 10px', borderRadius: '12px', background: '#F0F4F8', color: '#5D768A' },
   donePill: { fontSize: '10px', fontWeight: 600, padding: '3px 10px', borderRadius: '12px', background: '#E1F5EE', color: '#0F6E56' },
   donePillSm:{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '10px', background: '#E1F5EE', color: '#0F6E56' },
   lessonRow:{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 0 9px 38px', borderTop: '1px solid #F0F4F8', cursor: 'pointer' },
@@ -369,7 +369,7 @@ const st = {
   lessonCheckDone:{ background: '#0F6E56', borderColor: '#0F6E56' },
   kindPill: { fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', padding: '2px 8px', borderRadius: '10px', border: '1px solid', flexShrink: 0 },
   lessonTitle:{ flex: 1, fontSize: '13px', color: '#0D1B2A' },
-  lessonMins:{ fontSize: '11px', color: '#8BA0B8', fontFamily: "'DM Mono',monospace" },
+  lessonMins:{ fontSize: '11px', color: '#5D768A', fontFamily: "'DM Mono',monospace" },
   card:     { background: '#fff', border: '1px solid #CBD8E6', borderRadius: '16px', padding: '24px' },
   lessonH1: { fontSize: '20px', fontWeight: 600, color: '#0D1B2A', margin: '8px 0 14px' },
   btn:      { padding: '8px 14px', border: '1px solid #CBD8E6', borderRadius: '8px', background: '#fff', color: '#0D1B2A', fontSize: '12px', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" },
@@ -380,5 +380,5 @@ const st = {
   qText:    { fontSize: '13.5px', color: '#0D1B2A', lineHeight: 1.6, marginBottom: '10px' },
   opt:      { border: '1.5px solid', borderRadius: '8px', padding: '8px 12px', fontSize: '12.5px', lineHeight: 1.5, marginBottom: '6px', transition: 'all 0.12s' },
   explain:  { fontSize: '12px', color: '#4A6080', lineHeight: 1.6, background: '#fff', borderRadius: '8px', padding: '10px 12px', marginTop: '6px', borderLeft: '3px solid #5DCAA5' },
-  disclaimer:{ fontSize: '10.5px', color: '#8BA0B8', lineHeight: 1.6, padding: '14px 4px', textAlign: 'center' },
+  disclaimer:{ fontSize: '10.5px', color: '#5D768A', lineHeight: 1.6, padding: '14px 4px', textAlign: 'center' },
 }

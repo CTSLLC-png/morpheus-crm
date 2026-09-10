@@ -83,8 +83,9 @@ export default function TrainerShell() {
         </div>
         {isMultiTenant && (
           <div style={sh.tenantArea}>
-            <div style={sh.navSec}>Organisation</div>
+            <label style={sh.navSec} htmlFor="tenant-select">Organisation</label>
             <select
+              id="tenant-select"
               style={sh.tenantSelect}
               value={tenant?.id ?? ''}
               onChange={e => { selectTenant(e.target.value); navigate('/') }}
@@ -298,11 +299,11 @@ const sh = {
   sidebar:{width:'224px',minWidth:'224px',background:'#0D1B2A',display:'flex',flexDirection:'column'},
   logoArea:{padding:'20px 18px 14px',borderBottom:'1px solid rgba(255,255,255,0.08)'},
   logoM:{fontFamily:'monospace',fontSize:'22px',fontWeight:500,color:'#fff',letterSpacing:'-0.5px'},
-  logoSub:{fontSize:'10px',color:'rgba(255,255,255,0.3)',letterSpacing:'0.07em',marginTop:'2px'},
+  logoSub:{fontSize:'10px',color:'rgba(255,255,255,0.60)',letterSpacing:'0.07em',marginTop:'2px'},
   nav:{padding:'12px 10px',flex:1,overflowY:'auto'},
-  navSec:{fontSize:'10px',color:'rgba(255,255,255,0.3)',letterSpacing:'0.1em',textTransform:'uppercase',padding:'10px 8px 6px'},
-  navHint:{fontSize:'11px',color:'rgba(255,255,255,0.35)',padding:'6px 10px',fontStyle:'italic'},
-  navPending:{fontSize:'12px',color:'rgba(255,255,255,0.28)',padding:'7px 10px',cursor:'default'},
+  navSec:{fontSize:'10px',color:'rgba(255,255,255,0.60)',letterSpacing:'0.1em',textTransform:'uppercase',padding:'10px 8px 6px'},
+  navHint:{fontSize:'11px',color:'rgba(255,255,255,0.62)',padding:'6px 10px',fontStyle:'italic'},
+  navPending:{fontSize:'12px',color:'rgba(255,255,255,0.60)',padding:'7px 10px',cursor:'default'},
   navMissing:{fontSize:'12px',color:'#F0A868',padding:'7px 10px',cursor:'help',background:'rgba(240,168,104,0.10)',borderRadius:'7px',marginBottom:'2px'},
   tenantArea:{padding:'6px 10px 2px',borderBottom:'1px solid rgba(255,255,255,0.06)'},
   tenantSelect:{width:'100%',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.85)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'7px',padding:'6px 8px',fontSize:'12px',fontFamily:"'DM Sans',sans-serif",marginBottom:'8px',cursor:'pointer'},
@@ -312,7 +313,7 @@ const sh = {
   avatar:{width:'30px',height:'30px',borderRadius:'50%',background:'#2176AE',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:600,flexShrink:0},
   userName:{fontSize:'12px',fontWeight:500,color:'rgba(255,255,255,0.75)',marginBottom:'2px'},
   rolePill:{fontSize:'9px',padding:'2px 7px',borderRadius:'10px',background:'rgba(33,118,174,0.3)',color:'#7EC8F0',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em'},
-  signOutBtn:{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'6px',color:'rgba(255,255,255,0.4)',fontSize:'11px',cursor:'pointer',padding:'5px 10px',fontFamily:"'DM Sans',sans-serif",marginTop:'8px'},
+  signOutBtn:{background:'none',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'6px',color:'rgba(255,255,255,0.65)',fontSize:'11px',cursor:'pointer',padding:'5px 10px',fontFamily:"'DM Sans',sans-serif",marginTop:'8px'},
   main:{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',background:'#F7F9FC'},
   topbar:{background:'#fff',borderBottom:'1px solid #CBD8E6',padding:'0 24px',height:'54px',display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0},
   topbarTitle:{fontSize:'15px',fontWeight:500,color:'#0D1B2A'},

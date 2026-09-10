@@ -174,7 +174,7 @@ export default function ParticipantProfile() {
           {assignMode === 'all' && ' No assignments yet — they currently see every available program.'}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {catalog.length === 0 && <span style={{ fontSize: '12px', color: '#8BA0B8' }}>Loading programs…</span>}
+          {catalog.length === 0 && <span style={{ fontSize: '12px', color: '#5D768A' }}>Loading programs…</span>}
           {catalog.map(m => {
             const on = assigned.has(m.key)
             return (
@@ -348,7 +348,7 @@ const s = {
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px', marginBottom: '16px' },
   statCard: { background: '#fff', border: '1px solid #CBD8E6', borderRadius: '12px', padding: '16px' },
   statVal: { fontSize: '28px', fontWeight: 300, color: '#0D1B2A', fontFamily: "'DM Mono', monospace", lineHeight: 1 },
-  statLabel: { fontSize: '11px', color: '#8BA0B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '5px' },
+  statLabel: { fontSize: '11px', color: '#5D768A', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '5px' },
   statSub: { fontSize: '11px', color: '#CBD8E6', marginTop: '2px' },
   twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' },
   card: { background: '#fff', border: '1px solid #CBD8E6', borderRadius: '16px', padding: '20px', marginBottom: '12px' },
@@ -363,7 +363,7 @@ const s = {
   detailVal: { color: '#0D1B2A', fontWeight: 500 },
   callRow: { borderBottom: '1px solid #F0F4F8', cursor: 'pointer' },
   callRowMain: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0' },
-  callDate: { fontFamily: "'DM Mono', monospace", fontSize: '11px', color: '#8BA0B8', width: '50px', flexShrink: 0 },
+  callDate: { fontFamily: "'DM Mono', monospace", fontSize: '11px', color: '#5D768A', width: '50px', flexShrink: 0 },
   callScenario: { flex: 1, fontSize: '13px', color: '#0D1B2A' },
   diffTag: { fontSize: '10px', padding: '2px 8px', borderRadius: '10px', fontWeight: 600, flexShrink: 0 },
   totalScore: { fontSize: '13px', fontWeight: 700, padding: '2px 9px', borderRadius: '8px', fontFamily: "'DM Mono', monospace", flexShrink: 0 },
@@ -371,8 +371,8 @@ const s = {
   callDetail: { padding: '12px 0 14px', borderTop: '1px solid #F7F9FC' },
   callCats: { display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: '8px', marginBottom: '12px' },
   miniCat: { textAlign: 'center' },
-  miniCatLabel: { fontSize: '10px', color: '#8BA0B8', marginBottom: '3px' },
+  miniCatLabel: { fontSize: '10px', color: '#5D768A', marginBottom: '3px' },
   miniCatVal: { fontSize: '14px', fontWeight: 600, fontFamily: "'DM Mono', monospace" },
   feedbackBox: { background: '#F7F9FC', border: '1px solid #E8EFF6', borderRadius: '8px', padding: '10px 12px', fontSize: '12px', color: '#4A6080', lineHeight: '1.6', marginTop: '8px' },
-  empty: { color: '#8BA0B8', fontSize: '13px', fontStyle: 'italic', padding: '12px 0' },
+  empty: { color: '#5D768A', fontSize: '13px', fontStyle: 'italic', padding: '12px 0' },
 }
