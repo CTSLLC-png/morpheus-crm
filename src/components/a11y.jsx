@@ -10,7 +10,7 @@
 // The rule of thumb: if it responds to a click, it is a <button>, a <label>
 // wrapping a real radio, or a link — never a <div>.
 
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 
 /**
  * Neutralises the browser's default button chrome so a <button> can carry the
@@ -46,6 +46,17 @@ export function Tabs({
   idPrefix, panelId, style, itemStyle, activeItemStyle,
 }) {
   const listRef = useRef(null)
+  // Set when the selection changed by keyboard, so focus follows it. A click
+  // must not steal focus back, and the new tab only carries tabIndex 0 after
+  // React commits — which is why this waits for the effect rather than a
+  // requestAnimationFrame, which can run before the commit.
+  const focusAfterRender = useRef(false)
+
+  useEffect(() => {
+    if (!focusAfterRender.current) return
+    focusAfterRender.current = false
+    listRef.current?.querySelector(`[data-tab-value="${idSafe(value)}"]`)?.focus()
+  }, [value])
 
   function move(e) {
     const values = items.map(i => i.value)
@@ -59,14 +70,8 @@ export function Tabs({
     else return
 
     e.preventDefault()
+    focusAfterRender.current = true
     onChange(next)
-    // Focus has to follow selection or the user loses their place; the tab
-    // does not exist in the DOM with its new tabIndex until after this render.
-    requestAnimationFrame(() => {
-      listRef.current
-        ?.querySelector(`[data-tab-value="${idSafe(next)}"]`)
-        ?.focus()
-    })
   }
 
   return (
