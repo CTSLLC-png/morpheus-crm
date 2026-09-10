@@ -10,14 +10,14 @@ import { generateEduCertificatePDF } from '../lib/educert.js'
 import { SITE_URL } from '../lib/site.js'
 import { BARE_BUTTON, Tabs, TabPanel } from '../components/a11y.jsx'
 
-function pctColor(p) { return p >= 80 ? '#0F6E56' : p >= 40 ? '#BA7517' : '#5D768A' }
+function pctColor(p) { return p >= 80 ? '#0F6E56' : p >= 40 ? '#854F0B' : '#5D768A' }
 
 /** Checkpoint pass mark. Mirrors saveCheckpointAttempt's `passed = score >= 80`. */
 const PASS_MARK = 80
 
 function scoreColor(s) {
   if (s === undefined || s === null) return '#5D768A'
-  return s >= PASS_MARK ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D'
+  return s >= PASS_MARK ? '#0F6E56' : s >= 60 ? '#854F0B' : '#993C1D'
 }
 
 export default function AcademyAdmin({ staffProfileId }) {
@@ -284,7 +284,7 @@ export default function AcademyAdmin({ staffProfileId }) {
           <div style={st.matrixLegend}>
             Best checkpoint score per module. Pass mark {PASS_MARK}.
             <span style={{ color: '#0F6E56', marginLeft: '12px' }}>■ passed</span>
-            <span style={{ color: '#BA7517', marginLeft: '10px' }}>■ 60–79</span>
+            <span style={{ color: '#854F0B', marginLeft: '10px' }}>■ 60–79</span>
             <span style={{ color: '#993C1D', marginLeft: '10px' }}>■ below 60</span>
             <span style={{ color: '#5D768A', marginLeft: '10px' }}>· not attempted</span>
           </div>
@@ -390,7 +390,7 @@ const st = {
   courseTabs:{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' },
   courseTab:{ display: 'flex', alignItems: 'center', gap: '7px', padding: '7px 14px', borderRadius: '10px', border: '1px solid #CBD8E6', background: '#fff', color: '#4A6080', fontSize: '12px', fontWeight: 600, letterSpacing: '0.03em', cursor: 'pointer' },
   courseTabActive:{ background: '#0D1B2A', borderColor: '#0D1B2A', color: '#fff' },
-  draftPill:{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 6px', borderRadius: '8px', background: '#FAEEDA', color: '#BA7517' },
+  draftPill:{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 6px', borderRadius: '8px', background: '#FAEEDA', color: '#854F0B' },
   tableCard:{ background: '#fff', border: '1px solid #CBD8E6', borderRadius: '16px', overflow: 'hidden' },
   table:   { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
   th:      { padding: '9px 14px', textAlign: 'left', fontWeight: 500, fontSize: '11px', color: '#4A6080', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #CBD8E6' },

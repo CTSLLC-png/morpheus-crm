@@ -34,7 +34,7 @@ const ICONS = {
   book:    <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 3.5A1.5 1.5 0 013.5 2H8v12H3.5A1.5 1.5 0 012 12.5v-9z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M14 3.5A1.5 1.5 0 0012.5 2H8v12h4.5a1.5 1.5 0 001.5-1.5v-9z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>,
 }
 
-function scoreColor(s) { return s >= 80 ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D' }
+function scoreColor(s) { return s >= 80 ? '#0F6E56' : s >= 60 ? '#854F0B' : '#993C1D' }
 
 export default function TrainerShell() {
   const { user, role } = useAuth()

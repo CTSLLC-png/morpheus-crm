@@ -158,7 +158,7 @@ export default function CohortManagement({ staffProfiles = [] }) {
                   <div style={s.cstatLabel}>Calls logged</div>
                 </div>
                 <div style={s.cstat}>
-                  <div style={{ ...s.cstatVal, color: c.cohort_avg_score ? (c.cohort_avg_score >= 80 ? '#0F6E56' : c.cohort_avg_score >= 60 ? '#BA7517' : '#993C1D') : '#CBD8E6' }}>
+                  <div style={{ ...s.cstatVal, color: c.cohort_avg_score ? (c.cohort_avg_score >= 80 ? '#0F6E56' : c.cohort_avg_score >= 60 ? '#854F0B' : '#993C1D') : '#CBD8E6' }}>
                     {c.cohort_avg_score ?? '—'}
                   </div>
                   <div style={s.cstatLabel}>Avg score</div>

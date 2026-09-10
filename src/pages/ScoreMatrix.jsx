@@ -50,7 +50,7 @@ const CATS = [
 
 const RUBRIC_LEVELS = [
   { range: '0–59', label: 'Unsatisfactory', color: '#993C1D', bg: '#FAECE7' },
-  { range: '60–79', label: 'Developing',    color: '#BA7517', bg: '#FAEEDA' },
+  { range: '60–79', label: 'Developing',    color: '#854F0B', bg: '#FAEEDA' },
   { range: '80–100', label: 'Proficient',   color: '#0F6E56', bg: '#E1F5EE' },
 ]
 
@@ -222,7 +222,7 @@ export default function ScoreMatrix() {
           <div style={s.weightBar}>
             {CATS.map((cat, i) => {
               const w = weights[cat.key] ?? 0
-              const colors = ['#2176AE','#0F6E56','#BA7517','#534AB7','#993C1D','#5F5E5A']
+              const colors = ['#2176AE','#0F6E56','#854F0B','#534AB7','#993C1D','#5F5E5A']
               return (
                 <div key={cat.key} style={{
                   flex: w, background: colors[i], height:'100%',
@@ -239,7 +239,7 @@ export default function ScoreMatrix() {
           </div>
           <div style={s.weightBarLegend}>
             {CATS.map((cat, i) => {
-              const colors = ['#2176AE','#0F6E56','#BA7517','#534AB7','#993C1D','#5F5E5A']
+              const colors = ['#2176AE','#0F6E56','#854F0B','#534AB7','#993C1D','#5F5E5A']
               return (
                 <div key={cat.key} style={{ display:'flex', alignItems:'center', gap:'4px' }}>
                   <div style={{ width:'8px', height:'8px', borderRadius:'2px', background:colors[i], flexShrink:0 }} />
@@ -255,17 +255,24 @@ export default function ScoreMatrix() {
           {CATS.map(cat => (
             <div key={cat.key} style={s.weightRow}>
               <div style={s.weightLeft}>
-                <div style={s.weightLabel}>{cat.label}</div>
-                <div style={s.weightDesc}>{cat.description}</div>
+                {/* The visible category name is the label for both controls;
+                    the description is their accessible description, so a
+                    screen reader hears what the weight actually governs. */}
+                <div style={s.weightLabel} id={`w-${cat.key}-label`}>{cat.label}</div>
+                <div style={s.weightDesc} id={`w-${cat.key}-desc`}>{cat.description}</div>
               </div>
               <div style={s.weightControls}>
                 <input type="range" min="0" max="60" step="1"
+                  aria-labelledby={`w-${cat.key}-label`}
+                  aria-describedby={`w-${cat.key}-desc`}
                   value={weights[cat.key] ?? 0}
                   onChange={e => setWeight(cat.key, e.target.value)}
                   style={{ width:'120px', accentColor:'#0D1B2A' }}
                 />
                 <div style={{ position:'relative' }}>
                   <input type="number" min="0" max="100" step="1"
+                    aria-labelledby={`w-${cat.key}-label`}
+                    aria-describedby={`w-${cat.key}-desc`}
                     value={weights[cat.key] ?? 0}
                     onChange={e => setWeight(cat.key, e.target.value)}
                     style={{ ...s.input, width:'64px', textAlign:'center', paddingRight:'20px' }}

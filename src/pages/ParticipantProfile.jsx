@@ -15,7 +15,7 @@ const SCORE_KEYS = ['score_opening','score_listening','score_empathy','score_res
 
 function scoreColor(s) {
   if (s >= 80) return '#0F6E56'
-  if (s >= 60) return '#BA7517'
+  if (s >= 60) return '#854F0B'
   return '#993C1D'
 }
 function scoreBg(s) {
@@ -322,7 +322,7 @@ function DetailRow({ label, value, mono }) {
 
 function StatusBadge({ status, cert, eligible }) {
   if (cert)     return <span style={{ ...s.badge, background: '#E1F5EE', color: '#0F6E56' }}>Certified</span>
-  if (eligible) return <span style={{ ...s.badge, background: '#FAEEDA', color: '#BA7517' }}>Cert eligible</span>
+  if (eligible) return <span style={{ ...s.badge, background: '#FAEEDA', color: '#854F0B' }}>Cert eligible</span>
   return <span style={{ ...s.badge, background: '#E6F1FB', color: '#0C447C' }}>{status}</span>
 }
 
@@ -344,7 +344,7 @@ const s = {
   identRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' },
   badge: { fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.04em' },
   certNum: { fontFamily: "'DM Mono', monospace", fontSize: '11px', color: '#0F6E56' },
-  certPending: { fontSize: '11px', color: '#BA7517' },
+  certPending: { fontSize: '11px', color: '#854F0B' },
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px', marginBottom: '16px' },
   statCard: { background: '#fff', border: '1px solid #CBD8E6', borderRadius: '12px', padding: '16px' },
   statVal: { fontSize: '28px', fontWeight: 300, color: '#0D1B2A', fontFamily: "'DM Mono', monospace", lineHeight: 1 },

@@ -17,7 +17,7 @@ import {
 } from '../lib/edu.js'
 
 const KIND_LABEL = { lesson: 'Lesson', lab: 'Hands-on lab', checkpoint: 'Checkpoint' }
-const KIND_COLOR = { lesson: '#2176AE', lab: '#0F6E56', checkpoint: '#BA7517' }
+const KIND_COLOR = { lesson: '#2176AE', lab: '#0F6E56', checkpoint: '#854F0B' }
 
 export default function Academy() {
   const { participantId } = useAuth()
@@ -278,7 +278,7 @@ function CheckpointQuiz({ moduleId, bestScore, onSubmit, onDone }) {
   return (
     <div style={{ marginTop: '10px' }}>
       {bestScore != null && (
-        <div style={{ ...st.banner, background: bestScore >= 80 ? '#E1F5EE' : '#FAEEDA', color: bestScore >= 80 ? '#0F6E56' : '#BA7517' }}>
+        <div style={{ ...st.banner, background: bestScore >= 80 ? '#E1F5EE' : '#FAEEDA', color: bestScore >= 80 ? '#0F6E56' : '#854F0B' }}>
           Best score so far: <b>{Math.round(bestScore)}</b>{bestScore >= 80 ? ' — passed ✓' : ' — 80 needed to pass'}
         </div>
       )}
@@ -323,7 +323,7 @@ function CheckpointQuiz({ moduleId, bestScore, onSubmit, onDone }) {
           Submit checkpoint ({answered}/{questions.length} answered)
         </button>
       ) : (
-        <div style={{ ...st.banner, background: result.score >= 80 ? '#0F6E56' : '#BA7517', color: '#fff' }}>
+        <div style={{ ...st.banner, background: result.score >= 80 ? '#0F6E56' : '#854F0B', color: '#fff' }}>
           {result.score >= 80
             ? <>Passed — <b>{result.score}</b> ({result.correct}/{questions.length} correct). Checkpoint recorded. 🎉</>
             : <>Score <b>{result.score}</b> ({result.correct}/{questions.length}). 80 needed — review the module and retake. Your best score counts.</>}
@@ -342,7 +342,7 @@ const st = {
   courseTabs:{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' },
   courseTab:{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 14px', borderRadius: '10px', border: '1px solid #CBD8E6', background: '#fff', color: '#4A6080', fontSize: '12.5px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.12s' },
   courseTabActive:{ background: '#0D1B2A', borderColor: '#0D1B2A', color: '#fff' },
-  draftPill:{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 6px', borderRadius: '8px', background: '#FAEEDA', color: '#BA7517' },
+  draftPill:{ fontSize: '9px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 6px', borderRadius: '8px', background: '#FAEEDA', color: '#854F0B' },
   hero:     { background: '#0D1B2A', borderRadius: '16px', padding: '24px', marginBottom: '14px', color: '#fff' },
   heroKicker:{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#5DCAA5', fontFamily: "'DM Mono',monospace", marginBottom: '6px' },
   heroTitle:{ fontSize: '22px', fontWeight: 300 },
@@ -361,7 +361,7 @@ const st = {
   moduleSub:{ fontSize: '12px', color: '#5D768A', marginTop: '2px' },
   moduleMins:{ fontSize: '10px', color: '#5D768A', marginTop: '4px' },
   moduleSummary:{ fontSize: '12.5px', color: '#4A6080', lineHeight: 1.65, margin: '10px 0 12px', paddingLeft: '38px' },
-  outlinePill:{ fontSize: '10px', fontWeight: 600, padding: '3px 10px', borderRadius: '12px', background: '#F0F4F8', color: '#5D768A' },
+  outlinePill:{ fontSize: '10px', fontWeight: 600, padding: '3px 10px', borderRadius: '12px', background: '#F0F4F8', color: '#4A5D73' },
   donePill: { fontSize: '10px', fontWeight: 600, padding: '3px 10px', borderRadius: '12px', background: '#E1F5EE', color: '#0F6E56' },
   donePillSm:{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '10px', background: '#E1F5EE', color: '#0F6E56' },
   lessonRow:{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 0 9px 38px', borderTop: '1px solid #F0F4F8', cursor: 'pointer' },

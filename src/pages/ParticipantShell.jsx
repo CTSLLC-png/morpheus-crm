@@ -24,7 +24,7 @@ const SCORE_KEYS = ['score_opening','score_listening','score_empathy','score_res
 
 function scoreColor(s) {
   if (s >= 80) return '#0F6E56'
-  if (s >= 60) return '#BA7517'
+  if (s >= 60) return '#854F0B'
   return '#993C1D'
 }
 
@@ -157,7 +157,7 @@ export default function ParticipantShell() {
 
 // ── Portal dashboard ──────────────────────────────────────────
 function PortalDashboard({ firstName, profile, callHistory, completedCalls, avgScore, eligibility, navigate }) {
-  const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D'
+  const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#854F0B' : '#993C1D'
   const isCert = eligibility?.already_certified
   const isElig = eligibility?.is_eligible && !isCert
 
@@ -185,7 +185,7 @@ function PortalDashboard({ firstName, profile, callHistory, completedCalls, avgS
         </div>
       )}
       {isElig && (
-        <div style={{ ...sh.banner, background:'#BA7517' }}>
+        <div style={{ ...sh.banner, background:'#854F0B' }}>
           <span style={{ fontSize:'18px' }}>⭐</span>
           <div>
             <div style={{ fontWeight:500, fontSize:'14px' }}>You&apos;re eligible for certification!</div>
@@ -363,7 +363,7 @@ function PracticeCallsPage({ participantId, onComplete }) {
 
 // ── Progress page ─────────────────────────────────────────────
 function ProgressPage({ completedCalls, avgScore }) {
-  const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D'
+  const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#854F0B' : '#993C1D'
   const catAvgs = ['score_opening','score_listening','score_empathy','score_resolution','score_policy','score_closing']
     .map(key => completedCalls.length
       ? Math.round(completedCalls.reduce((s,c) => s+(c.call_scores[0]?.[key]??0),0)/completedCalls.length) : null)

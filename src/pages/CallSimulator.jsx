@@ -40,7 +40,7 @@ const CATS = [
 function scoreColor(s) {
   if (s == null) return 'var(--color-border-secondary)'
   if (s >= 80) return '#0F6E56'
-  if (s >= 60) return '#BA7517'
+  if (s >= 60) return '#854F0B'
   return '#993C1D'
 }
 function scoreBg(s) {

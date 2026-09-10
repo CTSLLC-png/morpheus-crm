@@ -28,7 +28,7 @@ export default function VerifyCredential() {
 
   const statusUi = result ? {
     active:  { bg: '#0F6E56', label: 'VALID — ACTIVE', icon: '✓' },
-    expired: { bg: '#BA7517', label: 'EXPIRED', icon: '!' },
+    expired: { bg: '#854F0B', label: 'EXPIRED', icon: '!' },
     revoked: { bg: '#993C1D', label: 'REVOKED', icon: '✕' },
   }[result.status] : null
 
