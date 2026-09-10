@@ -6,7 +6,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { generateScenario, getCallerReply, scoreCall } from '../lib/ai.js'
-import { createCallSession, saveCompletedCall } from '../lib/db.js'
+import { createCallSession, saveCompletedCall, getScoreWeights } from '../lib/db.js'
 
 export const CALL_STATES = {
   IDLE:       'idle',
@@ -29,7 +29,9 @@ export function useCallSession({ participantId, cohortId = null, scoredBy = null
   const [scenario, setScenario]   = useState(null)
   const [messages, setMessages]   = useState([])       // { id, role, name, text, ts }
   const [scores, setScores]       = useState(null)
-  const [certified, setCertified] = useState(false)
+  // True once the participant meets the threshold and a trainer should
+  // review and issue. Not a credential — issuance stays a human act.
+  const [awaitingIssue, setAwaitingIssue] = useState(false)
   const [error, setError]         = useState(null)
   const [sessionId, setSessionId] = useState(null)
 
@@ -42,7 +44,7 @@ export function useCallSession({ participantId, cohortId = null, scoredBy = null
     setError(null)
     setMessages([])
     setScores(null)
-    setCertified(false)
+    setAwaitingIssue(false)
     aiHistory.current = []
     try {
       const sc = await generateScenario(scenarioType, difficulty)
@@ -135,25 +137,37 @@ export function useCallSession({ participantId, cohortId = null, scoredBy = null
     }))
 
     try {
-      const aiScores = await scoreCall(transcriptText)
+      // Score against the weights actually in force — the cohort override if
+      // there is one, otherwise the ratified global default. Scoring against
+      // hardcoded numbers would make the Score Matrix decorative.
+      const weights = await getScoreWeights(cohortId).catch(() => null)
+      const w = weights ? {
+        opening:    Number(weights.weight_opening),
+        listening:  Number(weights.weight_listening),
+        empathy:    Number(weights.weight_empathy),
+        resolution: Number(weights.weight_resolution),
+        policy:     Number(weights.weight_policy),
+        closing:    Number(weights.weight_closing),
+      } : null
+
+      const aiScores = await scoreCall(transcriptText, w)
       setScores(aiScores)
 
-      // Save everything to Morpheus DB
+      // Save everything to Morpheus DB. Issuance is a separate, human step.
       const result = await saveCompletedCall({
         sessionId,
         participantId,
         transcriptArray,
         scores: aiScores,
-        issuedBy: scoredBy,
       })
-      setCertified(result.certified)
+      setAwaitingIssue(result.awaitingIssue)
       setState(CALL_STATES.COMPLETE)
     } catch (e) {
       console.error('[simulator] scoring or save failed:', e)
       setError('Scoring failed. Your call transcript was saved. Please contact your trainer.')
       setState(CALL_STATES.ERROR)
     }
-  }, [state, messages, sessionId, participantId, scoredBy])
+  }, [state, messages, sessionId, participantId, cohortId])
 
   // ── Reset ────────────────────────────────────────────────────
   const reset = useCallback(() => {
@@ -161,14 +175,14 @@ export function useCallSession({ participantId, cohortId = null, scoredBy = null
     setScenario(null)
     setMessages([])
     setScores(null)
-    setCertified(false)
+    setAwaitingIssue(false)
     setError(null)
     setSessionId(null)
     aiHistory.current = []
   }, [])
 
   return {
-    state, scenario, messages, scores, certified,
+    state, scenario, messages, scores, awaitingIssue,
     error, sessionId,
     generate, startCall, sendResponse, endCall, reset,
     isIdle:       state === CALL_STATES.IDLE,
