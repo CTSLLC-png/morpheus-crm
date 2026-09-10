@@ -36,12 +36,14 @@ const idSafe = v => String(v).replace(/[^A-Za-z0-9_-]/g, '_')
  * ends, and only the selected tab is in the tab order (roving tabindex), so
  * Tab steps past the whole group rather than through every tab in it.
  *
- * `items` is [{ value, label }]. Pair it with <TabPanel> using the same
+ * `items` is [{ value, label }]. `panelId` is optional: aria-controls is
+ * only emitted when a panel with that id actually exists, because an
+ * aria-controls pointing at a missing id is invalid ARIA. Pair it with <TabPanel> using the same
  * `idPrefix` so each panel is announced as belonging to its tab.
  */
 export function Tabs({
   label, value, onChange, items,
-  idPrefix, style, itemStyle, activeItemStyle,
+  idPrefix, panelId, style, itemStyle, activeItemStyle,
 }) {
   const listRef = useRef(null)
 
@@ -79,7 +81,7 @@ export function Tabs({
             id={`${idPrefix}-tab-${idSafe(item.value)}`}
             data-tab-value={idSafe(item.value)}
             aria-selected={selected}
-            aria-controls={`${idPrefix}-panel`}
+            {...(panelId ? { 'aria-controls': panelId } : {})}
             tabIndex={selected ? 0 : -1}
             style={{ ...BARE_BUTTON, ...itemStyle, ...(selected ? activeItemStyle : {}) }}
             onClick={() => onChange(item.value)}
@@ -97,11 +99,11 @@ export function Tabs({
  * time here, so a single element carries the role and points back at the tab
  * that is currently selected.
  */
-export function TabPanel({ idPrefix, value, children, style }) {
+export function TabPanel({ idPrefix, id, value, children, style }) {
   return (
     <div
       role="tabpanel"
-      id={`${idPrefix}-panel`}
+      id={id ?? `${idPrefix}-panel`}
       aria-labelledby={`${idPrefix}-tab-${idSafe(value)}`}
       tabIndex={-1}
       style={style}
