@@ -89,34 +89,34 @@ export default function CohortManagement({ staffProfiles = [] }) {
             <div style={s.modalTitle}>Create new cohort</div>
             <div style={s.formGrid}>
               <div style={{ ...s.fg, gridColumn: '1/-1' }}>
-                <label style={s.label}>Cohort name <span style={s.req}>*</span></label>
-                <input style={s.input} placeholder="e.g. Spring 2025 – Cohort A"
+                <label style={s.label} htmlFor="cohortmanagement-cohort-name">Cohort name <span style={s.req}>*</span></label>
+                <input id="cohortmanagement-cohort-name" style={s.input} placeholder="e.g. Spring 2025 – Cohort A"
                   value={newCohort.name} onChange={e => setNewCohort(p => ({ ...p, name: e.target.value }))} />
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Program source <span style={s.req}>*</span></label>
-                <select style={s.input} value={newCohort.program_source}
+                <label style={s.label} htmlFor="cohortmanagement-program-source">Program source <span style={s.req}>*</span></label>
+                <select id="cohortmanagement-program-source" style={s.input} value={newCohort.program_source}
                   onChange={e => setNewCohort(p => ({ ...p, program_source: e.target.value }))}>
                   <option value="">Select…</option>
                   {PROGRAM_SOURCES.map(ps => <option key={ps}>{ps}</option>)}
                 </select>
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Lead trainer</label>
-                <select style={s.input} value={newCohort.trainer_id}
+                <label style={s.label} htmlFor="cohortmanagement-lead-trainer">Lead trainer</label>
+                <select id="cohortmanagement-lead-trainer" style={s.input} value={newCohort.trainer_id}
                   onChange={e => setNewCohort(p => ({ ...p, trainer_id: e.target.value }))}>
                   <option value="">Select…</option>
                   {staffProfiles.map(sp => <option key={sp.id} value={sp.id}>{sp.full_name}</option>)}
                 </select>
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Start date <span style={s.req}>*</span></label>
-                <input style={s.input} type="date" value={newCohort.start_date}
+                <label style={s.label} htmlFor="cohortmanagement-start-date">Start date <span style={s.req}>*</span></label>
+                <input id="cohortmanagement-start-date" style={s.input} type="date" value={newCohort.start_date}
                   onChange={e => setNewCohort(p => ({ ...p, start_date: e.target.value }))} />
               </div>
               <div style={s.fg}>
-                <label style={s.label}>End date</label>
-                <input style={s.input} type="date" value={newCohort.end_date}
+                <label style={s.label} htmlFor="cohortmanagement-end-date">End date</label>
+                <input id="cohortmanagement-end-date" style={s.input} type="date" value={newCohort.end_date}
                   onChange={e => setNewCohort(p => ({ ...p, end_date: e.target.value }))} />
               </div>
             </div>

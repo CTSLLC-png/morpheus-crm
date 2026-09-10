@@ -143,8 +143,8 @@ export default function CallSimulator({
 
             {isTrainer && (
               <div style={s.fg}>
-                <label style={s.label}>Participant <span style={s.req}>*</span></label>
-                <select style={s.input}
+                <label style={s.label} htmlFor="callsimulator-participant">Participant <span style={s.req}>*</span></label>
+                <select id="callsimulator-participant" style={s.input}
                   value={selectedParticipantId ?? ''}
                   onChange={e => setSelectedParticipantId(e.target.value)}
                   disabled={call.isActive || call.isScoring}>
@@ -160,16 +160,16 @@ export default function CallSimulator({
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', margin:'12px 0' }}>
               <div style={s.fg}>
-                <label style={s.label}>Scenario type</label>
-                <select style={s.input} value={scenarioType}
+                <label style={s.label} htmlFor="callsimulator-scenario-type">Scenario type</label>
+                <select id="callsimulator-scenario-type" style={s.input} value={scenarioType}
                   onChange={e => setScenarioType(e.target.value)}
                   disabled={call.isActive || call.isScoring}>
                   {SCENARIO_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Difficulty</label>
-                <select style={s.input} value={difficulty}
+                <label style={s.label} htmlFor="callsimulator-difficulty">Difficulty</label>
+                <select id="callsimulator-difficulty" style={s.input} value={difficulty}
                   onChange={e => setDifficulty(e.target.value)}
                   disabled={call.isActive || call.isScoring}>
                   {DIFFICULTIES.map(d => <option key={d}>{d}</option>)}
@@ -179,12 +179,17 @@ export default function CallSimulator({
 
             {/* Scenario brief */}
             <div style={s.fg}>
-              <label style={s.label}>Scenario brief</label>
-              <div style={{
-                ...s.brief,
-                ...(call.scenario ? s.briefLoaded : {}),
-                ...(call.isGenerating ? s.briefLoading : {}),
-              }}>
+              <div style={s.label} id="scenario-brief-label">Scenario brief</div>
+              <div
+                role="region"
+                aria-labelledby="scenario-brief-label"
+                aria-live="polite"
+                aria-busy={call.isGenerating || undefined}
+                style={{
+                  ...s.brief,
+                  ...(call.scenario ? s.briefLoaded : {}),
+                  ...(call.isGenerating ? s.briefLoading : {}),
+                }}>
                 {call.isGenerating
                   ? '⏳  Generating scenario…'
                   : call.scenario
@@ -294,9 +299,9 @@ export default function CallSimulator({
             {/* Trainer note (post-call) */}
             {isTrainer && call.isComplete && (
               <div style={{ marginTop:'12px', paddingTop:'12px', borderTop:'1px solid var(--color-border-tertiary)' }}>
-                <label style={s.label}>Trainer notes (optional — saved to participant record)</label>
+                <label style={s.label} htmlFor="trainer-note">Trainer notes (optional — saved to participant record)</label>
                 <div style={{ display:'flex', gap:'8px', marginTop:'6px' }}>
-                  <input style={{ ...s.input, flex:1 }}
+                  <input id="trainer-note" style={{ ...s.input, flex:1 }}
                     placeholder="Add observation or feedback for this session…"
                     value={trainerNote}
                     onChange={e => setTrainerNote(e.target.value)}

@@ -6,6 +6,7 @@ import { SITE_HOST } from '../lib/site.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useTenant } from '../hooks/useTenant.jsx'
 import { navForModules, routableModules, plannedModules, missingModules } from '../modules/registry.jsx'
+import { BARE_BUTTON, SkipLink } from '../components/a11y.jsx'
 import { ModuleBoundary } from '../modules/common/ModuleFrame.jsx'
 import { getDashboardStats, getCohortOverview, getParticipantPerformance } from '../lib/db.js'
 import ParticipantIntake   from './ParticipantIntake.jsx'
@@ -74,6 +75,7 @@ export default function TrainerShell() {
 
   return (
     <div style={sh.app}>
+      <SkipLink />
       <aside style={sh.sidebar}>
         <div style={sh.logoArea}>
           <div style={sh.logoM}>M<span style={{color:'#5DCAA5'}}>.</span>orpheus</div>
@@ -92,7 +94,7 @@ export default function TrainerShell() {
           </div>
         )}
 
-        <nav style={sh.nav}>
+        <nav style={sh.nav} aria-label="Main">
           <div style={sh.navSec}>{tenant?.name ?? 'Workspace'}</div>
           {tenantLoading && <div style={sh.navHint}>Loading modules…</div>}
           {!tenantLoading && NAV.length === 0 && (
@@ -101,11 +103,13 @@ export default function TrainerShell() {
           {NAV.map(item => {
             const active = item.path==='/' ? location.pathname==='/' : location.pathname.startsWith(item.path)
             return (
-              <div key={`${item.moduleKey ?? 'core'}${item.path}`}
-                   style={{...sh.navItem,...(active?sh.navActive:{})}}
+              <button key={`${item.moduleKey ?? 'core'}${item.path}`}
+                   type="button"
+                   aria-current={active ? 'page' : undefined}
+                   style={{...BARE_BUTTON, ...sh.navItem, ...(active?sh.navActive:{}), width:'100%'}}
                    onClick={() => navigate(item.path)}>
-                <span style={{opacity:active?1:0.65}}>{ICONS[item.icon]}</span>{item.label}
-              </div>
+                <span aria-hidden="true" style={{opacity:active?1:0.65}}>{ICONS[item.icon]}</span>{item.label}
+              </button>
             )
           })}
           {missing.length > 0 && (
@@ -140,7 +144,7 @@ export default function TrainerShell() {
         </div>
       </aside>
 
-      <main style={sh.main}>
+      <main style={sh.main} id="main-content" tabIndex={-1}>
         <div style={sh.topbar}>
           <span style={sh.topbarTitle}>{currentLabel}</span>
           <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
@@ -260,7 +264,16 @@ function ParticipantsList({ participants, navigate }) {
               <tr key={p.participant_id} style={{borderBottom:i<list.length-1?'1px solid #F0F4F8':'none',cursor:'pointer'}}
                 onClick={()=>navigate(`/participants/${p.participant_id}`)}>
                 <td style={{padding:'10px 14px',fontFamily:'monospace',fontSize:'11px',color:'var(--color-text-tertiary)'}}>{p.cts_id}</td>
-                <td style={{padding:'10px 14px',fontWeight:500,color:'var(--color-text-primary)'}}>{p.full_name}</td>
+                {/* The row stays clickable for the mouse, but the keyboard and
+                    a screen reader need one real control per row. */}
+                <td style={{padding:'10px 14px',fontWeight:500,color:'var(--color-text-primary)'}}>
+                  <button type="button"
+                    style={{...BARE_BUTTON, fontWeight:500, color:'inherit'}}
+                    onClick={e=>{e.stopPropagation();navigate(`/participants/${p.participant_id}`)}}>
+                    {p.full_name}
+                    <span className="sr-only"> — open participant profile</span>
+                  </button>
+                </td>
                 <td style={{padding:'10px 14px',color:'var(--color-text-secondary)',fontSize:'12px'}}>{p.program_source}</td>
                 <td style={{padding:'10px 14px'}}>{p.total_calls??0}</td>
                 <td style={{padding:'10px 14px',fontWeight:600,color:p.avg_score?scoreColor(p.avg_score):'var(--color-text-tertiary)',fontFamily:'monospace'}}>{p.avg_score??'—'}</td>

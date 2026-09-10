@@ -35,7 +35,7 @@ export default function VerifyCredential() {
   return (
     <div style={st.page}>
       <div style={st.card}>
-        <div style={st.logo}>M<span style={{ color: '#5DCAA5' }}>.</span>orpheus</div>
+        <div style={st.logo}>M<span style={{ color: '#0F6E56' }}>.</span>orpheus</div>
         <div style={st.kicker}>MORPHEUS.EDU · CREDENTIAL VERIFICATION</div>
         <div style={st.title}>Verify a credential</div>
         <div style={st.sub}>
@@ -106,7 +106,7 @@ const st = {
   page:   { minHeight: '100vh', background: '#0D1B2A', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: "'DM Sans',sans-serif" },
   card:   { background: '#fff', borderRadius: '20px', padding: '32px', width: '100%', maxWidth: '480px' },
   logo:   { fontFamily: "'DM Mono',monospace", fontSize: '20px', fontWeight: 500, color: '#0D1B2A', marginBottom: '14px' },
-  kicker: { fontSize: '10px', letterSpacing: '0.12em', color: '#5DCAA5', fontFamily: "'DM Mono',monospace", marginBottom: '6px' },
+  kicker: { fontSize: '10px', letterSpacing: '0.12em', color: '#0F6E56', fontFamily: "'DM Mono',monospace", marginBottom: '6px' },
   title:  { fontSize: '22px', fontWeight: 600, color: '#0D1B2A', marginBottom: '6px' },
   sub:    { fontSize: '12.5px', color: '#4A6080', lineHeight: 1.6, marginBottom: '18px' },
   mono:   { fontFamily: "'DM Mono',monospace", fontSize: '11.5px', background: '#F0F4F8', padding: '1px 5px', borderRadius: '4px' },
@@ -119,7 +119,7 @@ const st = {
   statusIcon:{ width: '22px', height: '22px', borderRadius: '50%', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px' },
   resultBody:{ padding: '8px 18px 12px' },
   row:    { display: 'flex', justifyContent: 'space-between', gap: '14px', padding: '9px 0', borderBottom: '1px solid #F0F4F8', fontSize: '13px' },
-  rowKey: { color: '#8BA0B8', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', paddingTop: '2px', flexShrink: 0 },
+  rowKey: { color: '#5D768A', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', paddingTop: '2px', flexShrink: 0 },
   rowVal: { color: '#0D1B2A', fontWeight: 500, textAlign: 'right' },
-  footer: { fontSize: '10px', color: '#8BA0B8', lineHeight: 1.6, marginTop: '20px', paddingTop: '14px', borderTop: '1px solid #F0F4F8' },
+  footer: { fontSize: '10px', color: '#5D768A', lineHeight: 1.6, marginTop: '20px', paddingTop: '14px', borderTop: '1px solid #F0F4F8' },
 }

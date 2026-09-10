@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from '../lib/supabase.js'
+import { BARE_BUTTON, SkipLink } from '../components/a11y.jsx'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { getParticipantProfile, getCallHistory, checkCertEligibility } from '../lib/db.js'
 import { loadParticipantModules } from '../lib/morpheus.js'
@@ -84,20 +85,23 @@ export default function ParticipantShell() {
 
   return (
     <div style={sh.app}>
+      <SkipLink />
       <aside style={sh.sidebar}>
         <div style={sh.logoArea}>
           <div style={sh.logoM}>M<span style={sh.logoAccent}>.</span>orpheus</div>
           <div style={sh.logoSub}>Participant portal</div>
         </div>
-        <nav style={sh.nav}>
+        <nav style={sh.nav} aria-label="Main">
           <div style={sh.navSection}>My training</div>
           {NAV.map(item => {
             const active = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
             return (
-              <div key={item.path} style={{ ...sh.navItem, ...(active ? sh.navActive : {}) }}
+              <button key={item.path} type="button"
+                aria-current={active ? 'page' : undefined}
+                style={{ ...BARE_BUTTON, ...sh.navItem, ...(active ? sh.navActive : {}), width:'100%' }}
                 onClick={() => navigate(item.path)}>
                 {item.label}
-              </div>
+              </button>
             )
           })}
         </nav>
@@ -108,7 +112,7 @@ export default function ParticipantShell() {
         </div>
       </aside>
 
-      <main style={sh.main}>
+      <main style={sh.main} id="main-content" tabIndex={-1}>
         <div style={sh.topbar}>
           <span style={sh.topbarTitle}>
             {NAV.find(n => n.path === '/' ? location.pathname === '/' : location.pathname.startsWith(n.path))?.label ?? 'Portal'}
@@ -242,15 +246,15 @@ function PracticeCallsPage({ participantId, onComplete }) {
           <div style={sh.cardTitle}>Choose your scenario</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px' }}>
             <div>
-              <label style={sh.label}>Scenario type</label>
-              <select style={sh.input} value={scenarioType} onChange={e => setScenarioType(e.target.value)}
+              <label style={sh.label} htmlFor="participantshell-scenario-type">Scenario type</label>
+              <select id="participantshell-scenario-type" style={sh.input} value={scenarioType} onChange={e => setScenarioType(e.target.value)}
                 disabled={call.isActive || call.isScoring}>
                 {SCENARIO_TYPES.map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label style={sh.label}>Difficulty</label>
-              <select style={sh.input} value={difficulty} onChange={e => setDifficulty(e.target.value)}
+              <label style={sh.label} htmlFor="participantshell-difficulty">Difficulty</label>
+              <select id="participantshell-difficulty" style={sh.input} value={difficulty} onChange={e => setDifficulty(e.target.value)}
                 disabled={call.isActive || call.isScoring}>
                 {DIFFICULTIES.map(d => <option key={d}>{d}</option>)}
               </select>

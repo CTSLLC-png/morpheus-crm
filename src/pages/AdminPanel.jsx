@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { SITE_HOST } from '../lib/site.js'
+import { RadioCard } from '../components/a11y.jsx'
 
 // auth.users app_metadata role -> what a human should read.
 const ROLE_LABEL = {
@@ -150,54 +151,55 @@ export default function AdminPanel() {
           <div style={s.cardTitle}>Create Morpheus account</div>
 
           {/* Role selector */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'20px' }}>
+          <div role="radiogroup" aria-label="Account type"
+            style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'20px' }}>
             {ROLES.map(r => (
-              <div key={r.value}
-                style={{
-                  ...s.roleCard,
-                  ...(form.role === r.value ? s.roleCardActive : {}),
-                }}
-                onClick={() => set('role', r.value)}>
+              <RadioCard key={r.value}
+                name="account-role"
+                value={r.value}
+                checked={form.role === r.value}
+                onChange={v => set('role', v)}
+                style={{ ...s.roleCard, ...(form.role === r.value ? s.roleCardActive : {}) }}>
                 <div style={s.roleLabel}>{r.label}</div>
                 <div style={s.roleDesc}>{r.desc}</div>
-              </div>
+              </RadioCard>
             ))}
           </div>
 
           <form onSubmit={handleCreate} style={s.form}>
             <div style={s.formGrid}>
               <div style={s.fg}>
-                <label style={s.label}>Full name <span style={s.req}>*</span></label>
-                <input style={s.input} required value={form.full_name}
+                <label style={s.label} htmlFor="adminpanel-full-name">Full name <span style={s.req}>*</span></label>
+                <input id="adminpanel-full-name" style={s.input} required value={form.full_name}
                   onChange={e => set('full_name', e.target.value)}
                   placeholder="First and last name" />
               </div>
               {form.role !== 'participant' && (
                 <div style={s.fg}>
-                  <label style={s.label}>Job title</label>
-                  <input style={s.input} value={form.title}
+                  <label style={s.label} htmlFor="adminpanel-job-title">Job title</label>
+                  <input id="adminpanel-job-title" style={s.input} value={form.title}
                     onChange={e => set('title', e.target.value)}
                     placeholder="e.g. Lead Trainer" />
                 </div>
               )}
               {form.role === 'participant' && (
                 <div style={s.fg}>
-                  <label style={s.label}>Program source <span style={s.req}>*</span></label>
-                  <select style={s.input} value={form.program_source}
+                  <label style={s.label} htmlFor="adminpanel-program-source">Program source <span style={s.req}>*</span></label>
+                  <select id="adminpanel-program-source" style={s.input} value={form.program_source}
                     onChange={e => set('program_source', e.target.value)}>
                     {PROGRAM_SOURCES.map(p => <option key={p}>{p}</option>)}
                   </select>
                 </div>
               )}
               <div style={s.fg}>
-                <label style={s.label}>Email address <span style={s.req}>*</span></label>
-                <input style={s.input} type="email" required value={form.email}
+                <label style={s.label} htmlFor="adminpanel-email-address">Email address <span style={s.req}>*</span></label>
+                <input id="adminpanel-email-address" style={s.input} type="email" required value={form.email}
                   onChange={e => set('email', e.target.value)}
                   placeholder="user@example.com" />
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Temporary password <span style={s.req}>*</span></label>
-                <input style={s.input} type="password" required minLength={8}
+                <label style={s.label} htmlFor="adminpanel-temporary-password">Temporary password <span style={s.req}>*</span></label>
+                <input id="adminpanel-temporary-password" style={s.input} type="password" required minLength={8}
                   value={form.password}
                   onChange={e => set('password', e.target.value)}
                   placeholder="Min 8 characters" />

@@ -8,6 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getParticipantProfile, getCallHistory, checkCertEligibility } from '../lib/db.js'
 import { generateProgressReportPDF } from '../lib/report.js'
 import { listAvailableModules, getParticipantModules, setParticipantModule } from '../lib/morpheus.js'
+import { BARE_BUTTON } from '../components/a11y.jsx'
 
 const CATS = ['Opening','Listening','Empathy','Resolution','Policy','Closing']
 const SCORE_KEYS = ['score_opening','score_listening','score_empathy','score_resolution','score_policy','score_closing']
@@ -252,8 +253,12 @@ export default function ParticipantProfile() {
           const total = sc?.total_score ?? 0
           const isOpen = activeCall === call.id
           return (
-            <div key={call.id} style={s.callRow} onClick={() => setActiveCall(isOpen ? null : call.id)}>
-              <div style={s.callRowMain}>
+            <div key={call.id} style={s.callRow}>
+              <button type="button"
+                style={{ ...BARE_BUTTON, ...s.callRowMain, width: '100%' }}
+                aria-expanded={isOpen}
+                aria-controls={`call-detail-${call.id}`}
+                onClick={() => setActiveCall(isOpen ? null : call.id)}>
                 <span style={s.callDate}>{new Date(call.started_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
                 <span style={s.callScenario}>{call.scenario_type}</span>
                 <span style={{ ...s.diffTag, background: call.difficulty === 'Advanced' ? '#FAEEDA' : call.difficulty === 'Intermediate' ? '#E6F1FB' : '#EAF3DE', color: call.difficulty === 'Advanced' ? '#854F0B' : call.difficulty === 'Intermediate' ? '#0C447C' : '#27500A' }}>
@@ -262,10 +267,10 @@ export default function ParticipantProfile() {
                 <span style={{ ...s.totalScore, color: scoreColor(total), background: scoreBg(total) }}>
                   {total}
                 </span>
-                <span style={s.expandIcon}>{isOpen ? '▲' : '▼'}</span>
-              </div>
+                <span aria-hidden="true" style={s.expandIcon}>{isOpen ? '▲' : '▼'}</span>
+              </button>
               {isOpen && sc && (
-                <div style={s.callDetail}>
+                <div id={`call-detail-${call.id}`} style={s.callDetail}>
                   <div style={s.callCats}>
                     {CATS.map((cat, i) => (
                       <div key={cat} style={s.miniCat}>

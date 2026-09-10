@@ -9,6 +9,7 @@ import { useAuth } from '../hooks/useAuth.jsx'
 import Markdown from '../lib/markdown.jsx'
 import { generateEduCertificatePDF } from '../lib/educert.js'
 import { verifyUrlFor } from '../lib/site.js'
+import { BARE_BUTTON, Tabs, RadioCard } from '../components/a11y.jsx'
 import {
   listCourses, getCourse, getProgress, markLessonComplete,
   getCheckpointQuestions, getCheckpointAttempts, saveCheckpointAttempt,
@@ -111,16 +112,19 @@ export default function Academy() {
     <div>
       {/* Course picker — only when there is a choice to make */}
       {courses.length > 1 && (
-        <div style={st.courseTabs}>
-          {courses.map(c => (
-            <div key={c.code}
-              style={{ ...st.courseTab, ...(c.code === code ? st.courseTabActive : {}) }}
-              onClick={() => setCode(c.code)}>
-              {c.title}
-              {!c.is_published && <span style={st.draftPill}>draft</span>}
-            </div>
-          ))}
-        </div>
+        <Tabs
+          label="Course"
+          idPrefix="learner-course"
+          value={code}
+          onChange={setCode}
+          style={st.courseTabs}
+          itemStyle={st.courseTab}
+          activeItemStyle={st.courseTabActive}
+          items={courses.map(c => ({
+            value: c.code,
+            label: (<>{c.title}{!c.is_published && <span style={st.draftPill}>draft</span>}</>),
+          }))}
+        />
       )}
 
       {/* Course hero */}
@@ -181,16 +185,19 @@ export default function Academy() {
             </div>
             <div style={st.moduleSummary}>{m.summary}</div>
             {!isOutline && lessons.map((l, li) => (
-              <div key={l.id} style={st.lessonRow} onClick={() => setView({ page: 'lesson', moduleIdx: mi, lessonIdx: li })}>
-                <span style={{ ...st.lessonCheck, ...(doneIds.has(l.id) ? st.lessonCheckDone : {}) }}>
+              <button key={l.id} type="button"
+                style={{ ...BARE_BUTTON, ...st.lessonRow, width: '100%' }}
+                onClick={() => setView({ page: 'lesson', moduleIdx: mi, lessonIdx: li })}>
+                <span aria-hidden="true" style={{ ...st.lessonCheck, ...(doneIds.has(l.id) ? st.lessonCheckDone : {}) }}>
                   {doneIds.has(l.id) ? '✓' : ''}
                 </span>
+                <span className="sr-only">{doneIds.has(l.id) ? 'Completed. ' : 'Not started. '}</span>
                 <span style={{ ...st.kindPill, color: KIND_COLOR[l.kind], borderColor: KIND_COLOR[l.kind] }}>
                   {KIND_LABEL[l.kind]}
                 </span>
                 <span style={st.lessonTitle}>{l.title}</span>
                 <span style={st.lessonMins}>{l.duration_minutes} min</span>
-              </div>
+              </button>
             ))}
           </div>
         )
@@ -290,11 +297,17 @@ function CheckpointQuiz({ moduleId, bestScore, onSubmit, onDone }) {
               else if (showFeedback && isChosen)          { bg = '#FAECE7'; border = '#993C1D'; color = '#993C1D' }
               else if (isChosen)                          { bg = '#E6F1FB'; border = '#2176AE'; color = '#0C447C' }
               return (
-                <div key={oi}
-                  style={{ ...st.opt, background: bg, borderColor: border, color, cursor: showFeedback ? 'default' : 'pointer' }}
-                  onClick={() => !showFeedback && setAnswers(a => ({ ...a, [q.id]: oi }))}>
+                <RadioCard key={oi}
+                  name={`checkpoint-${q.id}`}
+                  value={oi}
+                  checked={isChosen}
+                  disabled={showFeedback}
+                  onChange={v => !showFeedback && setAnswers(a => ({ ...a, [q.id]: v }))}
+                  style={{ ...st.opt, background: bg, borderColor: border, color }}>
                   {opt}
-                </div>
+                  {showFeedback && isCorrect && <span className="sr-only"> — correct answer</span>}
+                  {showFeedback && isChosen && !isCorrect && <span className="sr-only"> — your answer, incorrect</span>}
+                </RadioCard>
               )
             })}
             {showFeedback && q.explanation && (

@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import { getScoreWeights, updateScoreWeights, getCohortOverview } from '../lib/db.js'
 import { useAuth } from '../hooks/useAuth.jsx'
+import { Tabs } from '../components/a11y.jsx'
 
 const CATS = [
   {
@@ -187,8 +188,8 @@ export default function ScoreMatrix() {
           </p>
         </div>
         <div style={s.cohortSelector}>
-          <label style={s.label}>Apply to</label>
-          <select style={{ ...s.input, width:'220px' }}
+          <label style={s.label} htmlFor="scorematrix-apply-to">Apply to</label>
+          <select id="scorematrix-apply-to" style={{ ...s.input, width:'220px' }}
             value={selectedCohort ?? ''}
             onChange={e => setSelectedCohort(e.target.value || null)}>
             <option value="">Global default (all cohorts)</option>
@@ -200,16 +201,19 @@ export default function ScoreMatrix() {
       </div>
 
       {/* Tabs */}
-      <div style={s.tabRow}>
-        <button style={{ ...s.tab, ...(activeTab === 'weights' ? s.tabActive : {}) }}
-          onClick={() => setActiveTab('weights')}>
-          Category weights
-        </button>
-        <button style={{ ...s.tab, ...(activeTab === 'rubric' ? s.tabActive : {}) }}
-          onClick={() => setActiveTab('rubric')}>
-          Rubric descriptors
-        </button>
-      </div>
+      <Tabs
+        label="Score matrix sections"
+        idPrefix="matrix"
+        value={activeTab}
+        onChange={setActiveTab}
+        style={s.tabRow}
+        itemStyle={s.tab}
+        activeItemStyle={s.tabActive}
+        items={[
+          { value: 'weights', label: 'Category weights' },
+          { value: 'rubric',  label: 'Rubric descriptors' },
+        ]}
+      />
 
       {/* ── Weights tab ── */}
       {activeTab === 'weights' && (

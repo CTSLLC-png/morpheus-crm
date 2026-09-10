@@ -8,6 +8,7 @@ import { listCourses, getCourse, getAcademyOverview, getCredentialRegistry, issu
          getCourseQuestionBank } from '../lib/edu.js'
 import { generateEduCertificatePDF } from '../lib/educert.js'
 import { SITE_URL } from '../lib/site.js'
+import { BARE_BUTTON, Tabs, TabPanel } from '../components/a11y.jsx'
 
 function pctColor(p) { return p >= 80 ? '#0F6E56' : p >= 40 ? '#BA7517' : '#8BA0B8' }
 
@@ -96,16 +97,19 @@ export default function AcademyAdmin({ staffProfileId }) {
     <div>
       {/* Course selector — drafts included, so a course can be built before release */}
       {courses.length > 1 && (
-        <div style={st.courseTabs}>
-          {courses.map(c => (
-            <div key={c.code}
-              style={{ ...st.courseTab, ...(c.code === code ? st.courseTabActive : {}) }}
-              onClick={() => setCode(c.code)}>
-              {c.code}
-              {!c.is_published && <span style={st.draftPill}>draft</span>}
-            </div>
-          ))}
-        </div>
+        <Tabs
+          label="Course"
+          idPrefix="course"
+          value={code}
+          onChange={setCode}
+          style={st.courseTabs}
+          itemStyle={st.courseTab}
+          activeItemStyle={st.courseTabActive}
+          items={courses.map(c => ({
+            value: c.code,
+            label: (<>{c.code}{!c.is_published && <span style={st.draftPill}>draft</span>}</>),
+          }))}
+        />
       )}
 
       {/* Header stats */}
@@ -125,17 +129,22 @@ export default function AcademyAdmin({ staffProfileId }) {
       </div>
 
       {/* Tabs */}
-      <div style={st.tabs}>
-        {[
+      <Tabs
+        label="Academy sections"
+        idPrefix="academy"
+        value={tab}
+        onChange={setTab}
+        style={st.tabs}
+        itemStyle={st.tab}
+        activeItemStyle={st.tabActive}
+        items={[
           ['curriculum', `Curriculum (${course.modules.length} modules · ${totalLessons} lessons)`],
           ['questions',  `Question bank (${totalQuestions})`],
           ['matrix',     'Score matrix'],
           ['progress',   'Learner progress'],
           ['registry',   `Credential registry (${courseRegistry.length})`],
-        ].map(([k, label]) => (
-          <div key={k} style={{ ...st.tab, ...(tab === k ? st.tabActive : {}) }} onClick={() => setTab(k)}>{label}</div>
-        ))}
-      </div>
+        ].map(([value, label]) => ({ value, label }))}
+      />
 
       {/* ── Curriculum: modules and their lessons ─────────────── */}
       {tab === 'curriculum' && (
@@ -146,7 +155,11 @@ export default function AcademyAdmin({ staffProfileId }) {
             const qCount = bank.find(b => b.id === m.id)?.questions.length ?? 0
             return (
               <div key={m.id} style={st.moduleCard}>
-                <div style={st.moduleHead} onClick={() => setOpenModule(open ? null : m.id)}>
+                <button type="button"
+                  style={{ ...BARE_BUTTON, ...st.moduleHead, width: '100%' }}
+                  aria-expanded={open}
+                  aria-controls={`module-panel-${m.id}`}
+                  onClick={() => setOpenModule(open ? null : m.id)}>
                   <div style={st.moduleNum}>{String(m.sort_order).padStart(2, '0')}</div>
                   <div style={{ flex: 1 }}>
                     <div style={st.moduleTitle}>{m.title}</div>
@@ -159,10 +172,10 @@ export default function AcademyAdmin({ staffProfileId }) {
                   <span style={{ ...st.statusPill, background: m.status === 'available' ? '#E1F5EE' : '#EEF2F7', color: m.status === 'available' ? '#0F6E56' : '#5B6B7F' }}>
                     {m.status}
                   </span>
-                  <span style={st.chevron}>{open ? '▾' : '▸'}</span>
-                </div>
+                  <span aria-hidden="true" style={st.chevron}>{open ? '▾' : '▸'}</span>
+                </button>
                 {open && (
-                  <div style={st.lessonList}>
+                  <div id={`module-panel-${m.id}`} style={st.lessonList}>
                     {lessons.length === 0 && <div style={st.emptyRow}>No lessons in this module.</div>}
                     {lessons.map(l => (
                       <div key={l.id} style={st.lessonRow}>
@@ -191,14 +204,18 @@ export default function AcademyAdmin({ staffProfileId }) {
           {bank.length === 0 && <div style={st.tableCard}><div style={st.emptyRow}>No checkpoint questions found.</div></div>}
           {bank.map(m => (
             <div key={m.id} style={st.moduleCard}>
-              <div style={st.moduleHead} onClick={() => setOpenModule(openModule === `q${m.id}` ? null : `q${m.id}`)}>
+              <button type="button"
+                style={{ ...BARE_BUTTON, ...st.moduleHead, width: '100%' }}
+                aria-expanded={openModule === `q${m.id}`}
+                aria-controls={`qbank-panel-${m.id}`}
+                onClick={() => setOpenModule(openModule === `q${m.id}` ? null : `q${m.id}`)}>
                 <div style={st.moduleNum}>{String(m.sortOrder).padStart(2, '0')}</div>
                 <div style={{ flex: 1 }}><div style={st.moduleTitle}>{m.title}</div></div>
                 <div style={st.moduleMeta}>{m.questions.length} questions</div>
-                <span style={st.chevron}>{openModule === `q${m.id}` ? '▾' : '▸'}</span>
-              </div>
+                <span aria-hidden="true" style={st.chevron}>{openModule === `q${m.id}` ? '▾' : '▸'}</span>
+              </button>
               {openModule === `q${m.id}` && (
-                <div style={st.lessonList}>
+                <div id={`qbank-panel-${m.id}`} style={st.lessonList}>
                   {m.questions.map((q, qi) => {
                     const opts = Array.isArray(q.options) ? q.options : []
                     return (

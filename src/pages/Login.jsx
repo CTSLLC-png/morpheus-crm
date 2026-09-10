@@ -55,15 +55,15 @@ export default function Login() {
           <>
             <h1 style={styles.heading}>Sign in to Morpheus</h1>
             <form onSubmit={handleLogin} style={styles.form}>
-              <label style={styles.label}>Email address</label>
-              <input
+              <label style={styles.label} htmlFor="login-email-address">Email address</label>
+              <input id="login-email-address"
                 type="email" required autoFocus
                 style={styles.input}
                 value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
               />
-              <label style={styles.label}>Password</label>
-              <input
+              <label style={styles.label} htmlFor="login-password">Password</label>
+              <input id="login-password"
                 type="password" required
                 style={styles.input}
                 value={password} onChange={e => setPassword(e.target.value)}
@@ -90,8 +90,8 @@ export default function Login() {
               </div>
             ) : (
               <form onSubmit={handleReset} style={styles.form}>
-                <label style={styles.label}>Email address</label>
-                <input
+                <label style={styles.label} htmlFor="login-email-address-2">Email address</label>
+                <input id="login-email-address-2"
                   type="email" required autoFocus
                   style={styles.input}
                   value={email} onChange={e => setEmail(e.target.value)}
@@ -137,7 +137,7 @@ const styles = {
   logoRow: { marginBottom: '4px' },
   logoM: { fontSize: '26px', fontWeight: '500', color: '#0D1B2A', fontFamily: "'DM Mono', monospace", letterSpacing: '-0.5px' },
   logoAccent: { color: '#5DCAA5' },
-  logoSub: { fontSize: '11px', color: '#8BA0B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '28px' },
+  logoSub: { fontSize: '11px', color: '#5D768A', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '28px' },
   heading: { fontSize: '18px', fontWeight: '500', color: '#0D1B2A', marginBottom: '22px' },
   form: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' },
   label: { fontSize: '11px', fontWeight: '600', color: '#4A6080', textTransform: 'uppercase', letterSpacing: '0.06em' },
@@ -154,5 +154,5 @@ const styles = {
   error: { fontSize: '13px', color: '#993C1D', background: '#FAECE7', borderRadius: '8px', padding: '10px 12px' },
   success: { fontSize: '13px', color: '#0F6E56', background: '#E1F5EE', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px', lineHeight: '1.6' },
   link: { background: 'none', border: 'none', color: '#2176AE', fontSize: '13px', cursor: 'pointer', padding: '0', fontFamily: "'DM Sans', sans-serif" },
-  footer: { marginTop: '28px', paddingTop: '18px', borderTop: '1px solid #E8EFF6', fontSize: '12px', color: '#8BA0B8', textAlign: 'center', lineHeight: '1.6' },
+  footer: { marginTop: '28px', paddingTop: '18px', borderTop: '1px solid #E8EFF6', fontSize: '12px', color: '#5D768A', textAlign: 'center', lineHeight: '1.6' },
 }
