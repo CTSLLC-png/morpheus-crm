@@ -359,7 +359,9 @@ export default function ScoreMatrix() {
             ))}
             <div style={s.floorNote}>
               Record these as <em>not yet ready</em> and have the candidate retake the call —
-              they are a readiness gate, not a punishment.
+              they are a readiness gate, not a punishment. A floor can only be lifted by an
+              administrator, who is recorded against the override along with their reason;
+              trainers escalate rather than clear it themselves.
             </div>
           </div>
         </div>

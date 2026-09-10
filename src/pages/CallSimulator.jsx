@@ -22,6 +22,12 @@ const SCENARIO_TYPES = [
 
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced']
 
+/** Human-readable names for the governance floors the assessor screens for. */
+const FLOOR_LABEL = {
+  verification_not_completed: 'Verification not completed',
+  prohibited_data_recorded:   'Prohibited data recorded',
+}
+
 const CATS = [
   { key: 'opening',    label: 'Opening / Greeting',  weight: 15 },
   { key: 'listening',  label: 'Active Listening',     weight: 20 },
@@ -371,9 +377,30 @@ export default function CallSimulator({
                 Saved to Morpheus
               </div>
             )}
-            {call.certified && (
+            {/* A governance-floor breach fails the call outright, so it is
+                shown before anything else and states the consequence. */}
+            {call.scores?.floors?.length > 0 && (
+              <div style={s.floorAlert}>
+                <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                  Not yet ready — governance floor
+                </div>
+                {call.scores.floors.map((f, i) => (
+                  <div key={i} style={{ marginBottom: '6px' }}>
+                    <div style={{ fontWeight: 600 }}>{FLOOR_LABEL[f.code] ?? f.code}</div>
+                    {f.evidence && <div style={{ opacity: 0.85 }}>{f.evidence}</div>}
+                  </div>
+                ))}
+                <div style={{ opacity: 0.85 }}>
+                  This call does not count toward certification regardless of the score above.
+                  Retake it. If you believe this is wrong, ask your trainer to escalate — only
+                  an administrator can lift a governance floor, and the reason is recorded.
+                </div>
+              </div>
+            )}
+            {call.awaitingIssue && (
               <div style={s.certAlert}>
-                🎓 Certification threshold met — issue certificate from participant profile.
+                🎓 Threshold met — a trainer can review and issue the credential from the
+                participant profile. Issuance is a human step.
               </div>
             )}
           </div>
@@ -411,5 +438,6 @@ const s = {
   totalBox:   { marginTop:'auto', paddingTop:'16px', borderTop:'1px solid #F0F4F8', textAlign:'center' },
   feedbackBox:{ background:'#F7F9FC', border:'1px solid #E8EFF6', borderRadius:'8px', padding:'10px 12px', fontSize:'12px', color:'#4A6080', lineHeight:'1.6', marginTop:'10px', textAlign:'left' },
   dbSaved:    { display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', marginTop:'10px', fontSize:'11px', color:'#0F6E56', background:'#E1F5EE', padding:'6px 12px', borderRadius:'20px' },
+  floorAlert: { marginTop:'10px', background:'#FAECE7', color:'#7A2E15', border:'1px solid #E8C4B8', borderRadius:'8px', padding:'10px 12px', fontSize:'12px', lineHeight:'1.55', textAlign:'left' },
   certAlert:  { marginTop:'10px', background:'#FAEEDA', color:'#854F0B', borderRadius:'8px', padding:'10px 12px', fontSize:'12px', lineHeight:'1.5', textAlign:'left' },
 }
