@@ -5,6 +5,7 @@
 // URL, so the paper is only ever as good as the live registry entry.
 
 import jsPDF from 'jspdf'
+import { SITE_HOST, verifyUrlFor } from './site.js'
 
 const NAVY  = [13,  27,  42]
 const BLUE  = [33, 118, 174]
@@ -70,13 +71,16 @@ function sealTextFor(credential) {
  * @param {object} credential  Row from edu_credentials:
  *   { credential_code, holder_name, credential_name, issuer_org,
  *     issued_at, expires_at, status }
- * @param {string} [verifyBase]  Origin for the verify URL
- *                               (defaults to the current site).
+ * @param {string} [verifyBase]  Override the origin for the verify URL. Left
+ *   unset in normal use: a certificate is a permanent artifact, so it carries
+ *   the canonical site address rather than whichever host happened to render
+ *   it — a PDF issued from a preview deploy would otherwise be stamped with a
+ *   hostname that stops resolving.
  */
 export function generateEduCertificatePDF(credential, verifyBase) {
-  const base = verifyBase ??
-    (typeof window !== 'undefined' ? window.location.origin : 'https://morpheuscr.com')
-  const verifyUrl = `${base.replace(/\/$/, '')}/verify/${credential.credential_code}`
+  const verifyUrl = verifyBase
+    ? `${verifyBase.replace(/\/$/, '')}/verify/${credential.credential_code}`
+    : verifyUrlFor(credential.credential_code)
 
   const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'landscape' })
   const W = doc.internal.pageSize.getWidth()   // 792
@@ -232,7 +236,7 @@ export function generateEduCertificatePDF(credential, verifyBase) {
   doc.setFontSize(7.5)
   doc.setTextColor(139, 175, 200)
   doc.text(
-    `MORPHEUS.EDU  ·  ${credential.issuer_org}  ·  Albany, NY  ·  morpheuscr.com`,
+    `MORPHEUS.EDU  ·  ${credential.issuer_org}  ·  Albany, NY  ·  ${SITE_HOST}`,
     W / 2, H - 56, { align: 'center' }
   )
   doc.setFontSize(6.8)

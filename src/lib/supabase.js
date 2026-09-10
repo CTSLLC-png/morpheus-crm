@@ -2,6 +2,7 @@
 // ── Morpheus CRM — Supabase client + auth helpers ──────────────
 
 import { createClient } from '@supabase/supabase-js'
+import { SITE_URL } from './site.js'
 
 // Baked-in defaults (public-by-design values — the anon key is the
 // browser key, protected by Row Level Security). Env vars, when set
@@ -71,7 +72,7 @@ export async function getCurrentUser() {
 
 export async function sendPasswordReset(email) {
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${import.meta.env.VITE_APP_URL || 'https://morpheuscr.com'}/reset-password`,
+    redirectTo: `${SITE_URL}/reset-password`,
   })
   if (error) throw error
 }
