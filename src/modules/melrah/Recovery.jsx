@@ -17,15 +17,16 @@ export default function MelrahRecovery(){
     const lbs=records.reduce((n,r)=>n+Number(r.weight_lbs||0),0)
     const count=records.reduce((n,r)=>n+Number(r.package_count||0),0)
     const pouch=records.filter(r=>r.material_stream==='FLEXIBLE_POUCH').reduce((n,r)=>n+Number(r.weight_lbs||0),0)
+    const coffee=records.filter(r=>r.program_key==='ORGANICS_COFFEE').reduce((n,r)=>n+Number(r.weight_lbs||0),0)
     const avgCont=records.length?records.reduce((n,r)=>n+Number(r.contamination_pct||0),0)/records.length:0
-    return {lbs,count,pouch,avgCont}
+    return {lbs,count,pouch,coffee,avgCont}
   },[records])
 
   return <div>
     <ModuleHeader title="Recovery Intelligence" subtitle="Measured recovery, contamination and downstream disposition" right={<Pill tone="info">{records.length} collection records</Pill>} />
     <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:12,marginBottom:20}}>
       <Metric label="Recovered weight" value={`${stats.lbs.toFixed(1)} lb`} />
-      <Metric label="Packages counted" value={stats.count.toLocaleString()} />
+      <Metric label="Coffee grounds" value={`${stats.coffee.toFixed(1)} lb`} />
       <Metric label="Flexible pouch weight" value={`${stats.pouch.toFixed(1)} lb`} />
       <Metric label="Avg contamination" value={`${stats.avgCont.toFixed(1)}%`} />
     </div>
