@@ -42,6 +42,7 @@ export default function TrainerShell() {
   const navigate = useNavigate()
   const location = useLocation()
   const isAdmin  = role === 'super_admin'
+  const isFieldMobile = location.pathname.startsWith('/field')
 
   // Navigation is data. Every item below comes from the modules this tenant
   // has enabled in core.tenant_module — nothing here is hardcoded per client.
@@ -76,7 +77,7 @@ export default function TrainerShell() {
   return (
     <div style={sh.app}>
       <SkipLink />
-      <aside style={sh.sidebar}>
+      {!isFieldMobile && <aside style={sh.sidebar}>
         <div style={sh.logoArea}>
           <div style={sh.logoM}>M<span style={{color:'#5DCAA5'}}>.</span>orpheus</div>
           <div style={sh.logoSub}>{SITE_HOST}</div>
@@ -143,10 +144,10 @@ export default function TrainerShell() {
           </div>
           <button style={sh.signOutBtn} onClick={() => signOut().then(() => navigate('/login'))}>Sign out</button>
         </div>
-      </aside>
+      </aside>}
 
-      <main style={sh.main} id="main-content" tabIndex={-1}>
-        <div style={sh.topbar}>
+      <main style={{...sh.main,...(isFieldMobile?{width:'100%',minWidth:0}: {})}} id="main-content" tabIndex={-1}>
+        {!isFieldMobile && <div style={sh.topbar}>
           <span style={sh.topbarTitle}>{currentLabel}</span>
           <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
             {stats && <span style={sh.statPill}>{stats.totalCalls} calls · {stats.certsIssued} certs issued</span>}
@@ -154,9 +155,9 @@ export default function TrainerShell() {
               <button style={sh.newBtn} onClick={() => navigate('/participants/new')}>+ Enroll participant</button>
             )}
           </div>
-        </div>
+        </div>}
 
-        <div style={sh.content}>
+        <div style={isFieldMobile?{padding:'10px',width:'100%',boxSizing:'border-box'}:sh.content}>
           <Routes>
             <Route path="/" element={<Dashboard stats={stats} cohorts={cohorts} navigate={navigate}/>}/>
             <Route path="/simulator" element={<CallSimulator role="trainer" participants={participants} staffProfileId={staffProfileId}/>}/>
