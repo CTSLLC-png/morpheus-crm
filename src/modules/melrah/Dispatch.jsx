@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { fromModuleSchema } from '../../lib/morpheus.js'
 import { supabase } from '../../lib/supabase.js'
 import { ModuleHeader, Pill, Table, styles } from '../common/ModuleFrame.jsx'
+import { programFor } from './programs.js'
 
 const SCHEMA = 'melrah'
 
@@ -53,12 +54,12 @@ export default function MelrahDispatch() {
       {notice&&<div style={{marginBottom:12,padding:10,borderRadius:8,background:'#E8EFF6'}}>{notice}</div>}
       <div style={{overflowX:'auto'}}>
         <Table
-          columns={['WO #','Location','City','Priority','Status','Scheduled','Fill','Score','Assignment']}
+          columns={['Program','WO #','Location','City','Priority','Status','Scheduled','Fill','Score','Assignment']}
           rows={queue.data}
           keyOf={o => o.id}
           renderRow={o => (
             <>
-              <td style={{...styles.td,fontFamily:'monospace',fontWeight:600}}>{o.wo_number}</td>
+              <td style={styles.td}><Pill tone={o.program_key==='ORGANICS_COFFEE'?'good':'info'}>{programFor(o).shortLabel}</Pill></td><td style={{...styles.td,fontFamily:'monospace',fontWeight:600}}>{o.wo_number}</td>
               <td style={styles.td}>{o.location_name ?? '—'}</td>
               <td style={{...styles.td,color:'#5B6B7F'}}>{o.city ?? '—'}</td>
               <td style={styles.td}><Pill tone={tone(o.priority)}>{o.priority ?? 'NORMAL'}</Pill></td>
