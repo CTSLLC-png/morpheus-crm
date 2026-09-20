@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fromModuleSchema } from '../../lib/morpheus.js'
+import { fromModuleSchema } from '../../lib/morpheus.js'\nimport { supabase } from '../../lib/supabase.js'
 import { ModuleHeader, Pill, Table, styles } from '../common/ModuleFrame.jsx'
 
 const SCHEMA = 'melrah'
@@ -14,7 +14,7 @@ function tone(status) {
 
 export default function MelrahDispatch() {
   const [queue, setQueue] = useState({ loading: true, data: [] })
-  const [resources, setResources] = useState({ loading: true, data: [] })
+  const [resources, setResources] = useState({ loading: true, data: [] })\n  const [notice,setNotice]=useState('')\n  async function assign(workOrderId,resourceId){if(!resourceId)return;const {error}=await supabase.rpc('melrah_dispatch_assign',{p_work_order_id:workOrderId,p_resource_id:resourceId});setNotice(error?error.message:'Dispatched to collector. It will appear in their Route Briefcase.');if(!error)setQueue(q=>({...q,data:q.data.map(x=>x.id===workOrderId?{...x,assigned_resource_id:resourceId,status:'RELEASED'}:x)}))}
 
   useEffect(() => {
     fromModuleSchema(SCHEMA, 'dispatch_queue', q => q.order('scheduled_for', { ascending: true }).limit(200))
@@ -47,7 +47,7 @@ export default function MelrahDispatch() {
         <Metric label="Active field resources" value={resources.data.length} sub="drivers / dispatch / ops" />
       </div>
 
-      <div style={{overflowX:'auto'}}>
+      {notice&&<div style={{marginBottom:12,padding:10,borderRadius:8,background:'#E8EFF6'}}>{notice}</div>}\n      <div style={{overflowX:'auto'}}>
         <Table
           columns={['WO #','Location','City','Priority','Status','Scheduled','Fill','Assignment']}
           rows={queue.data}
@@ -61,7 +61,7 @@ export default function MelrahDispatch() {
               <td style={styles.td}><Pill tone={tone(o.status)}>{o.status ?? 'OPEN'}</Pill></td>
               <td style={styles.td}>{o.scheduled_for ?? '—'}</td>
               <td style={styles.td}><Pill tone={Number(o.max_fill_pct)>=90?'bad':Number(o.max_fill_pct)>=80?'warn':'neutral'}>{Number(o.max_fill_pct||0).toFixed(0)}%</Pill></td>
-              <td style={styles.td}>{o.assigned_resource_id ? 'Assigned' : 'Unassigned'}</td>
+              <td style={styles.td}><select value={o.assigned_resource_id||''} onChange={e=>assign(o.id,e.target.value)}><option value=''>Unassigned</option>{resources.data.filter(r=>r.role==='DRIVER').map(r=><option key={r.id} value={r.id}>{r.display_name}</option>)}</select></td>
             </>
           )}
         />
