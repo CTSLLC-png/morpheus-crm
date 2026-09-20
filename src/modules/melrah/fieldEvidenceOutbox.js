@@ -1,0 +1,5 @@
+const DB='melrah-field-v1',STORE='evidence-outbox'
+function db(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE,{keyPath:'id'})};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+export async function queueEvidence(entry){const d=await db();return new Promise((ok,no)=>{const t=d.transaction(STORE,'readwrite');t.objectStore(STORE).put({...entry,id:entry.id||crypto.randomUUID(),queuedAt:new Date().toISOString()});t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
+export async function evidenceItems(){const d=await db();return new Promise((ok,no)=>{const r=d.transaction(STORE).objectStore(STORE).getAll();r.onsuccess=()=>ok(r.result||[]);r.onerror=()=>no(r.error)})}
+export async function removeEvidence(id){const d=await db();return new Promise((ok,no)=>{const t=d.transaction(STORE,'readwrite');t.objectStore(STORE).delete(id);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
