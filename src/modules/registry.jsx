@@ -38,7 +38,7 @@ export const MODULE_REGISTRY = {
   },
   'logistics.field': {
     nav: [{ path: '/field', label: 'MELRAH FIELD', icon: 'clipboard', order: 94 }],
-    component: lazy(() => import('./melrah/Driver.jsx')),
+    component: lazy(() => import('./melrah/FieldMobile.jsx')),
   },
   'logistics.stations': {
     nav: [{ path: '/stations', label: 'Collection Stations', icon: 'box', order: 96 }],
