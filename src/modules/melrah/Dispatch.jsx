@@ -27,6 +27,8 @@ export default function MelrahDispatch() {
       .then(r => setResources({ loading: false, data: r.data ?? [], error: r.error }))
   }, [])
 
+  const drivers = resources.data.filter(r => r.role === 'DRIVER')
+
   const stats = useMemo(() => ({
     unassigned: queue.data.filter(x => !x.assigned_resource_id).length,
     urgent: queue.data.filter(x => x.priority === 'URGENT' || Number(x.max_fill_pct) >= 90).length,
