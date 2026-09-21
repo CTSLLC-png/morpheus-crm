@@ -73,6 +73,15 @@ export default function MelrahDispatch() {
           )}
         />
       </div>
+      <div className='dispatch-mobile-cards'>
+        {queue.data.map(o=><div className='dispatch-mobile-card' key={o.id}>
+          <div className='dispatch-mobile-head'><Pill tone={o.program_key==='ORGANICS_COFFEE'?'good':'info'}>{programFor(o).shortLabel}</Pill><strong>{o.wo_number}</strong></div>
+          <div className='dispatch-mobile-place'>{o.location_name ?? 'No location'}{o.city ? ` · ${o.city}` : ''}</div>
+          <div className='dispatch-mobile-meta'><Pill tone={tone(o.status)}>{o.status ?? 'OPEN'}</Pill><span>{Number(o.max_fill_pct||0).toFixed(0)}% fill</span></div>
+          <label className='dispatch-mobile-label'>Assign collector<AssignmentSelect order={o} drivers={drivers} assign={assign}/></label>
+        </div>)}
+      </div>
+      <style>{`.dispatch-mobile-cards{display:none}@media(max-width:720px){.dispatch-table{display:none!important}.dispatch-mobile-cards{display:grid;gap:12px}.dispatch-mobile-card{background:var(--color-background-primary);border:1px solid #CBD8E6;border-radius:14px;padding:14px;min-width:0}.dispatch-mobile-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.dispatch-mobile-head strong{font-family:monospace;font-size:16px}.dispatch-mobile-place{margin:10px 0;color:#42546A;font-size:14px}.dispatch-mobile-meta{display:flex;align-items:center;gap:8px;margin-bottom:12px;color:#5B6B7F;font-size:12px}.dispatch-mobile-label{display:grid;gap:6px;color:#42546A;font-size:12px;font-weight:700}.dispatch-mobile-label select{width:100%;min-height:46px;border:1px solid #AFC0D2;border-radius:10px;background:white;padding:0 10px;font-size:16px}}`}</style>
     </div>
   )
 }
