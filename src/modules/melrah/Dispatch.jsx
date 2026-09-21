@@ -52,7 +52,7 @@ export default function MelrahDispatch() {
       </div>
 
       {notice&&<div style={{marginBottom:12,padding:10,borderRadius:8,background:'#E8EFF6'}}>{notice}</div>}
-      <div style={{overflowX:'auto'}}>
+      <div className='dispatch-table' style={{overflowX:'auto'}}>
         <Table
           columns={['Program','WO #','Location','City','Priority','Status','Scheduled','Fill','Score','Assignment']}
           rows={queue.data}
@@ -66,7 +66,7 @@ export default function MelrahDispatch() {
               <td style={styles.td}><Pill tone={tone(o.status)}>{o.status ?? 'OPEN'}</Pill></td>
               <td style={styles.td}>{o.scheduled_for ?? '—'}</td>
               <td style={styles.td}><Pill tone={Number(o.max_fill_pct)>=90?'bad':Number(o.max_fill_pct)>=80?'warn':'neutral'}>{Number(o.max_fill_pct||0).toFixed(0)}%</Pill></td><td style={styles.td}><strong>{o.route_score??'—'}</strong></td>
-              <td style={styles.td}><select value={o.assigned_resource_id||''} onChange={e=>assign(o.id,e.target.value)}><option value=''>Unassigned</option>{resources.data.filter(r=>r.role==='DRIVER').map(r=><option key={r.id} value={r.id}>{r.display_name}</option>)}</select></td>
+              <td style={styles.td}><AssignmentSelect order={o} drivers={drivers} assign={assign}/></td>
             </>
           )}
         />
@@ -74,6 +74,8 @@ export default function MelrahDispatch() {
     </div>
   )
 }
+
+function AssignmentSelect({order,drivers,assign}) { return <select aria-label={`Assign collector for ${order.wo_number}`} value={order.assigned_resource_id||''} onChange={e=>assign(order.id,e.target.value)}><option value=''>Unassigned</option>{drivers.map(r=><option key={r.id} value={r.id}>{r.display_name}</option>)}</select> }
 
 function Metric({label,value,sub}) {
   return <div style={{background:'var(--color-background-primary)',border:'1px solid #CBD8E6',borderRadius:12,padding:16}}>
