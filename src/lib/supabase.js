@@ -56,9 +56,20 @@ export async function getSession() {
   return data.session
 }
 
-/** Get role from user metadata: 'super_admin' | 'trainer' | 'participant' */
+/**
+ * Get role from app metadata: 'super_admin' | 'trainer' | 'participant'
+ *
+ * SECURITY: this reads app_metadata, NOT user_metadata. app_metadata can
+ * only be written by a trusted server (the service_role key, used inside
+ * our edge functions and the set_default_participant_app_role DB
+ * trigger) -- a signed-in user can never set it on themselves. Every RLS
+ * policy in the database is gated the same way via current_user_role(),
+ * which also reads app_metadata. If this ever reads user_metadata again,
+ * any user could grant themselves super_admin at signup by passing
+ * options.data.role to supabase.auth.signUp().
+ */
 export function getUserRole(user) {
-  return user?.user_metadata?.role ?? null
+  return user?.app_metadata?.role ?? null
 }
 
 /** Get current user object */
