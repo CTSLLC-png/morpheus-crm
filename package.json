@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node -e \"require('fs').renameSync('dist/index.html','dist/app.html')\"",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx"
   },
