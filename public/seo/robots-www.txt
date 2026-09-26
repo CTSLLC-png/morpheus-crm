@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /login
+Allow: /verify
+Allow: /privacy
+Allow: /terms
+Allow: /refunds
+Disallow: /legacy/
+Disallow: /api/
+Disallow: /
+
+Sitemap: https://www.morpheuscr.com/sitemap.xml

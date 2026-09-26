@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /signin
+Disallow: /purchase/
+Disallow: /admin/
+Disallow: /reset-password
+
+Sitemap: https://legacy.morpheuscr.com/sitemap.xml

@@ -8,9 +8,21 @@
       "has": [{ "type": "host", "value": "morpheuscr.com" }],
       "destination": "https://www.morpheuscr.com/:path*",
       "permanent": true
-    }
+    },
+    { "source": "/legacy", "destination": "/legacy/", "permanent": true }
   ],
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/", "has": [{ "type": "host", "value": "legacy.morpheuscr.com" }], "destination": "/legacy/index.html" },
+    { "source": "/legacy/", "destination": "/legacy/index.html" },
+    { "source": "/privacy", "destination": "/legal/privacy.html" },
+    { "source": "/terms", "destination": "/legal/terms.html" },
+    { "source": "/refunds", "destination": "/legal/refunds.html" },
+    { "source": "/robots.txt", "has": [{ "type": "host", "value": "legacy.morpheuscr.com" }], "destination": "/seo/robots-legacy.txt" },
+    { "source": "/sitemap.xml", "has": [{ "type": "host", "value": "legacy.morpheuscr.com" }], "destination": "/seo/sitemap-legacy.xml" },
+    { "source": "/robots.txt", "destination": "/seo/robots-www.txt" },
+    { "source": "/sitemap.xml", "destination": "/seo/sitemap-www.xml" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -18,7 +30,9 @@
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" },
+        { "key": "Content-Security-Policy-Report-Only", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://ymavrmekxiwdphdyteau.supabase.co wss://ymavrmekxiwdphdyteau.supabase.co; frame-src 'none'; worker-src 'self' blob:; manifest-src 'self'" }
       ]
     },
     {

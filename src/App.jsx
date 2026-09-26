@@ -12,6 +12,9 @@ const TrainerShell     = lazy(() => import('./pages/TrainerShell.jsx'))
 const ParticipantShell = lazy(() => import('./pages/ParticipantShell.jsx'))
 const ResetPassword    = lazy(() => import('./pages/ResetPassword.jsx'))
 const VerifyCredential = lazy(() => import('./pages/VerifyCredential.jsx'))
+// Legacy Path (CTS consumer module): legacy.morpheuscr.com, or /legacy/* here.
+const LegacyRoutes     = lazy(() => import('./legacy/LegacyRoutes.jsx'))
+const IS_LEGACY_HOST   = typeof window !== 'undefined' && window.location.hostname.startsWith('legacy.')
 
 function LoadingScreen() {
   return (
@@ -37,6 +40,8 @@ function RequireAuth({ children }) {
 function RoleRouter() {
   const { role, loading } = useAuth()
   if (loading) return <LoadingScreen />
+  // Legacy Path customers have no Morpheus access; send them to their app.
+  if (role === 'lp_customer') return <Navigate to="/legacy/app" replace />
   if (role === 'participant') return <ParticipantShell />
   if (role === 'trainer' || role === 'super_admin') return <TrainerShell />
   // Unknown role — sign out and back to login
@@ -85,9 +90,21 @@ const PAGE_TITLES = {
   '/login': 'Sign in',
   '/reset-password': 'Reset password',
   '/verify': 'Verify a credential',
+  '/legacy': 'Legacy Path',
 }
 
 export default function App() {
+  if (IS_LEGACY_HOST) {
+    return (
+      <BrowserRouter>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/*" element={<LegacyRoutes base="" />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    )
+  }
   return (
     <AuthProvider>
       <TenantProvider>
@@ -100,6 +117,8 @@ export default function App() {
             {/* MORPHEUS.EDU — public credential verification (no auth) */}
             <Route path="/verify"         element={<VerifyCredential />} />
             <Route path="/verify/:code"   element={<VerifyCredential />} />
+            {/* Legacy Path — public module, its own sign-in and paywall */}
+            <Route path="/legacy/*"       element={<LegacyRoutes base="/legacy" />} />
             <Route
               path="/*"
               element={

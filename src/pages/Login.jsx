@@ -111,6 +111,12 @@ export default function Login() {
 
         <div style={styles.footer}>
           Having trouble? Contact your trainer or program coordinator.
+          <div style={{ marginTop: 10 }}>
+            Looking for family finance education? <a href="https://legacy.morpheuscr.com/" style={{ color: 'inherit' }}>Visit Legacy Path</a>
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <a href="/privacy" style={{ color: 'inherit' }}>Privacy</a> · <a href="/terms" style={{ color: 'inherit' }}>Terms</a> · <a href="/refunds" style={{ color: 'inherit' }}>Refunds</a>
+          </div>
         </div>
       </div>
     </div>
