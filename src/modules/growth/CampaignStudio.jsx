@@ -6,9 +6,11 @@
 //    the growth_asset_review_gate trigger, not just this screen).
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
 import { useAuth } from '../../hooks/useAuth.jsx'
 import { generateCampaignCopy } from '../../lib/ai.js'
+import { projectFromCampaignAsset } from '../studio/studioApi.js'
 import { ModuleHeader, Pill, Table, DataState, styles } from '../common/ModuleFrame.jsx'
 import {
   AUDIENCES, CHANNELS, ANGLES, SEASONAL, DEFAULT_MEDIUM, LANDING,
@@ -16,7 +18,6 @@ import {
   PRODUCTION_CHANNELS, productionBrief,
 } from './legacyPlaybook.js'
 
-const CREATOR_STUDIO_URL = 'https://creator-studio-cinema.determinedman42.chatgpt.site/'
 
 const TABS = [
   ['funnel', 'Funnel'],
@@ -280,6 +281,7 @@ function Autopilot() {
 // ── Asset library + approval ────────────────────────────────────────────────
 function Library() {
   const { isAdmin } = useAuth()
+  const navigate = useNavigate()
   const [status, setStatus] = useState('draft')
   const [state, setState] = useState({ loading: true, rows: [], error: null })
   const [open, setOpen] = useState(null)
@@ -306,14 +308,19 @@ function Library() {
     catch { setMsg('Copy failed — select the text and copy it by hand.') }
   }
 
-  // Creator Studio has no import, so the brief goes over the clipboard and
-  // Creator Studio opens in a new tab ready for New project.
+  // Approved production assets become Creator Studio projects with their
+  // queue filled in. Copy brief stays for tools outside Morpheus.
   async function sendToCreatorStudio(row) {
+    setMsg(null)
     try {
-      await navigator.clipboard.writeText(productionBrief(row))
-      setMsg('Production brief copied. In Creator Studio, click New project and paste it.')
-      window.open(CREATOR_STUDIO_URL, '_blank', 'noopener')
-    } catch { setMsg('Copy failed. Open Review and copy the brief by hand.') }
+      const { project } = await projectFromCampaignAsset(row)
+      navigate(`/creator-studio?project=${project.id}`)
+    } catch (e) { setMsg(`Could not open the Creator Studio project: ${e.message}`) }
+  }
+
+  async function copyBrief(row) {
+    try { await navigator.clipboard.writeText(productionBrief(row)); setMsg('Production brief copied.') }
+    catch { setMsg('Copy failed.') }
   }
 
   async function saveMedia(row, url) {
@@ -359,6 +366,7 @@ function Library() {
                   <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
                     <button style={f.btn} onClick={() => copy(r)}>Copy text</button>
                     {canProduce(r) && <button style={f.primary} onClick={() => sendToCreatorStudio(r)}>Send to Creator Studio</button>}
+                    {canProduce(r) && <button style={f.btn} onClick={() => copyBrief(r)}>Copy brief</button>}
                     {isAdmin && r.status === 'draft' && <button style={f.primary} onClick={() => setAssetStatus(r, 'approved')}>Approve</button>}
                     {isAdmin && r.status === 'approved' && <button style={f.btn} onClick={() => setAssetStatus(r, 'scheduled')}>Mark scheduled</button>}
                     {isAdmin && ['approved', 'scheduled'].includes(r.status) && <button style={f.primary} onClick={() => setAssetStatus(r, 'published')}>Mark published</button>}
@@ -414,7 +422,7 @@ function MediaLink({ row, onSave }) {
   return (
     <div style={{ display:'flex', gap:'8px', alignItems:'flex-end', flexWrap:'wrap' }}>
       <div style={{ flex:'1 1 280px' }}>
-        <Field label="Finished media link (from Creator Studio)">
+        <Field label="Finished media link (set automatically from the Creator Studio project)">
           <input style={f.input} value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
         </Field>
       </div>

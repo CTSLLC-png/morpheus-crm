@@ -143,18 +143,18 @@ Return ONLY a JSON object, no preamble:
 }
 
 // ── Creator Studio handoff ─────────────────────────────────────────────────
-// Creator Studio (creator-studio-cinema) has no API or import, so the handoff
-// is a brief laid out the way its New project form and Production queue read:
-// project, type, stage, queue items with priority, then the approved copy.
+// An approved asset becomes a Creator Studio project (Morpheus module
+// growth.studio) with its production queue filled in. The same plan renders
+// as a plain-text brief for tools outside Morpheus.
 
 const PRODUCTION = {
-  'video-script': { type: 'Explainer video',    specs: '60–90 s · 16:9 master + 9:16 cut · burned-in captions', kind: 'video' },
-  tiktok:         { type: 'Short-form video',   specs: '30–45 s · 9:16 · captions on screen · hook in first 3 s', kind: 'video' },
-  youtube:        { type: 'YouTube video',      specs: '16:9 · thumbnail 1280×720 · chapters from the description', kind: 'video' },
-  instagram:      { type: 'Social image / Reel', specs: '1080×1350 feed image, or 9:16 Reel under 45 s', kind: 'image' },
-  facebook:       { type: 'Social image',       specs: '1080×1080 and 1200×628 · text on image under 20%', kind: 'image' },
-  'meta-ads':     { type: 'Ad creative set',    specs: '1080×1080, 1080×1350, 9:16 · one image or 15 s video per variant', kind: 'image' },
-  print:          { type: 'Print flyer',        specs: 'Letter 8.5×11 in · 300 dpi · QR code to the tracked link', kind: 'image' },
+  'video-script': { type: 'Explainer video',    specs: '60–90 s · 16:9 master + 9:16 cut · burned-in captions', kind: 'video', project: 'explainer' },
+  tiktok:         { type: 'Short-form video',   specs: '30–45 s · 9:16 · captions on screen · hook in first 3 s', kind: 'video', project: 'short-form' },
+  youtube:        { type: 'YouTube video',      specs: '16:9 · thumbnail 1280×720 · chapters from the description', kind: 'video', project: 'explainer' },
+  instagram:      { type: 'Social image / Reel', specs: '1080×1350 feed image, or 9:16 Reel under 45 s', kind: 'image', project: 'social-image' },
+  facebook:       { type: 'Social image',       specs: '1080×1080 and 1200×628 · text on image under 20%', kind: 'image', project: 'social-image' },
+  'meta-ads':     { type: 'Ad creative set',    specs: '1080×1080, 1080×1350, 9:16 · one image or 15 s video per variant', kind: 'image', project: 'ad' },
+  print:          { type: 'Print flyer',        specs: 'Letter 8.5×11 in · 300 dpi · QR code to the tracked link', kind: 'image', project: 'print' },
 }
 
 export const PRODUCTION_CHANNELS = Object.keys(PRODUCTION)
@@ -171,43 +171,61 @@ const shiftDate = (iso, days) => {
   return d.toISOString().slice(0, 10)
 }
 
-/** Plain-text production brief for one approved asset, ready to paste. */
-export function productionBrief(asset) {
-  const p = PRODUCTION[asset.channel] ?? { type: 'Creative', specs: 'See copy', kind: 'image' }
+/**
+ * The production plan for one approved asset: what Creator Studio needs to
+ * open a project and fill its queue. Due dates count back from the air date.
+ */
+export function productionPlan(asset) {
+  const p = PRODUCTION[asset.channel] ?? { type: 'Creative', specs: 'See copy', kind: 'image', project: 'other' }
   const audience = AUDIENCES.find(a => a.key === asset.audience)
   const air = asset.scheduled_for || shiftDate(new Date().toISOString().slice(0, 10), 7)
   const due = n => shiftDate(air, -n)
   const queue = p.kind === 'video'
     ? [
-        ['Critical', `Lock script and shot list`, due(5)],
-        ['High',     `Record or generate voiceover`, due(4)],
-        ['High',     `Generate visuals from the Asset vault (brand kit below)`, due(3)],
-        ['Normal',   `Edit, captions, music, end card`, due(2)],
-        ['Critical', `Compliance pass: disclaimer on end card, link exact, no advice or promises`, due(1)],
+        ['critical', 'Lock script and shot list', due(5)],
+        ['high',     'Record or generate voiceover', due(4)],
+        ['high',     'Generate visuals from the Asset vault (brand kit in brief)', due(3)],
+        ['normal',   'Edit, captions, music, end card', due(2)],
+        ['critical', 'Compliance pass: disclaimer on end card, link exact, no advice or promises', due(1)],
       ]
     : [
-        ['High',     `Generate key visual from the Asset vault (brand kit below)`, due(3)],
-        ['Normal',   `Lay out headline and copy, export every size`, due(2)],
-        ['Critical', `Compliance pass: disclaimer present, link or QR exact, no advice or promises`, due(1)],
+        ['high',     'Generate key visual from the Asset vault (brand kit in brief)', due(3)],
+        ['normal',   'Lay out headline and copy, export every size', due(2)],
+        ['critical', 'Compliance pass: disclaimer present, link or QR exact, no advice or promises', due(1)],
       ]
+  return {
+    title: `Legacy Path · ${asset.title}`,
+    type: p.type,
+    projectKind: p.project,
+    specs: p.specs,
+    air,
+    audience: audience?.label ?? null,
+    link: asset.landing_url || LANDING,
+    queue: queue.map(([priority, title, due_date]) => ({ priority, title, due_date })),
+  }
+}
 
+/** Plain-text production brief for one approved asset, ready to paste. */
+export function productionBrief(asset) {
+  const plan = productionPlan(asset)
+  const cap = w => w[0].toUpperCase() + w.slice(1)
   return [
     'CREATOR STUDIO — PRODUCTION BRIEF',
     '',
-    `Project: Legacy Path · ${asset.title}`,
-    `Type: ${p.type}`,
+    `Project: ${plan.title}`,
+    `Type: ${plan.type}`,
     'Stage: Pre-production',
-    `Campaign: ${asset.campaign} · Channel: ${asset.channel}${audience ? ` · Audience: ${audience.label}` : ''}`,
-    `Air date: ${air}`,
+    `Campaign: ${asset.campaign} · Channel: ${asset.channel}${plan.audience ? ` · Audience: ${plan.audience}` : ''}`,
+    `Air date: ${plan.air}`,
     '',
     'PRODUCTION QUEUE',
-    ...queue.map(([pri, task, date], i) => `${i + 1}. [${pri}] ${task} — due ${date}`),
+    ...plan.queue.map((q, i) => `${i + 1}. [${cap(q.priority)}] ${q.title} — due ${q.due_date}`),
     '',
     'SPECS',
-    `- ${p.specs}`,
+    `- ${plan.specs}`,
     `- End card / footer: "Legacy Path · Free family screener at legacy.morpheuscr.com"`,
     `- Disclaimer on screen: "${DISCLAIMER}"`,
-    `- Tracked link (use exactly): ${asset.landing_url || LANDING}`,
+    `- Tracked link (use exactly): ${plan.link}`,
     '',
     'BRAND KIT',
     `- Colors: ${BRAND_KIT.colors}`,
@@ -220,6 +238,6 @@ export function productionBrief(asset) {
     asset.body,
     '---',
     '',
-    'When the cut is final, paste the media link back into Campaign Studio so results can be tied to it.',
+    'When the cut is final, add the media link to the project so results can be tied to it.',
   ].join('\n')
 }

@@ -92,6 +92,7 @@ const PAGE_TITLES = {
   '/verify': 'Verify a credential',
   '/legacy': 'Legacy Path',
   '/campaigns': 'Campaign Studio',
+  '/creator-studio': 'Creator Studio',
 }
 
 export default function App() {
