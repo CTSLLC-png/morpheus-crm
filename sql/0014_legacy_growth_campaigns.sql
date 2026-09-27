@@ -128,7 +128,7 @@ create trigger growth_asset_review_gate
   before insert or update on public.growth_campaign_asset
   for each row execute function public.growth_asset_review_gate();
 
-revoke execute on function public.growth_asset_review_gate() from anon, authenticated;
+revoke execute on function public.growth_asset_review_gate() from public, anon, authenticated;
 
 -- ── 3. Funnel report ─────────────────────────────────────────────────────────
 -- Aggregates only: counts and revenue per campaign tag. No user ids leave.
