@@ -1,0 +1,77 @@
+{
+  "$comment": "Locked render parameters for the Still Here series. Changing anything here changes how every future episode looks or sounds - edit deliberately. Values marked PENDING need creator sign-off before the first automated run.",
+
+  "channel": {
+    "name": "Still Here",
+    "platform": "YOUTUBE",
+    "post_account_id": "6a60a0ac0aa1067780024dc0",
+    "channel_url": "https://www.youtube.com/channel/UCJiOGAr7cqMj2M6hZeamQRQ",
+    "privacy": "public",
+    "made_for_kids": true
+  },
+
+  "render": {
+    "style_name": "Animation",
+    "style_id": "3d-animation",
+    "style_status": "PENDING - UNRESOLVED, blocks rendering. Episodes 1-3 are in the 'watercolor' style; this value is 'Animation' (3D), which episode 4 used and which does not match them. Set this to the chosen house style and change style_status to CONFIRMED. See STYLE_DECISION.md.",
+    "style_note": "Modern 3D feature animation - warm cinematic lighting, soft bokeh, expressive stylized characters.",
+    "image_model": "gemini-3-pro-image",
+    "image_model_note": "Nano Banana Pro. Chosen for 'most consistent image quality' - character consistency across episodes matters more here than text rendering.",
+    "transition_video_model": "seedance-1-5-pro-251215",
+    "enable_captions": true,
+    "captions_note": "On. Children's content and many viewers watch muted.",
+    "ratio": "9:16",
+    "ratio_status": "CONFIRMED 2026-07-25 - vertical, posts as a YouTube Short. Chosen for reach on a new channel.",
+    "target_duration_seconds": 45,
+    "duration_status": "CONFIRMED 2026-07-25 as an interim value. The agreed go-forward length is 60s, but the current 80-credit balance cannot cover it alongside anything else - raise this to 60 once the daily credit pool refills. See COSTS.md."
+  },
+
+  "voices": {
+    "lane_a_child_facing": {
+      "voice_id": "Callirrhoe",
+      "name": "Laura",
+      "status": "CONFIRMED 2026-07-25 - warm, unhurried, read-aloud storybook register"
+    },
+    "lane_b_parent_facing": {
+      "voice_id": "English_magnetic_voiced_man",
+      "name": "Michael",
+      "status": "CONFIRMED 2026-07-25 by default - not yet exercised, no Lane B episode has rendered under it. Alternative is Daniel (English_Insightful_Speaker)."
+    }
+  },
+
+  "anchors": {
+    "note": "Anchor images are how characters and places stay on-model between episodes. Max 8 per render, max 10 in the shared library. Attach the location anchor to every episode set at Wilson's; attach character anchors to every episode once they exist.",
+    "locations": {
+      "wilsons_bakery": {
+        "asset_id": "3c98b196fca1a9e1",
+        "category": "object",
+        "description": "Wilson's Bakery & Restaurant - the real diner from the creator's childhood. Recurring location anchor."
+      }
+    },
+    "characters": {
+      "maya": {
+        "asset_id": null,
+        "category": "actor",
+        "status": "MISSING - see CHARACTER_ANCHORS.md for how to create it"
+      },
+      "maya_dad": {
+        "asset_id": null,
+        "category": "actor",
+        "status": "MISSING"
+      },
+      "grandma_ruth": {
+        "asset_id": null,
+        "category": "actor",
+        "status": "MISSING"
+      }
+    }
+  },
+
+  "schedule": {
+    "cadence": "3x_weekly",
+    "cadence_cron_utc": "0 13 * * 1,3,5",
+    "cadence_status": "CONFIRMED 2026-07-25 - Mon/Wed/Fri at 60s, roughly 720 credits per month. Chosen over daily because a schedule that does not stall builds the channel better. STILL BLOCKED on the credit balance until the daily pool refills - see COSTS.md.",
+    "publish_time_utc": "13:00",
+    "publish_time_note": "09:00 America/New_York during EDT. Creator is Albany, NY."
+  }
+}
