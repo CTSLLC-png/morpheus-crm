@@ -76,9 +76,10 @@ const RULES = [
   { re: /\b(get rich|wealthy fast|double your|risk[- ]free)\b/i, msg: 'Implies returns or no risk.' },
   { re: /\b(we recommend|you should (buy|invest|open)|best investment)\b/i, msg: 'Reads as individual advice.' },
   { re: /\bfinancial (advisor|adviser|advice)\b(?![^.]*\bnot\b)/i, msg: 'Mentions advice/advisers without saying Legacy Path is not advice.' },
-  { re: /\b(certified financial|licensed|fiduciary)\b/i,     msg: 'Could imply CTS holds a license it does not.' },
+  // "talk to a licensed professional" is the required disclaimer, not a claim.
+  { re: /\b(certified financial|fiduciary)\b|\blicensed\b(?!\s+(professional|attorney|agent|adviser|advisor))/i, msg: 'Could imply CTS holds a license it does not.' },
   { re: /\b(avoid|skip) (taxes|probate) (completely|entirely)\b/i, msg: 'Overstates what a trust or plan does.' },
-  { re: /\bfree\b(?![^.]*(screener|account|help|workshop|ask ai))/i, msg: '"Free" must refer to the screener, account, workshop or Ask AI — the guides cost $20.' },
+  { re: /\bfree\b(?![^.]*(screener|account|help|workshop|session|class|ask ai))/i, msg: '"Free" must refer to the screener, account, workshop or Ask AI — the guides cost $20.' },
   { re: /\$\s?(?!20\b)\d+/,                                   msg: 'Mentions a price other than $20. Check it.' },
   { re: /\b(limited time|only \d+ left|expires tonight)\b/i, msg: 'False-urgency language.' },
   { re: /\b(social security number|ssn|bank login)\b(?![^.]*\b(never|no)\b)/i, msg: 'Mentions sensitive data without saying we never collect it.' },
