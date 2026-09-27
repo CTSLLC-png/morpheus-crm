@@ -28,6 +28,10 @@ export const MODULE_REGISTRY = {
     nav: [{ path: '/campaigns', label: 'Campaign Studio', icon: 'chart', order: 75 }],
     component: lazy(() => import('./growth/CampaignStudio.jsx')),
   },
+  'growth.studio': {
+    nav: [{ path: '/creator-studio', label: 'Creator Studio', icon: 'monitor', order: 76 }],
+    component: lazy(() => import('./studio/CreatorStudio.jsx')),
+  },
   'logistics.accounts': {
     nav: [{ path: '/networks', label: 'Provider Networks', icon: 'network', order: 80 }],
     component: lazy(() => import('./melrah/Accounts.jsx')),
