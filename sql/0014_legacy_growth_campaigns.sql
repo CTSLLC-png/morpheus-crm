@@ -171,7 +171,7 @@ grant execute on function public.lp_campaign_funnel(timestamptz) to authenticate
 insert into core.module (key, name, description, schema_name, category, status, sort_order)
 values ('growth.campaigns', 'Campaign Studio',
         'AI-assisted marketing campaigns for CTS products, with attribution and a human approval gate',
-        'public', 'crm', 'BETA', 60)
+        'public', 'crm', 'AVAILABLE', 60)
 on conflict (key) do update set
   name = excluded.name, description = excluded.description, schema_name = excluded.schema_name,
   category = excluded.category, status = excluded.status, sort_order = excluded.sort_order;
