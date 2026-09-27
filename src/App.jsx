@@ -91,6 +91,7 @@ const PAGE_TITLES = {
   '/reset-password': 'Reset password',
   '/verify': 'Verify a credential',
   '/legacy': 'Legacy Path',
+  '/campaigns': 'Campaign Studio',
 }
 
 export default function App() {

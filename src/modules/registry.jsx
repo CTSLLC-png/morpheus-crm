@@ -24,6 +24,10 @@ export const MODULE_REGISTRY = {
     nav: [{ path: '/empowercare', label: 'EmpowerCare', icon: 'badge', order: 70 }],
     component: lazy(() => import('./empowercare/index.jsx')),
   },
+  'growth.campaigns': {
+    nav: [{ path: '/campaigns', label: 'Campaign Studio', icon: 'chart', order: 75 }],
+    component: lazy(() => import('./growth/CampaignStudio.jsx')),
+  },
   'logistics.accounts': {
     nav: [{ path: '/networks', label: 'Provider Networks', icon: 'network', order: 80 }],
     component: lazy(() => import('./melrah/Accounts.jsx')),

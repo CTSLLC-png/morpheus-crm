@@ -11,7 +11,7 @@ import './legacy.css'
 import { mountLegacy } from './ui.js'
 import {
   supabase, hasAccess, loadContent, loadIntake, saveIntake, startCheckout,
-  signUp, signInWithPassword, sendReset,
+  signUp, signInWithPassword, sendReset, captureAttribution, recordAttribution,
 } from './api.js'
 
 const AdminContent  = lazy(() => import('./AdminContent.jsx'))
@@ -148,6 +148,7 @@ function AppPage({ base }) {
   useEffect(() => {
     if (!uid) return
     let alive = true
+    recordAttribution(uid).catch(() => {})
     ;(async () => {
       try {
         const access = await hasAccess(uid)
@@ -261,6 +262,7 @@ function NotFound({ base }) {
 
 export default function LegacyRoutes({ base = '' }) {
   useFonts()
+  useEffect(() => { captureAttribution() }, [])
   useEffect(() => { document.title = 'Legacy Path — Family wealth education, cradle to grave' }, [])
   return (
     <Suspense fallback={<Loading base={base} />}>
