@@ -13,7 +13,10 @@ import { ModuleHeader, Pill, Table, DataState, styles } from '../common/ModuleFr
 import {
   AUDIENCES, CHANNELS, ANGLES, SEASONAL, DEFAULT_MEDIUM, LANDING,
   complianceCheck, utmLink, systemPrompt, generationPrompt,
+  PRODUCTION_CHANNELS, productionBrief,
 } from './legacyPlaybook.js'
+
+const CREATOR_STUDIO_URL = 'https://creator-studio-cinema.determinedman42.chatgpt.site/'
 
 const TABS = [
   ['funnel', 'Funnel'],
@@ -303,6 +306,22 @@ function Library() {
     catch { setMsg('Copy failed — select the text and copy it by hand.') }
   }
 
+  // Creator Studio has no import, so the brief goes over the clipboard and
+  // Creator Studio opens in a new tab ready for New project.
+  async function sendToCreatorStudio(row) {
+    try {
+      await navigator.clipboard.writeText(productionBrief(row))
+      setMsg('Production brief copied. In Creator Studio, click New project and paste it.')
+      window.open(CREATOR_STUDIO_URL, '_blank', 'noopener')
+    } catch { setMsg('Copy failed. Open Review and copy the brief by hand.') }
+  }
+
+  async function saveMedia(row, url) {
+    setMsg(null)
+    const { error } = await supabase.from('growth_campaign_asset').update({ media_url: url.trim() || null }).eq('id', row.id)
+    if (error) setMsg(error.message); else { setMsg('Media link saved.'); load() }
+  }
+
   return (
     <div style={{ display:'grid', gap:'12px' }}>
       <div style={{ display:'flex', gap:'6px', flexWrap:'wrap' }}>
@@ -320,6 +339,7 @@ function Library() {
                 <Pill tone={STATUS_TONE[r.status]}>{r.status}</Pill>
                 <Pill tone="neutral">{CHANNELS.find(c => c.key === r.channel)?.label ?? r.channel}</Pill>
                 {r.scheduled_for && <span style={{ fontSize:'12px', color:'#5B6B7F' }}>{r.scheduled_for}</span>}
+                {r.media_url && <Pill tone="good">media ready</Pill>}
                 {r.compliance_flags?.length > 0 && <Pill tone="bad">{r.compliance_flags.length} flag{r.compliance_flags.length > 1 ? 's' : ''}</Pill>}
                 <button style={{ ...f.btn, marginLeft:'auto' }} onClick={() => setOpen(open === r.id ? null : r.id)} aria-expanded={open === r.id}>
                   {open === r.id ? 'Close' : 'Review'}
@@ -332,8 +352,13 @@ function Library() {
                   <pre style={f.pre}>{r.body}</pre>
                   <Flags flags={r.compliance_flags ?? []} />
                   {r.landing_url && <div style={{ fontSize:'12px', wordBreak:'break-all' }}>Link: <code>{r.landing_url}</code></div>}
+                  {canProduce(r) && <MediaLink row={r} onSave={saveMedia} />}
+                  {PRODUCTION_CHANNELS.includes(r.channel) && r.status === 'draft' && (
+                    <div style={{ fontSize:'12px', color:'#5B6B7F' }}>Approve this draft to send it to Creator Studio for production.</div>
+                  )}
                   <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
                     <button style={f.btn} onClick={() => copy(r)}>Copy text</button>
+                    {canProduce(r) && <button style={f.primary} onClick={() => sendToCreatorStudio(r)}>Send to Creator Studio</button>}
                     {isAdmin && r.status === 'draft' && <button style={f.primary} onClick={() => setAssetStatus(r, 'approved')}>Approve</button>}
                     {isAdmin && r.status === 'approved' && <button style={f.btn} onClick={() => setAssetStatus(r, 'scheduled')}>Mark scheduled</button>}
                     {isAdmin && ['approved', 'scheduled'].includes(r.status) && <button style={f.primary} onClick={() => setAssetStatus(r, 'published')}>Mark published</button>}
@@ -376,6 +401,26 @@ function LinkBuilder() {
         }}>{copied ? 'Copied' : 'Copy link'}</button>
       </div>
       <div style={styles.sub}>For print and in-person events, turn this link into a QR code so flyer sign-ups show up in the funnel under their own source.</div>
+    </div>
+  )
+}
+
+// Only approved copy goes to production, so a brief never carries unreviewed text.
+const canProduce = r => PRODUCTION_CHANNELS.includes(r.channel) && ['approved', 'scheduled', 'published'].includes(r.status)
+
+function MediaLink({ row, onSave }) {
+  const [url, setUrl] = useState(row.media_url ?? '')
+  const valid = !url.trim() || /^https:\/\/\S+$/.test(url.trim())
+  return (
+    <div style={{ display:'flex', gap:'8px', alignItems:'flex-end', flexWrap:'wrap' }}>
+      <div style={{ flex:'1 1 280px' }}>
+        <Field label="Finished media link (from Creator Studio)">
+          <input style={f.input} value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
+        </Field>
+      </div>
+      <button style={f.btn} disabled={!valid || url === (row.media_url ?? '')} onClick={() => onSave(row, url)}>Save link</button>
+      {row.media_url && <a href={row.media_url} target="_blank" rel="noreferrer" style={{ fontSize:'13px', alignSelf:'center' }}>Open media ↗</a>}
+      {!valid && <div style={{ width:'100%', fontSize:'12px', color:'#993C1D' }}>Use a full https:// link.</div>}
     </div>
   )
 }
