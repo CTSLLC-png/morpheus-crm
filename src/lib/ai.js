@@ -201,3 +201,22 @@ what happened and that the call must be retaken."
     passed: floors.length === 0 && total >= 80,
   }
 }
+
+// ── 4. Campaign copy (Campaign Studio) ─────────────────────────
+/**
+ * @param {string} system  guardrail prompt from the module's playbook
+ * @param {string} prompt  channel/audience/angle brief
+ * @returns {{ title, body }}  a draft — a person approves it before use
+ */
+export async function generateCampaignCopy(system, prompt) {
+  const text = await claudePost({
+    max_tokens: 2500,
+    system,
+    messages: [{ role: 'user', content: prompt }],
+  })
+  const raw = JSON.parse(text.replace(/```json|```/g, '').trim())
+  return {
+    title: String(raw.title ?? 'Untitled draft').slice(0, 200),
+    body: String(raw.body ?? '').slice(0, 20000),
+  }
+}

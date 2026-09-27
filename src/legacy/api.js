@@ -96,4 +96,55 @@ export async function sendReset(email, redirectTo) {
   if (error) throw error
 }
 
+// ── Campaign attribution ─────────────────────────────────────────────────
+// Mirrors public/legacy/attribution.js (same key and shape) so visitors who
+// land straight on /signin from a campaign link are counted too.
+const ATTR_KEY = 'lp_attr_v1'
+const ATTR_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000
+const clip = (v, n) => (v ? String(v).slice(0, n) : null)
+
+/** Remembers this visit's UTM tags in the browser (first touch wins). */
+export function captureAttribution() {
+  try {
+    const q = new URLSearchParams(window.location.search)
+    const ref = document.referrer ? new URL(document.referrer).hostname : null
+    const external = ref && ref !== window.location.hostname
+    const tagged = !!q.get('utm_source') || !!external
+    const prev = JSON.parse(window.localStorage.getItem(ATTR_KEY) || 'null')
+    const fresh = prev && Date.now() - (prev.t || 0) < ATTR_MAX_AGE_MS
+    if (fresh && (prev.utm_source || prev.referrer_host || !tagged)) return
+    window.localStorage.setItem(ATTR_KEY, JSON.stringify({
+      utm_source: clip(q.get('utm_source'), 80),
+      utm_medium: clip(q.get('utm_medium'), 80),
+      utm_campaign: clip(q.get('utm_campaign'), 80),
+      utm_content: clip(q.get('utm_content'), 80),
+      utm_term: clip(q.get('utm_term'), 80),
+      referrer_host: external ? clip(ref, 253) : null,
+      landing_path: clip(window.location.pathname, 200),
+      t: Date.now(),
+    }))
+  } catch { /* storage blocked: attribution is best-effort */ }
+}
+
+/**
+ * Writes the stored first touch to lp_attribution once per account. A
+ * duplicate (23505) means it was already recorded; any other failure is
+ * ignored so attribution can never block someone from using the app.
+ */
+export async function recordAttribution(uid) {
+  let a
+  try { a = JSON.parse(window.localStorage.getItem(ATTR_KEY) || 'null') } catch { return }
+  if (!a || a.recorded === uid) return
+  const { error } = await supabase.from('lp_attribution').insert({
+    user_id: uid,
+    utm_source: a.utm_source, utm_medium: a.utm_medium, utm_campaign: a.utm_campaign,
+    utm_content: a.utm_content, utm_term: a.utm_term,
+    referrer_host: a.referrer_host, landing_path: a.landing_path,
+    first_seen_at: a.t ? new Date(a.t).toISOString() : null,
+  })
+  if (!error || error.code === '23505') {
+    try { window.localStorage.setItem(ATTR_KEY, JSON.stringify({ ...a, recorded: uid })) } catch { /* ignore */ }
+  }
+}
+
 export { supabase }
