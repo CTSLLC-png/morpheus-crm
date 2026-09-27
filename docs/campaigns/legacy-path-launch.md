@@ -171,7 +171,12 @@ Enforced in three places: the AI system prompt, the automatic `complianceCheck()
 
 ## 8. Measurement
 
-- Every link carries `utm_source / utm_medium / utm_campaign / utm_content`. The landing page (`public/legacy/attribution.js`) and the app (`captureAttribution`) keep the first campaign touch for 90 days.
+- Every link carries `utm_source / utm_medium / utm_campaign / utm_content`.
+  - **`utm_source` is the platform** the person saw it on: `facebook`, `instagram`, `youtube`, `tiktok`, `meta`, `google`, `newsletter`, or the partner or placement by name (`st-johns-church`, `albany-library`).
+  - **`utm_medium` is the format**: `social`, `video`, `paid-social`, `cpc`, `email`, `sms`, `article`, `partner`, `print`.
+  - Never use the Campaign Studio channel name as the source. `video-script` or `blog` tells the Funnel nothing. The mapping lives in `CHANNEL_UTM` in `src/modules/growth/legacyPlaybook.js`.
+  - Partner and print drafts carry a `partner-name` / `placement-name` placeholder, and the compliance check flags it until a real link from the Link builder replaces it.
+- The landing page (`public/legacy/attribution.js`) and the app (`captureAttribution`) keep the first campaign touch for 90 days.
 - After signup, the first touch is written once to `lp_attribution`. It holds tags only, with no personal data.
 - **Funnel tab** (`lp_campaign_funnel()`, super_admin only): free accounts → purchases → refunds → net revenue, per source, medium and campaign.
 - Weekly review: cut the bottom third of angles by conversion and feed the top angle into next week's Autopilot "extra direction".
