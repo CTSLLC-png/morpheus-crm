@@ -141,3 +141,85 @@ ${notes ? 'Extra direction from the campaign manager: ' + notes + '\n' : ''}
 Return ONLY a JSON object, no preamble:
 {"title": "short internal name for this asset", "body": "the finished copy"}`
 }
+
+// ── Creator Studio handoff ─────────────────────────────────────────────────
+// Creator Studio (creator-studio-cinema) has no API or import, so the handoff
+// is a brief laid out the way its New project form and Production queue read:
+// project, type, stage, queue items with priority, then the approved copy.
+
+const PRODUCTION = {
+  'video-script': { type: 'Explainer video',    specs: '60–90 s · 16:9 master + 9:16 cut · burned-in captions', kind: 'video' },
+  tiktok:         { type: 'Short-form video',   specs: '30–45 s · 9:16 · captions on screen · hook in first 3 s', kind: 'video' },
+  youtube:        { type: 'YouTube video',      specs: '16:9 · thumbnail 1280×720 · chapters from the description', kind: 'video' },
+  instagram:      { type: 'Social image / Reel', specs: '1080×1350 feed image, or 9:16 Reel under 45 s', kind: 'image' },
+  facebook:       { type: 'Social image',       specs: '1080×1080 and 1200×628 · text on image under 20%', kind: 'image' },
+  'meta-ads':     { type: 'Ad creative set',    specs: '1080×1080, 1080×1350, 9:16 · one image or 15 s video per variant', kind: 'image' },
+  print:          { type: 'Print flyer',        specs: 'Letter 8.5×11 in · 300 dpi · QR code to the tracked link', kind: 'image' },
+}
+
+export const PRODUCTION_CHANNELS = Object.keys(PRODUCTION)
+
+export const BRAND_KIT = {
+  colors: 'Forest #1C3D35 (primary) · Gold #9C6A1E (accent) · Cream #F3F5F1 (background) · Ink #17231F',
+  fonts: 'Spectral (headlines) · Public Sans (body)',
+  logo: 'Legacy Path mark: rising three-point line in a rounded square (legacy.morpheuscr.com/og/legacy-path-icon.png)',
+  tone: 'Warm, plain-spoken, respectful of every faith and culture. Real families, multi-generational, not stock "rich" imagery. No money piles, no luxury, no fear or grief staging.',
+}
+
+const shiftDate = (iso, days) => {
+  const d = new Date(`${iso}T12:00:00`); d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Plain-text production brief for one approved asset, ready to paste. */
+export function productionBrief(asset) {
+  const p = PRODUCTION[asset.channel] ?? { type: 'Creative', specs: 'See copy', kind: 'image' }
+  const audience = AUDIENCES.find(a => a.key === asset.audience)
+  const air = asset.scheduled_for || shiftDate(new Date().toISOString().slice(0, 10), 7)
+  const due = n => shiftDate(air, -n)
+  const queue = p.kind === 'video'
+    ? [
+        ['Critical', `Lock script and shot list`, due(5)],
+        ['High',     `Record or generate voiceover`, due(4)],
+        ['High',     `Generate visuals from the Asset vault (brand kit below)`, due(3)],
+        ['Normal',   `Edit, captions, music, end card`, due(2)],
+        ['Critical', `Compliance pass: disclaimer on end card, link exact, no advice or promises`, due(1)],
+      ]
+    : [
+        ['High',     `Generate key visual from the Asset vault (brand kit below)`, due(3)],
+        ['Normal',   `Lay out headline and copy, export every size`, due(2)],
+        ['Critical', `Compliance pass: disclaimer present, link or QR exact, no advice or promises`, due(1)],
+      ]
+
+  return [
+    'CREATOR STUDIO — PRODUCTION BRIEF',
+    '',
+    `Project: Legacy Path · ${asset.title}`,
+    `Type: ${p.type}`,
+    'Stage: Pre-production',
+    `Campaign: ${asset.campaign} · Channel: ${asset.channel}${audience ? ` · Audience: ${audience.label}` : ''}`,
+    `Air date: ${air}`,
+    '',
+    'PRODUCTION QUEUE',
+    ...queue.map(([pri, task, date], i) => `${i + 1}. [${pri}] ${task} — due ${date}`),
+    '',
+    'SPECS',
+    `- ${p.specs}`,
+    `- End card / footer: "Legacy Path · Free family screener at legacy.morpheuscr.com"`,
+    `- Disclaimer on screen: "${DISCLAIMER}"`,
+    `- Tracked link (use exactly): ${asset.landing_url || LANDING}`,
+    '',
+    'BRAND KIT',
+    `- Colors: ${BRAND_KIT.colors}`,
+    `- Fonts: ${BRAND_KIT.fonts}`,
+    `- Logo: ${BRAND_KIT.logo}`,
+    `- Look and tone: ${BRAND_KIT.tone}`,
+    '',
+    'APPROVED COPY / SCRIPT (do not change wording without re-approval in Campaign Studio)',
+    '---',
+    asset.body,
+    '---',
+    '',
+    'When the cut is final, paste the media link back into Campaign Studio so results can be tied to it.',
+  ].join('\n')
+}
