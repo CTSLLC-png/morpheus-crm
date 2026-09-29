@@ -1,0 +1,52 @@
+{
+  "title": "Legacy Path — A plan for every age",
+  "campaignAsset": "Explainer video: A plan for every age (60s)",
+  "voice": "en-us-lessac-medium",
+  "lengthScale": 1.06,
+  "fps": 30,
+  "outputs": [
+    { "name": "16x9", "width": 1920, "height": 1080 },
+    { "name": "9x16", "width": 1080, "height": 1920 }
+  ],
+  "disclaimer": "Education only — not investment, insurance, tax or legal advice. Talk to a licensed professional before acting.",
+  "scenes": [
+    {
+      "kind": "family",
+      "eyebrow": "Family wealth education",
+      "headline": "Nobody showed us the plan.",
+      "vo": "Most families don't have a money plan. Not because they don't care, but because nobody ever showed them one."
+    },
+    {
+      "kind": "screener",
+      "eyebrow": "Start free",
+      "headline": "Free 5-minute screener",
+      "chips": ["Your state", "Household income · a range is fine", "Kids and their ages", "Goals for the family"],
+      "note": "No bank logins. No Social Security numbers. Ever.",
+      "vo": "Legacy Path is a plan for your family's money at every age. Start with a free five-minute screener. Ranges are fine, and it never asks for bank logins."
+    },
+    {
+      "kind": "plan",
+      "eyebrow": "Your family's plan",
+      "columns": [
+        { "label": "Do first", "items": ["Beneficiary forms", "Wills and powers of attorney"] },
+        { "label": "Work on next", "items": ["College savings options", "Life insurance basics"] },
+        { "label": "When you're ready", "items": ["Family trusts", "Legacy and burial planning"] }
+      ],
+      "vo": "You'll see what to do first, what to work on next, and what can wait."
+    },
+    {
+      "kind": "guides",
+      "eyebrow": "Every guide, for the whole household",
+      "tiles": ["Savings and credit", "Retirement", "A home", "Insurance", "Wills and trusts", "Funeral planning, in your tradition"],
+      "price": "$20 once · whole household · no subscription",
+      "vo": "Then, for twenty dollars, once, your whole household gets every guide: savings and credit, retirement, a home, insurance, wills and trusts, and a funeral your family can afford, in your tradition."
+    },
+    {
+      "kind": "endcard",
+      "headline": "Legacy Path",
+      "tagline": "From the cradle to the legacy years.",
+      "cta": "Free screener at legacy.morpheuscr.com",
+      "vo": "Legacy Path. From the cradle to the legacy years."
+    }
+  ]
+}

@@ -13,8 +13,8 @@ import { generateCampaignCopy } from '../../lib/ai.js'
 import { projectFromCampaignAsset } from '../studio/studioApi.js'
 import { ModuleHeader, Pill, Table, DataState, styles } from '../common/ModuleFrame.jsx'
 import {
-  AUDIENCES, CHANNELS, ANGLES, SEASONAL, DEFAULT_MEDIUM, LANDING,
-  complianceCheck, utmLink, systemPrompt, generationPrompt,
+  AUDIENCES, CHANNELS, ANGLES, SEASONAL, CHANNEL_UTM, LANDING,
+  complianceCheck, utmLink, channelLink, systemPrompt, generationPrompt,
   PRODUCTION_CHANNELS, productionBrief,
 } from './legacyPlaybook.js'
 
@@ -129,17 +129,17 @@ function Funnel() {
 function Generate({ onSaved }) {
   const [form, setForm] = useState({
     channel: 'facebook', audience: AUDIENCES[0].key, angle: ANGLES[0],
-    campaign: defaultCampaign(), notes: '',
+    campaign: defaultCampaign(), notes: '', source: '',
   })
   const [draft, setDraft] = useState(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState(null)
 
-  const link = utmLink({
-    source: form.channel, medium: DEFAULT_MEDIUM[form.channel],
-    campaign: form.campaign, content: form.audience,
-  })
+  const utm = CHANNEL_UTM[form.channel]
+  const link = channelLink({ channel: form.channel, campaign: form.campaign, audience: form.audience, source: form.source })
   const set = k => e => setForm(v => ({ ...v, [k]: e.target.value }))
+  // A new channel means a new platform, so drop any source typed for the old one.
+  const setChannel = e => setForm(v => ({ ...v, channel: e.target.value, source: '' }))
 
   async function run() {
     setBusy(true); setMsg(null)
@@ -163,13 +163,16 @@ function Generate({ onSaved }) {
     <div style={{ display:'grid', gap:'16px' }}>
       <div style={{ ...styles.card, padding:'16px' }}>
         <div style={f.grid}>
-          <Field label="Channel"><select style={f.input} value={form.channel} onChange={set('channel')}>
+          <Field label="Channel"><select style={f.input} value={form.channel} onChange={setChannel}>
             {CHANNELS.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}</select></Field>
           <Field label="Audience"><select style={f.input} value={form.audience} onChange={set('audience')}>
             {AUDIENCES.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}</select></Field>
           <Field label="Angle"><select style={f.input} value={form.angle} onChange={set('angle')}>
             {ANGLES.map(a => <option key={a} value={a}>{a}</option>)}</select></Field>
           <Field label="Campaign tag"><input style={f.input} value={form.campaign} onChange={set('campaign')} /></Field>
+          <Field label={`Source · where it's seen (medium: ${utm.medium})`}>
+            <input style={f.input} value={form.source} onChange={set('source')} placeholder={utm.named ?? utm.source} />
+          </Field>
         </div>
         <div style={{ marginTop:'12px' }}>
           <Field label="Extra direction (optional)">
@@ -219,7 +222,7 @@ export function planWeek(start, campaign, offset = 0) {
     return {
       channel, audience, angle, campaign, scheduled_for: d.toISOString().slice(0, 10),
       notes: `Seasonal hook if it fits naturally: ${SEASONAL[d.getMonth()]}.`,
-      link: utmLink({ source: channel, medium: DEFAULT_MEDIUM[channel], campaign, content: audience }),
+      link: channelLink({ channel, campaign, audience }),
     }
   })
 }

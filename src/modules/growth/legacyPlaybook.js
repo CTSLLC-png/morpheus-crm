@@ -93,6 +93,8 @@ export function complianceCheck(text, channel) {
   }
   if (channel === 'sms' && !/reply stop/i.test(text)) flags.push('SMS must include "Reply STOP to opt out".')
   if (channel === 'email' && !/unsubscribe/i.test(text)) flags.push('Email needs an unsubscribe line and the CTS mailing address (CAN-SPAM).')
+  if (text.includes(`utm_source=${PARTNER_PLACEHOLDER}`)) flags.push('Link still says "partner-name". Make one link per partner in the Link builder and swap it in before sending.')
+  if (text.includes(`utm_source=${PLACEMENT_PLACEHOLDER}`)) flags.push('Link still says "placement-name". Name where this is posted in the Link builder and swap the link in.')
   return flags
 }
 
@@ -107,10 +109,41 @@ export function utmLink({ source, medium, campaign, content, path = '' }) {
   return u.toString()
 }
 
-export const DEFAULT_MEDIUM = {
-  email: 'email', facebook: 'social', instagram: 'social', tiktok: 'social', youtube: 'video',
-  linkedin: 'social', 'google-search': 'cpc', 'meta-ads': 'paid-social', sms: 'sms',
-  partner: 'partner', 'video-script': 'video', blog: 'organic',
+// Where each channel's traffic comes from. utm_source is the PLATFORM the
+// person saw it on (facebook, youtube, meta, google) and utm_medium is the
+// FORMAT (social, video, paid-social, cpc). The channel key itself never goes
+// in the link: "video-script" or "blog" as a source would make the Funnel
+// tab's Source column meaningless.
+// Partner and print links can't know their source up front — each church,
+// credit union or flyer placement is its own source — so they carry a
+// placeholder that complianceCheck() flags until someone names it.
+export const PARTNER_PLACEHOLDER = 'partner-name'
+export const PLACEMENT_PLACEHOLDER = 'placement-name'
+
+export const CHANNEL_UTM = {
+  facebook:        { source: 'facebook',         medium: 'social' },
+  instagram:       { source: 'instagram',        medium: 'social' },
+  linkedin:        { source: 'linkedin',         medium: 'social' },
+  tiktok:          { source: 'tiktok',           medium: 'video' },
+  youtube:         { source: 'youtube',          medium: 'video' },
+  'video-script':  { source: 'youtube',          medium: 'video' },
+  'meta-ads':      { source: 'meta',             medium: 'paid-social' },
+  'google-search': { source: 'google',           medium: 'cpc' },
+  email:           { source: 'newsletter',       medium: 'email' },
+  sms:             { source: 'sms-list',         medium: 'sms' },
+  blog:            { source: 'legacy-path-blog', medium: 'article' },
+  partner:         { source: PARTNER_PLACEHOLDER,   medium: 'partner', named: 'the partner organization, e.g. st-johns-church' },
+  print:           { source: PLACEMENT_PLACEHOLDER, medium: 'print',   named: 'where the flyer is posted, e.g. albany-library' },
+}
+
+/**
+ * The tracked link for a channel. `source` overrides the default platform
+ * (a partner's name, or "facebook" for a video posted there instead of
+ * YouTube); the medium always follows the channel's format.
+ */
+export function channelLink({ channel, campaign, audience, source, path = '' }) {
+  const utm = CHANNEL_UTM[channel] ?? { source: 'other', medium: 'other' }
+  return utmLink({ source: source || utm.source, medium: utm.medium, campaign, content: audience, path })
 }
 
 export function systemPrompt() {
