@@ -40,6 +40,22 @@
       "destination": "/legacy/index.html"
     },
     {
+      "source": "/partners",
+      "destination": "/legacy/partners/index.html"
+    },
+    {
+      "source": "/partners/",
+      "destination": "/legacy/partners/index.html"
+    },
+    {
+      "source": "/legacy/partners",
+      "destination": "/legacy/partners/index.html"
+    },
+    {
+      "source": "/legacy/partners/",
+      "destination": "/legacy/partners/index.html"
+    },
+    {
       "source": "/privacy",
       "destination": "/legal/privacy.html"
     },
