@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--caps", "devtools", "--viewport-size", "1920x1080"]
+    }
+  }
+}
