@@ -9,7 +9,7 @@ const STATUS_COLORS = {
   Active:     { bg: '#E1F5EE', color: '#0F6E56' },
   Scheduled:  { bg: '#E6F1FB', color: '#0C447C' },
   Completed:  { bg: '#F1EFE8', color: '#5F5E5A' },
-  Archived:   { bg: '#F1EFE8', color: '#8BA0B8' },
+  Archived:   { bg: '#F1EFE8', color: '#5D768A' },
 }
 
 const PROGRAM_SOURCES = ['LDSS Albany','LDSS Schenectady','Reentry / Incarcerated','Direct Enrollment']
@@ -89,34 +89,34 @@ export default function CohortManagement({ staffProfiles = [] }) {
             <div style={s.modalTitle}>Create new cohort</div>
             <div style={s.formGrid}>
               <div style={{ ...s.fg, gridColumn: '1/-1' }}>
-                <label style={s.label}>Cohort name <span style={s.req}>*</span></label>
-                <input style={s.input} placeholder="e.g. Spring 2025 – Cohort A"
+                <label style={s.label} htmlFor="cohortmanagement-cohort-name">Cohort name <span style={s.req}>*</span></label>
+                <input id="cohortmanagement-cohort-name" style={s.input} placeholder="e.g. Spring 2025 – Cohort A"
                   value={newCohort.name} onChange={e => setNewCohort(p => ({ ...p, name: e.target.value }))} />
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Program source <span style={s.req}>*</span></label>
-                <select style={s.input} value={newCohort.program_source}
+                <label style={s.label} htmlFor="cohortmanagement-program-source">Program source <span style={s.req}>*</span></label>
+                <select id="cohortmanagement-program-source" style={s.input} value={newCohort.program_source}
                   onChange={e => setNewCohort(p => ({ ...p, program_source: e.target.value }))}>
                   <option value="">Select…</option>
                   {PROGRAM_SOURCES.map(ps => <option key={ps}>{ps}</option>)}
                 </select>
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Lead trainer</label>
-                <select style={s.input} value={newCohort.trainer_id}
+                <label style={s.label} htmlFor="cohortmanagement-lead-trainer">Lead trainer</label>
+                <select id="cohortmanagement-lead-trainer" style={s.input} value={newCohort.trainer_id}
                   onChange={e => setNewCohort(p => ({ ...p, trainer_id: e.target.value }))}>
                   <option value="">Select…</option>
                   {staffProfiles.map(sp => <option key={sp.id} value={sp.id}>{sp.full_name}</option>)}
                 </select>
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Start date <span style={s.req}>*</span></label>
-                <input style={s.input} type="date" value={newCohort.start_date}
+                <label style={s.label} htmlFor="cohortmanagement-start-date">Start date <span style={s.req}>*</span></label>
+                <input id="cohortmanagement-start-date" style={s.input} type="date" value={newCohort.start_date}
                   onChange={e => setNewCohort(p => ({ ...p, start_date: e.target.value }))} />
               </div>
               <div style={s.fg}>
-                <label style={s.label}>End date</label>
-                <input style={s.input} type="date" value={newCohort.end_date}
+                <label style={s.label} htmlFor="cohortmanagement-end-date">End date</label>
+                <input id="cohortmanagement-end-date" style={s.input} type="date" value={newCohort.end_date}
                   onChange={e => setNewCohort(p => ({ ...p, end_date: e.target.value }))} />
               </div>
             </div>
@@ -158,7 +158,7 @@ export default function CohortManagement({ staffProfiles = [] }) {
                   <div style={s.cstatLabel}>Calls logged</div>
                 </div>
                 <div style={s.cstat}>
-                  <div style={{ ...s.cstatVal, color: c.cohort_avg_score ? (c.cohort_avg_score >= 80 ? '#0F6E56' : c.cohort_avg_score >= 60 ? '#BA7517' : '#993C1D') : '#CBD8E6' }}>
+                  <div style={{ ...s.cstatVal, color: c.cohort_avg_score ? (c.cohort_avg_score >= 80 ? '#0F6E56' : c.cohort_avg_score >= 60 ? '#854F0B' : '#993C1D') : '#CBD8E6' }}>
                     {c.cohort_avg_score ?? '—'}
                   </div>
                   <div style={s.cstatLabel}>Avg score</div>
@@ -228,16 +228,16 @@ const s = {
   cohortStats: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px', marginBottom: '12px' },
   cstat: { textAlign: 'center', background: '#F7F9FC', borderRadius: '8px', padding: '8px 4px' },
   cstatVal: { fontSize: '20px', fontWeight: 300, color: '#0D1B2A', fontFamily: "'DM Mono', monospace" },
-  cstatLabel: { fontSize: '10px', color: '#8BA0B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' },
+  cstatLabel: { fontSize: '10px', color: '#5D768A', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' },
   cohortTrainer: { fontSize: '12px', color: '#4A6080', marginBottom: '3px' },
-  cohortDates: { fontSize: '11px', color: '#8BA0B8', fontFamily: "'DM Mono', monospace", marginBottom: '12px' },
+  cohortDates: { fontSize: '11px', color: '#5D768A', fontFamily: "'DM Mono', monospace", marginBottom: '12px' },
   cohortActions: { display: 'flex', gap: '7px' },
   enrollPanel: { background: '#F7F9FC', border: '1px solid #E8EFF6', borderRadius: '10px', padding: '12px', marginTop: '12px' },
   enrollTitle: { fontSize: '11px', fontWeight: 600, color: '#4A6080', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' },
   enrollList: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' },
   enrollRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', background: '#fff', borderRadius: '6px', border: '1px solid #E8EFF6' },
   enrollName: { flex: 1, fontSize: '12px', fontWeight: 500, color: '#0D1B2A' },
-  enrollSource: { fontSize: '11px', color: '#8BA0B8' },
+  enrollSource: { fontSize: '11px', color: '#5D768A' },
   enrollBtn: { padding: '3px 10px', border: 'none', borderRadius: '5px', background: '#0D1B2A', color: '#fff', fontSize: '11px', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   modal: { position: 'fixed', inset: 0, background: 'rgba(13,27,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
   modalCard: { background: '#fff', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' },

@@ -5,6 +5,15 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase.js'
+import { SITE_HOST } from '../lib/site.js'
+import { RadioCard } from '../components/a11y.jsx'
+
+// auth.users app_metadata role -> what a human should read.
+const ROLE_LABEL = {
+  super_admin: 'Super admin',
+  trainer:     'Trainer',
+  participant: 'Participant',
+}
 import { useAuth } from '../hooks/useAuth.jsx'
 
 const ROLES = [
@@ -24,6 +33,7 @@ export default function AdminPanel() {
   const { user } = useAuth()
   const [tab, setTab]         = useState('accounts')
   const [staff, setStaff]     = useState([])
+  const [staffError, setStaffError] = useState(null)
   const [authUsers, setAuthUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -45,15 +55,20 @@ export default function AdminPanel() {
 
   async function loadStaff() {
     setLoading(true)
+    setStaffError(null)
     try {
-      const { data, error } = await supabase
-        .from('staff_profiles')
-        .select('*, auth_user:user_id(email)')
-        .order('full_name')
+      // The account email lives in auth.users, which the Data API does not
+      // expose — embedding it from staff_profiles 400s. staff_directory() is
+      // the server-side join, restricted to super admins.
+      const { data, error } = await supabase.rpc('staff_directory')
       if (error) throw error
       setStaff(data ?? [])
     } catch(e) {
-      console.error(e)
+      // Never fall through to the empty state on a failed read: "no staff
+      // exist" and "we could not ask" must not look the same to an admin.
+      console.error('[admin] staff directory failed:', e)
+      setStaffError(e.message ?? 'Could not load the staff directory.')
+      setStaff([])
     } finally {
       setLoading(false)
     }
@@ -136,54 +151,55 @@ export default function AdminPanel() {
           <div style={s.cardTitle}>Create Morpheus account</div>
 
           {/* Role selector */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'20px' }}>
+          <div role="radiogroup" aria-label="Account type"
+            style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'20px' }}>
             {ROLES.map(r => (
-              <div key={r.value}
-                style={{
-                  ...s.roleCard,
-                  ...(form.role === r.value ? s.roleCardActive : {}),
-                }}
-                onClick={() => set('role', r.value)}>
+              <RadioCard key={r.value}
+                name="account-role"
+                value={r.value}
+                checked={form.role === r.value}
+                onChange={v => set('role', v)}
+                style={{ ...s.roleCard, ...(form.role === r.value ? s.roleCardActive : {}) }}>
                 <div style={s.roleLabel}>{r.label}</div>
                 <div style={s.roleDesc}>{r.desc}</div>
-              </div>
+              </RadioCard>
             ))}
           </div>
 
           <form onSubmit={handleCreate} style={s.form}>
             <div style={s.formGrid}>
               <div style={s.fg}>
-                <label style={s.label}>Full name <span style={s.req}>*</span></label>
-                <input style={s.input} required value={form.full_name}
+                <label style={s.label} htmlFor="adminpanel-full-name">Full name <span style={s.req}>*</span></label>
+                <input id="adminpanel-full-name" style={s.input} required value={form.full_name}
                   onChange={e => set('full_name', e.target.value)}
                   placeholder="First and last name" />
               </div>
               {form.role !== 'participant' && (
                 <div style={s.fg}>
-                  <label style={s.label}>Job title</label>
-                  <input style={s.input} value={form.title}
+                  <label style={s.label} htmlFor="adminpanel-job-title">Job title</label>
+                  <input id="adminpanel-job-title" style={s.input} value={form.title}
                     onChange={e => set('title', e.target.value)}
                     placeholder="e.g. Lead Trainer" />
                 </div>
               )}
               {form.role === 'participant' && (
                 <div style={s.fg}>
-                  <label style={s.label}>Program source <span style={s.req}>*</span></label>
-                  <select style={s.input} value={form.program_source}
+                  <label style={s.label} htmlFor="adminpanel-program-source">Program source <span style={s.req}>*</span></label>
+                  <select id="adminpanel-program-source" style={s.input} value={form.program_source}
                     onChange={e => set('program_source', e.target.value)}>
                     {PROGRAM_SOURCES.map(p => <option key={p}>{p}</option>)}
                   </select>
                 </div>
               )}
               <div style={s.fg}>
-                <label style={s.label}>Email address <span style={s.req}>*</span></label>
-                <input style={s.input} type="email" required value={form.email}
+                <label style={s.label} htmlFor="adminpanel-email-address">Email address <span style={s.req}>*</span></label>
+                <input id="adminpanel-email-address" style={s.input} type="email" required value={form.email}
                   onChange={e => set('email', e.target.value)}
                   placeholder="user@example.com" />
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Temporary password <span style={s.req}>*</span></label>
-                <input style={s.input} type="password" required minLength={8}
+                <label style={s.label} htmlFor="adminpanel-temporary-password">Temporary password <span style={s.req}>*</span></label>
+                <input id="adminpanel-temporary-password" style={s.input} type="password" required minLength={8}
                   value={form.password}
                   onChange={e => set('password', e.target.value)}
                   placeholder="Min 8 characters" />
@@ -224,15 +240,20 @@ export default function AdminPanel() {
                   <div style={s.staffInfo}>
                     <div style={s.staffName}>{sp.full_name}</div>
                     <div style={s.staffMeta}>
-                      {sp.title && <span>{sp.title}</span>}
+                      {[sp.title, sp.email].filter(Boolean).join('  ·  ')}
                     </div>
                   </div>
                   <div style={{ display:'flex', gap:'8px', alignItems:'center' }}>
-                    <span style={s.staffBadge}>Trainer</span>
+                    <span style={s.staffBadge}>{ROLE_LABEL[sp.role] ?? 'No role set'}</span>
                   </div>
                 </div>
               ))}
-              {staff.length === 0 && (
+              {staffError && (
+                <div style={{ color:'#993C1D', fontSize:'13px', lineHeight:'1.6' }}>
+                  Could not load the staff directory: {staffError}
+                </div>
+              )}
+              {!staffError && staff.length === 0 && (
                 <div style={{ color:'var(--color-text-tertiary)', fontSize:'13px', fontStyle:'italic' }}>
                   No staff profiles yet. Create accounts using the &ldquo;Create account&rdquo; tab.
                 </div>
@@ -297,7 +318,7 @@ function SystemStatus() {
         </div>
       ))}
       <div style={{ marginTop:'8px', fontSize:'12px', color:'var(--color-text-tertiary)', lineHeight:'1.6' }}>
-        Morpheus CRM v1.0 · Sprint 3 complete · morpheuscr.com
+        Morpheus CRM v1.0 · Sprint 3 complete · {SITE_HOST}
       </div>
     </div>
   )
@@ -333,6 +354,6 @@ const s = {
   staffAvatar:{ width:'36px', height:'36px', borderRadius:'50%', background:'#0D1B2A', color:'#5DCAA5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:600, flexShrink:0, fontFamily:'monospace' },
   staffInfo:  { flex:1 },
   staffName:  { fontSize:'13px', fontWeight:500, color:'var(--color-text-primary)' },
-  staffMeta:  { fontSize:'11px', color:'var(--color-text-tertiary)', marginTop:'1px' },
+  staffMeta:  { fontSize:'11px', color:'var(--color-text-tertiary)', marginTop:'2px' },
   staffBadge: { fontSize:'10px', fontWeight:600, padding:'2px 9px', borderRadius:'10px', background:'#E6F1FB', color:'#0C447C' },
 }

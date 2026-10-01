@@ -6,6 +6,7 @@
 
 import jsPDF from 'jspdf'
 import { supabase } from './supabase.js'
+import { SITE_HOST } from './site.js'
 
 const NAVY   = [13,  27,  42]
 const MIDBL  = [27,  58,  92]
@@ -210,7 +211,7 @@ export async function generateCertificatePDF({ participant, certRecord }) {
   doc.setFontSize(7.5)
   doc.setTextColor(139, 175, 200)
   doc.text(
-    'Morpheus CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscr.com',
+    `Morpheus CRM  ·  Certified Training Standards  ·  Albany, NY  ·  ${SITE_HOST}`,
     W / 2, H - 46, { align: 'center' }
   )
   doc.text(

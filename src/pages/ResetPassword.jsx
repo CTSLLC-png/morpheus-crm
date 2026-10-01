@@ -29,7 +29,7 @@ export default function ResetPassword() {
     card: { background:'#fff', borderRadius:'16px', padding:'36px 40px', width:'100%', maxWidth:'400px' },
     logo: { fontFamily:"'DM Mono',monospace", fontSize:'22px', fontWeight:500, color:'#0D1B2A', marginBottom:'4px' },
     accent: { color:'#5DCAA5' },
-    sub: { fontSize:'11px', color:'#8BA0B8', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'24px' },
+    sub: { fontSize:'11px', color:'#5D768A', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'24px' },
     heading: { fontSize:'17px', fontWeight:500, color:'#0D1B2A', marginBottom:'20px' },
     form: { display:'flex', flexDirection:'column', gap:'12px' },
     label: { fontSize:'11px', fontWeight:600, color:'#4A6080', textTransform:'uppercase', letterSpacing:'0.06em' },
@@ -49,11 +49,11 @@ export default function ResetPassword() {
           <div style={s.success}>Password updated. Redirecting you to Morpheus…</div>
         ) : (
           <form onSubmit={handleSubmit} style={s.form}>
-            <label style={s.label}>New password</label>
-            <input style={s.input} type="password" required minLength={8}
+            <label style={s.label} htmlFor="resetpassword-new-password">New password</label>
+            <input id="resetpassword-new-password" style={s.input} type="password" required minLength={8}
               value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 8 characters" />
-            <label style={s.label}>Confirm password</label>
-            <input style={s.input} type="password" required
+            <label style={s.label} htmlFor="resetpassword-confirm-password">Confirm password</label>
+            <input id="resetpassword-confirm-password" style={s.input} type="password" required
               value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat password" />
             {error && <div style={s.error}>{error}</div>}
             <button style={s.btn} type="submit" disabled={loading}>

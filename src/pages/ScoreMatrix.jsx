@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react'
 import { getScoreWeights, updateScoreWeights, getCohortOverview } from '../lib/db.js'
 import { useAuth } from '../hooks/useAuth.jsx'
+import { Tabs } from '../components/a11y.jsx'
 
 const CATS = [
   {
@@ -49,7 +50,7 @@ const CATS = [
 
 const RUBRIC_LEVELS = [
   { range: '0–59', label: 'Unsatisfactory', color: '#993C1D', bg: '#FAECE7' },
-  { range: '60–79', label: 'Developing',    color: '#BA7517', bg: '#FAEEDA' },
+  { range: '60–79', label: 'Developing',    color: '#854F0B', bg: '#FAEEDA' },
   { range: '80–100', label: 'Proficient',   color: '#0F6E56', bg: '#E1F5EE' },
 ]
 
@@ -187,8 +188,8 @@ export default function ScoreMatrix() {
           </p>
         </div>
         <div style={s.cohortSelector}>
-          <label style={s.label}>Apply to</label>
-          <select style={{ ...s.input, width:'220px' }}
+          <label style={s.label} htmlFor="scorematrix-apply-to">Apply to</label>
+          <select id="scorematrix-apply-to" style={{ ...s.input, width:'220px' }}
             value={selectedCohort ?? ''}
             onChange={e => setSelectedCohort(e.target.value || null)}>
             <option value="">Global default (all cohorts)</option>
@@ -200,16 +201,19 @@ export default function ScoreMatrix() {
       </div>
 
       {/* Tabs */}
-      <div style={s.tabRow}>
-        <button style={{ ...s.tab, ...(activeTab === 'weights' ? s.tabActive : {}) }}
-          onClick={() => setActiveTab('weights')}>
-          Category weights
-        </button>
-        <button style={{ ...s.tab, ...(activeTab === 'rubric' ? s.tabActive : {}) }}
-          onClick={() => setActiveTab('rubric')}>
-          Rubric descriptors
-        </button>
-      </div>
+      <Tabs
+        label="Score matrix sections"
+        idPrefix="matrix"
+        value={activeTab}
+        onChange={setActiveTab}
+        style={s.tabRow}
+        itemStyle={s.tab}
+        activeItemStyle={s.tabActive}
+        items={[
+          { value: 'weights', label: 'Category weights' },
+          { value: 'rubric',  label: 'Rubric descriptors' },
+        ]}
+      />
 
       {/* ── Weights tab ── */}
       {activeTab === 'weights' && (
@@ -218,7 +222,7 @@ export default function ScoreMatrix() {
           <div style={s.weightBar}>
             {CATS.map((cat, i) => {
               const w = weights[cat.key] ?? 0
-              const colors = ['#2176AE','#0F6E56','#BA7517','#534AB7','#993C1D','#5F5E5A']
+              const colors = ['#2176AE','#0F6E56','#854F0B','#534AB7','#993C1D','#5F5E5A']
               return (
                 <div key={cat.key} style={{
                   flex: w, background: colors[i], height:'100%',
@@ -235,7 +239,7 @@ export default function ScoreMatrix() {
           </div>
           <div style={s.weightBarLegend}>
             {CATS.map((cat, i) => {
-              const colors = ['#2176AE','#0F6E56','#BA7517','#534AB7','#993C1D','#5F5E5A']
+              const colors = ['#2176AE','#0F6E56','#854F0B','#534AB7','#993C1D','#5F5E5A']
               return (
                 <div key={cat.key} style={{ display:'flex', alignItems:'center', gap:'4px' }}>
                   <div style={{ width:'8px', height:'8px', borderRadius:'2px', background:colors[i], flexShrink:0 }} />
@@ -251,17 +255,24 @@ export default function ScoreMatrix() {
           {CATS.map(cat => (
             <div key={cat.key} style={s.weightRow}>
               <div style={s.weightLeft}>
-                <div style={s.weightLabel}>{cat.label}</div>
-                <div style={s.weightDesc}>{cat.description}</div>
+                {/* The visible category name is the label for both controls;
+                    the description is their accessible description, so a
+                    screen reader hears what the weight actually governs. */}
+                <div style={s.weightLabel} id={`w-${cat.key}-label`}>{cat.label}</div>
+                <div style={s.weightDesc} id={`w-${cat.key}-desc`}>{cat.description}</div>
               </div>
               <div style={s.weightControls}>
                 <input type="range" min="0" max="60" step="1"
+                  aria-labelledby={`w-${cat.key}-label`}
+                  aria-describedby={`w-${cat.key}-desc`}
                   value={weights[cat.key] ?? 0}
                   onChange={e => setWeight(cat.key, e.target.value)}
                   style={{ width:'120px', accentColor:'#0D1B2A' }}
                 />
                 <div style={{ position:'relative' }}>
                   <input type="number" min="0" max="100" step="1"
+                    aria-labelledby={`w-${cat.key}-label`}
+                    aria-describedby={`w-${cat.key}-desc`}
                     value={weights[cat.key] ?? 0}
                     onChange={e => setWeight(cat.key, e.target.value)}
                     style={{ ...s.input, width:'64px', textAlign:'center', paddingRight:'20px' }}
@@ -297,9 +308,11 @@ export default function ScoreMatrix() {
           {error && <div style={s.errorBox}>{error}</div>}
 
           <div style={s.certNote}>
-            <strong>Certification threshold:</strong> Participants must achieve a cumulative
-            weighted average of 80 or above across a minimum of 5 evaluated calls to receive
-            the CX Representative certificate from Certified Training Standards.
+            <strong>Certification threshold:</strong> a cumulative weighted average of 80 or
+            above across a minimum of 5 evaluated calls. This is the standard for the
+            call-scored credentials issued by Certified Training Standards, including the
+            ClearCall Call Center Customer Service Certification, whose Module 4 assessment
+            is scored against this matrix.
           </div>
         </div>
       )}
@@ -336,6 +349,32 @@ export default function ScoreMatrix() {
               </div>
             </div>
           ))}
+
+          {/* Floors sit outside the weighted arithmetic: each is a firing
+              offence in a live centre, so it cannot be a points deduction.
+              Assessors need them on the same page as the descriptors, or
+              they get applied inconsistently between reviewers. */}
+          <div style={s.floorsBox}>
+            <div style={s.floorsTitle}>Governance floors — fail the call regardless of weighted score</div>
+            {[
+              ['Verification not completed', 'Account information released, or an account change made, without completing the verification standard in force. A caller-volunteered factor does not count as verification.'],
+              ['Prohibited data recorded', 'A full card number or other restricted identifier typed into a note, ticket, or any free-text field.'],
+            ].map(([title, detail]) => (
+              <div key={title} style={s.floorRow}>
+                <span style={s.floorPill}>FAIL</span>
+                <div>
+                  <div style={s.floorName}>{title}</div>
+                  <div style={s.floorDetail}>{detail}</div>
+                </div>
+              </div>
+            ))}
+            <div style={s.floorNote}>
+              Record these as <em>not yet ready</em> and have the candidate retake the call —
+              they are a readiness gate, not a punishment. A floor can only be lifted by an
+              administrator, who is recorded against the override along with their reason;
+              trainers escalate rather than clear it themselves.
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -373,4 +412,11 @@ const s = {
   rubricCat:  { fontSize:'12px', fontWeight:600, color:'var(--color-text-secondary)', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'8px' },
   rubricLevels: { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px' },
   rubricCell: { borderRadius:'8px', padding:'10px 12px' },
+  floorsBox:  { marginTop:'18px', border:'1px solid #E8C4B8', borderRadius:'12px', padding:'16px 18px', background:'#FDF7F5' },
+  floorsTitle:{ fontSize:'11px', fontWeight:600, color:'#993C1D', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'12px' },
+  floorRow:   { display:'flex', gap:'10px', alignItems:'flex-start', marginBottom:'10px' },
+  floorPill:  { fontSize:'9px', fontWeight:700, letterSpacing:'0.07em', padding:'3px 8px', borderRadius:'10px', background:'#993C1D', color:'#fff', flexShrink:0, marginTop:'1px' },
+  floorName:  { fontSize:'13px', fontWeight:600, color:'var(--color-text-primary)' },
+  floorDetail:{ fontSize:'12px', color:'var(--color-text-secondary)', lineHeight:'1.55', marginTop:'2px' },
+  floorNote:  { fontSize:'11.5px', color:'#7A4A38', lineHeight:'1.6', marginTop:'4px', paddingTop:'10px', borderTop:'1px solid #F0DDD6' },
 }

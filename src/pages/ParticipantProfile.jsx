@@ -7,13 +7,15 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getParticipantProfile, getCallHistory, checkCertEligibility } from '../lib/db.js'
 import { generateProgressReportPDF } from '../lib/report.js'
+import { listAvailableModules, getParticipantModules, setParticipantModule } from '../lib/morpheus.js'
+import { BARE_BUTTON } from '../components/a11y.jsx'
 
 const CATS = ['Opening','Listening','Empathy','Resolution','Policy','Closing']
 const SCORE_KEYS = ['score_opening','score_listening','score_empathy','score_resolution','score_policy','score_closing']
 
 function scoreColor(s) {
   if (s >= 80) return '#0F6E56'
-  if (s >= 60) return '#BA7517'
+  if (s >= 60) return '#854F0B'
   return '#993C1D'
 }
 function scoreBg(s) {
@@ -37,6 +39,10 @@ export default function ParticipantProfile() {
   const [loading, setLoading]         = useState(true)
   const [exporting, setExporting]     = useState(false)
   const [activeCall, setActiveCall]   = useState(null)  // expanded call detail
+  const [catalog, setCatalog]         = useState([])
+  const [assigned, setAssigned]       = useState(new Set())
+  const [assignMode, setAssignMode]   = useState('all')
+  const [savingKey, setSavingKey]     = useState(null)
 
   useEffect(() => {
     async function load() {
@@ -57,6 +63,37 @@ export default function ParticipantProfile() {
     }
     load()
   }, [id])
+
+  // ── Program access ────────────────────────────────────────────
+  // `assigned` empty means "no explicit assignments", which the participant
+  // shell reads as "show everything". That is the pilot default, and the UI
+  // says so rather than leaving it to be inferred from empty chips.
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+    Promise.all([listAvailableModules(), getParticipantModules(id)]).then(([cat, mine]) => {
+      if (cancelled) return
+      setCatalog(cat)
+      setAssigned(new Set(mine))
+      setAssignMode(mine.length ? 'assigned' : 'all')
+    })
+    return () => { cancelled = true }
+  }, [id])
+
+  async function toggleModule(key, on) {
+    setSavingKey(key)
+    try {
+      await setParticipantModule(id, key, on)
+      const next = new Set(assigned)
+      if (on) next.add(key); else next.delete(key)
+      setAssigned(next)
+      setAssignMode(next.size ? 'assigned' : 'all')
+    } catch (err) {
+      console.error(err)
+      window.alert(`Could not update program access: ${err.message}`)
+    }
+    setSavingKey(null)
+  }
 
   // Category averages across all scored calls
   const completedCalls = calls.filter(c => c.call_scores?.length > 0)
@@ -129,6 +166,38 @@ export default function ParticipantProfile() {
         </div>
       </div>
 
+      {/* ── Program access ── */}
+      <div style={s.card}>
+        <div style={s.cardTitle}>Program access</div>
+        <div style={{ fontSize: '11.5px', color: '#5B6B7F', marginBottom: '10px', lineHeight: 1.5 }}>
+          Controls which programs this participant sees when they sign in.
+          {assignMode === 'all' && ' No assignments yet — they currently see every available program.'}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {catalog.length === 0 && <span style={{ fontSize: '12px', color: '#5D768A' }}>Loading programs…</span>}
+          {catalog.map(m => {
+            const on = assigned.has(m.key)
+            return (
+              <button
+                key={m.key}
+                onClick={() => toggleModule(m.key, !on)}
+                disabled={savingKey === m.key}
+                title={m.description ?? ''}
+                style={{
+                  padding: '7px 14px', borderRadius: '20px', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: 500, fontFamily: "'DM Sans',sans-serif",
+                  border: on ? '1px solid #0F6E56' : '1px solid #CBD8E6',
+                  background: on ? '#E1F5EE' : '#fff',
+                  color: on ? '#0F6E56' : '#5B6B7F',
+                  opacity: savingKey === m.key ? 0.5 : 1,
+                }}>
+                {on ? '✓ ' : ''}{m.name}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* ── Stats row ── */}
       <div style={s.statsRow}>
         <StatCard label="Calls completed" value={completedCalls.length} />
@@ -184,8 +253,12 @@ export default function ParticipantProfile() {
           const total = sc?.total_score ?? 0
           const isOpen = activeCall === call.id
           return (
-            <div key={call.id} style={s.callRow} onClick={() => setActiveCall(isOpen ? null : call.id)}>
-              <div style={s.callRowMain}>
+            <div key={call.id} style={s.callRow}>
+              <button type="button"
+                style={{ ...BARE_BUTTON, ...s.callRowMain, width: '100%' }}
+                aria-expanded={isOpen}
+                aria-controls={`call-detail-${call.id}`}
+                onClick={() => setActiveCall(isOpen ? null : call.id)}>
                 <span style={s.callDate}>{new Date(call.started_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
                 <span style={s.callScenario}>{call.scenario_type}</span>
                 <span style={{ ...s.diffTag, background: call.difficulty === 'Advanced' ? '#FAEEDA' : call.difficulty === 'Intermediate' ? '#E6F1FB' : '#EAF3DE', color: call.difficulty === 'Advanced' ? '#854F0B' : call.difficulty === 'Intermediate' ? '#0C447C' : '#27500A' }}>
@@ -194,10 +267,10 @@ export default function ParticipantProfile() {
                 <span style={{ ...s.totalScore, color: scoreColor(total), background: scoreBg(total) }}>
                   {total}
                 </span>
-                <span style={s.expandIcon}>{isOpen ? '▲' : '▼'}</span>
-              </div>
+                <span aria-hidden="true" style={s.expandIcon}>{isOpen ? '▲' : '▼'}</span>
+              </button>
               {isOpen && sc && (
-                <div style={s.callDetail}>
+                <div id={`call-detail-${call.id}`} style={s.callDetail}>
                   <div style={s.callCats}>
                     {CATS.map((cat, i) => (
                       <div key={cat} style={s.miniCat}>
@@ -249,7 +322,7 @@ function DetailRow({ label, value, mono }) {
 
 function StatusBadge({ status, cert, eligible }) {
   if (cert)     return <span style={{ ...s.badge, background: '#E1F5EE', color: '#0F6E56' }}>Certified</span>
-  if (eligible) return <span style={{ ...s.badge, background: '#FAEEDA', color: '#BA7517' }}>Cert eligible</span>
+  if (eligible) return <span style={{ ...s.badge, background: '#FAEEDA', color: '#854F0B' }}>Cert eligible</span>
   return <span style={{ ...s.badge, background: '#E6F1FB', color: '#0C447C' }}>{status}</span>
 }
 
@@ -271,11 +344,11 @@ const s = {
   identRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' },
   badge: { fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '20px', letterSpacing: '0.04em' },
   certNum: { fontFamily: "'DM Mono', monospace", fontSize: '11px', color: '#0F6E56' },
-  certPending: { fontSize: '11px', color: '#BA7517' },
+  certPending: { fontSize: '11px', color: '#854F0B' },
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px', marginBottom: '16px' },
   statCard: { background: '#fff', border: '1px solid #CBD8E6', borderRadius: '12px', padding: '16px' },
   statVal: { fontSize: '28px', fontWeight: 300, color: '#0D1B2A', fontFamily: "'DM Mono', monospace", lineHeight: 1 },
-  statLabel: { fontSize: '11px', color: '#8BA0B8', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '5px' },
+  statLabel: { fontSize: '11px', color: '#5D768A', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '5px' },
   statSub: { fontSize: '11px', color: '#CBD8E6', marginTop: '2px' },
   twoCol: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' },
   card: { background: '#fff', border: '1px solid #CBD8E6', borderRadius: '16px', padding: '20px', marginBottom: '12px' },
@@ -290,7 +363,7 @@ const s = {
   detailVal: { color: '#0D1B2A', fontWeight: 500 },
   callRow: { borderBottom: '1px solid #F0F4F8', cursor: 'pointer' },
   callRowMain: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0' },
-  callDate: { fontFamily: "'DM Mono', monospace", fontSize: '11px', color: '#8BA0B8', width: '50px', flexShrink: 0 },
+  callDate: { fontFamily: "'DM Mono', monospace", fontSize: '11px', color: '#5D768A', width: '50px', flexShrink: 0 },
   callScenario: { flex: 1, fontSize: '13px', color: '#0D1B2A' },
   diffTag: { fontSize: '10px', padding: '2px 8px', borderRadius: '10px', fontWeight: 600, flexShrink: 0 },
   totalScore: { fontSize: '13px', fontWeight: 700, padding: '2px 9px', borderRadius: '8px', fontFamily: "'DM Mono', monospace", flexShrink: 0 },
@@ -298,8 +371,8 @@ const s = {
   callDetail: { padding: '12px 0 14px', borderTop: '1px solid #F7F9FC' },
   callCats: { display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: '8px', marginBottom: '12px' },
   miniCat: { textAlign: 'center' },
-  miniCatLabel: { fontSize: '10px', color: '#8BA0B8', marginBottom: '3px' },
+  miniCatLabel: { fontSize: '10px', color: '#5D768A', marginBottom: '3px' },
   miniCatVal: { fontSize: '14px', fontWeight: 600, fontFamily: "'DM Mono', monospace" },
   feedbackBox: { background: '#F7F9FC', border: '1px solid #E8EFF6', borderRadius: '8px', padding: '10px 12px', fontSize: '12px', color: '#4A6080', lineHeight: '1.6', marginTop: '8px' },
-  empty: { color: '#8BA0B8', fontSize: '13px', fontStyle: 'italic', padding: '12px 0' },
+  empty: { color: '#5D768A', fontSize: '13px', fontStyle: 'italic', padding: '12px 0' },
 }

@@ -4,9 +4,12 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from '../lib/supabase.js'
+import { BARE_BUTTON, SkipLink } from '../components/a11y.jsx'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { getParticipantProfile, getCallHistory, checkCertEligibility } from '../lib/db.js'
+import { loadParticipantModules } from '../lib/morpheus.js'
 import { useCallSession, CALL_STATES } from '../hooks/useCallSession.js'
+import Academy from './Academy.jsx'
 
 const SCENARIO_TYPES = [
   'Billing dispute – frustrated customer',
@@ -21,7 +24,7 @@ const SCORE_KEYS = ['score_opening','score_listening','score_empathy','score_res
 
 function scoreColor(s) {
   if (s >= 80) return '#0F6E56'
-  if (s >= 60) return '#BA7517'
+  if (s >= 60) return '#854F0B'
   return '#993C1D'
 }
 
@@ -32,6 +35,9 @@ export default function ParticipantShell() {
   const [profile, setProfile]         = useState(null)
   const [callHistory, setCallHistory] = useState([])
   const [eligibility, setEligibility] = useState(null)
+  // null = still resolving. Never render nav from a half-loaded state, or a
+  // participant briefly sees tabs disappear.
+  const [myModules, setMyModules] = useState(null)
 
   useEffect(() => {
     if (!participantId) return
@@ -46,12 +52,29 @@ export default function ParticipantShell() {
       setEligibility(e)
     }
     load()
+    loadParticipantModules().then(setMyModules)
   }, [participantId])
 
+  /**
+   * While assignments are loading, and if the lookup fails outright, show
+   * everything. A participant locked out of their own coursework by a failed
+   * request is far worse than one who briefly sees a tab they don't use.
+   */
+  function hasModule(key) {
+    if (!myModules) return true
+    return myModules.some(m => m.key === key)
+  }
+
+  // Navigation follows the participant's module assignments, the same way the
+  // trainer sidebar follows core.tenant_module. My Dashboard is always present;
+  // everything else is earned by an assignment. A participant with no
+  // assignments yet gets the full set rather than an empty shell, and
+  // morpheus_participant_bootstrap reports that as assignment_mode 'all'.
   const NAV = [
-    { path: '/',       label: 'My Dashboard' },
-    { path: '/calls',  label: 'Practice Calls' },
-    { path: '/progress', label: 'My Progress' },
+    { path: '/', label: 'My Dashboard' },
+    ...(hasModule('workforce.cer')     ? [{ path: '/calls',   label: 'Practice Calls' }] : []),
+    ...(hasModule('workforce.academy') ? [{ path: '/academy', label: 'Claude Academy' }] : []),
+    ...(hasModule('workforce.cer')     ? [{ path: '/progress', label: 'My Progress' }] : []),
   ]
 
   const firstName = profile?.full_name?.split(' ')[0] ?? 'there'
@@ -62,20 +85,23 @@ export default function ParticipantShell() {
 
   return (
     <div style={sh.app}>
+      <SkipLink />
       <aside style={sh.sidebar}>
         <div style={sh.logoArea}>
           <div style={sh.logoM}>M<span style={sh.logoAccent}>.</span>orpheus</div>
           <div style={sh.logoSub}>Participant portal</div>
         </div>
-        <nav style={sh.nav}>
+        <nav style={sh.nav} aria-label="Main">
           <div style={sh.navSection}>My training</div>
           {NAV.map(item => {
             const active = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
             return (
-              <div key={item.path} style={{ ...sh.navItem, ...(active ? sh.navActive : {}) }}
+              <button key={item.path} type="button"
+                aria-current={active ? 'page' : undefined}
+                style={{ ...BARE_BUTTON, ...sh.navItem, ...(active ? sh.navActive : {}), width:'100%' }}
                 onClick={() => navigate(item.path)}>
                 {item.label}
-              </div>
+              </button>
             )
           })}
         </nav>
@@ -86,7 +112,7 @@ export default function ParticipantShell() {
         </div>
       </aside>
 
-      <main style={sh.main}>
+      <main style={sh.main} id="main-content" tabIndex={-1}>
         <div style={sh.topbar}>
           <span style={sh.topbarTitle}>
             {NAV.find(n => n.path === '/' ? location.pathname === '/' : location.pathname.startsWith(n.path))?.label ?? 'Portal'}
@@ -109,12 +135,19 @@ export default function ParticipantShell() {
                 navigate={navigate}
               />
             } />
-            <Route path="/calls" element={
-              <PracticeCallsPage participantId={participantId} onComplete={(newCall) => setCallHistory(prev => [newCall, ...prev])} />
-            } />
-            <Route path="/progress" element={
-              <ProgressPage completedCalls={completedCalls} avgScore={avgScore} />
-            } />
+            {/* Routes are gated on assignment too, so an unassigned module
+                cannot be reached by typing its URL. */}
+            {hasModule('workforce.cer') && (
+              <Route path="/calls" element={
+                <PracticeCallsPage participantId={participantId} onComplete={(newCall) => setCallHistory(prev => [newCall, ...prev])} />
+              } />
+            )}
+            {hasModule('workforce.academy') && <Route path="/academy/*" element={<Academy />} />}
+            {hasModule('workforce.cer') && (
+              <Route path="/progress" element={
+                <ProgressPage completedCalls={completedCalls} avgScore={avgScore} />
+              } />
+            )}
           </Routes>
         </div>
       </main>
@@ -124,7 +157,7 @@ export default function ParticipantShell() {
 
 // ── Portal dashboard ──────────────────────────────────────────
 function PortalDashboard({ firstName, profile, callHistory, completedCalls, avgScore, eligibility, navigate }) {
-  const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D'
+  const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#854F0B' : '#993C1D'
   const isCert = eligibility?.already_certified
   const isElig = eligibility?.is_eligible && !isCert
 
@@ -152,7 +185,7 @@ function PortalDashboard({ firstName, profile, callHistory, completedCalls, avgS
         </div>
       )}
       {isElig && (
-        <div style={{ ...sh.banner, background:'#BA7517' }}>
+        <div style={{ ...sh.banner, background:'#854F0B' }}>
           <span style={{ fontSize:'18px' }}>⭐</span>
           <div>
             <div style={{ fontWeight:500, fontSize:'14px' }}>You&apos;re eligible for certification!</div>
@@ -213,15 +246,15 @@ function PracticeCallsPage({ participantId, onComplete }) {
           <div style={sh.cardTitle}>Choose your scenario</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'12px' }}>
             <div>
-              <label style={sh.label}>Scenario type</label>
-              <select style={sh.input} value={scenarioType} onChange={e => setScenarioType(e.target.value)}
+              <label style={sh.label} htmlFor="participantshell-scenario-type">Scenario type</label>
+              <select id="participantshell-scenario-type" style={sh.input} value={scenarioType} onChange={e => setScenarioType(e.target.value)}
                 disabled={call.isActive || call.isScoring}>
                 {SCENARIO_TYPES.map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label style={sh.label}>Difficulty</label>
-              <select style={sh.input} value={difficulty} onChange={e => setDifficulty(e.target.value)}
+              <label style={sh.label} htmlFor="participantshell-difficulty">Difficulty</label>
+              <select id="participantshell-difficulty" style={sh.input} value={difficulty} onChange={e => setDifficulty(e.target.value)}
                 disabled={call.isActive || call.isScoring}>
                 {DIFFICULTIES.map(d => <option key={d}>{d}</option>)}
               </select>
@@ -264,7 +297,7 @@ function PracticeCallsPage({ participantId, onComplete }) {
             {call.messages.length === 0 && <div style={sh.empty}>Your call transcript will appear here.</div>}
             {call.messages.map(m => (
               <div key={m.id} style={{ marginBottom:'10px' }}>
-                <div style={{ fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'3px', color: m.role==='rep' ? '#2176AE' : m.role==='typing' ? '#8BA0B8' : '#993C1D' }}>
+                <div style={{ fontSize:'10px', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'3px', color: m.role==='rep' ? '#2176AE' : m.role==='typing' ? '#5D768A' : '#993C1D' }}>
                   {m.role === 'typing' ? `${m.name} is typing…` : m.name}
                 </div>
                 {m.role !== 'typing' && (
@@ -310,7 +343,7 @@ function PracticeCallsPage({ participantId, onComplete }) {
           <div style={{ fontSize:'40px', fontWeight:300, fontFamily:"'DM Mono',monospace", color: call.scores ? scoreColor(call.scores.total) : '#CBD8E6' }}>
             {call.scores ? call.scores.total : '—'}
           </div>
-          <div style={{ fontSize:'11px', color:'#8BA0B8', marginTop:'3px' }}>overall score / 100</div>
+          <div style={{ fontSize:'11px', color:'#5D768A', marginTop:'3px' }}>overall score / 100</div>
           {call.scores?.feedback && (
             <div style={{ marginTop:'10px', background:'#F7F9FC', borderRadius:'8px', padding:'10px', fontSize:'12px', color:'#4A6080', lineHeight:'1.6', textAlign:'left' }}>
               {call.scores.feedback}
@@ -330,7 +363,7 @@ function PracticeCallsPage({ participantId, onComplete }) {
 
 // ── Progress page ─────────────────────────────────────────────
 function ProgressPage({ completedCalls, avgScore }) {
-  const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#BA7517' : '#993C1D'
+  const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#854F0B' : '#993C1D'
   const catAvgs = ['score_opening','score_listening','score_empathy','score_resolution','score_policy','score_closing']
     .map(key => completedCalls.length
       ? Math.round(completedCalls.reduce((s,c) => s+(c.call_scores[0]?.[key]??0),0)/completedCalls.length) : null)
@@ -367,7 +400,7 @@ function ProgressPage({ completedCalls, avgScore }) {
               const color = scoreColor(total)
               return (
                 <tr key={c.id} style={{ borderBottom: i<completedCalls.length-1?'1px solid #F0F4F8':'none' }}>
-                  <td style={{ padding:'10px 14px', fontFamily:"'DM Mono',monospace", fontSize:'11px', color:'#8BA0B8' }}>
+                  <td style={{ padding:'10px 14px', fontFamily:"'DM Mono',monospace", fontSize:'11px', color:'#5D768A' }}>
                     {new Date(c.started_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
                   </td>
                   <td style={{ padding:'10px 14px', color:'#0D1B2A' }}>{c.scenario_type}</td>
@@ -395,15 +428,15 @@ const sh = {
   logoArea:   { padding:'20px 18px 14px', borderBottom:'1px solid rgba(255,255,255,0.08)' },
   logoM:      { fontFamily:"'DM Mono',monospace", fontSize:'20px', fontWeight:500, color:'#fff', letterSpacing:'-0.5px' },
   logoAccent: { color:'#5DCAA5' },
-  logoSub:    { fontSize:'10px', color:'rgba(255,255,255,0.3)', letterSpacing:'0.06em', marginTop:'2px' },
+  logoSub:    { fontSize:'10px', color:'rgba(255,255,255,0.60)', letterSpacing:'0.06em', marginTop:'2px' },
   nav:        { padding:'12px 10px', flex:1 },
-  navSection: { fontSize:'10px', color:'rgba(255,255,255,0.3)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'10px 8px 6px' },
+  navSection: { fontSize:'10px', color:'rgba(255,255,255,0.60)', letterSpacing:'0.1em', textTransform:'uppercase', padding:'10px 8px 6px' },
   navItem:    { padding:'9px 10px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', color:'rgba(255,255,255,0.55)', marginBottom:'1px', transition:'all 0.15s' },
   navActive:  { background:'rgba(93,202,165,0.18)', color:'#5DCAA5', fontWeight:500 },
   userArea:   { padding:'14px 12px', borderTop:'1px solid rgba(255,255,255,0.08)' },
   userName:   { fontSize:'12px', fontWeight:500, color:'rgba(255,255,255,0.75)', marginBottom:'2px' },
-  userSub:    { fontSize:'10px', color:'rgba(255,255,255,0.3)', marginBottom:'10px' },
-  signOutBtn: { background:'none', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'6px', color:'rgba(255,255,255,0.4)', fontSize:'11px', cursor:'pointer', padding:'5px 10px', fontFamily:"'DM Sans',sans-serif" },
+  userSub:    { fontSize:'10px', color:'rgba(255,255,255,0.60)', marginBottom:'10px' },
+  signOutBtn: { background:'none', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'6px', color:'rgba(255,255,255,0.65)', fontSize:'11px', cursor:'pointer', padding:'5px 10px', fontFamily:"'DM Sans',sans-serif" },
   main:       { flex:1, display:'flex', flexDirection:'column', overflow:'hidden', background:'#F7F9FC' },
   topbar:     { background:'#fff', borderBottom:'1px solid #CBD8E6', padding:'0 24px', height:'52px', display:'flex', alignItems:'center', justifyContent:'space-between', flexShrink:0 },
   topbarTitle:{ fontSize:'15px', fontWeight:500, color:'#0D1B2A' },
@@ -411,26 +444,26 @@ const sh = {
   content:    { flex:1, overflowY:'auto', padding:'22px' },
   hero:       { background:'#0D1B2A', borderRadius:'16px', padding:'22px 24px', marginBottom:'14px', color:'#fff' },
   heroGreeting:{ fontSize:'20px', fontWeight:300, marginBottom:'3px' },
-  heroSub:    { fontSize:'12px', color:'rgba(255,255,255,0.4)', marginBottom:'16px' },
+  heroSub:    { fontSize:'12px', color:'rgba(255,255,255,0.65)', marginBottom:'16px' },
   heroStats:  { display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px' },
   hstat:      { background:'rgba(255,255,255,0.07)', borderRadius:'8px', padding:'10px 14px' },
   hstatVal:   { fontSize:'22px', fontWeight:300, color:'#fff', fontFamily:"'DM Mono',monospace" },
-  hstatLabel: { fontSize:'10px', color:'rgba(255,255,255,0.4)', marginTop:'2px' },
+  hstatLabel: { fontSize:'10px', color:'rgba(255,255,255,0.65)', marginTop:'2px' },
   banner:     { display:'flex', alignItems:'center', gap:'12px', borderRadius:'12px', padding:'14px 18px', marginBottom:'14px', color:'#fff' },
   startBtn:   { display:'inline-block', padding:'10px 20px', background:'#0D1B2A', color:'#fff', border:'none', borderRadius:'10px', fontSize:'13px', fontWeight:500, cursor:'pointer', fontFamily:"'DM Sans',sans-serif", marginBottom:'16px' },
   card:       { background:'#fff', border:'1px solid #CBD8E6', borderRadius:'16px', padding:'18px', marginBottom:'12px' },
   cardTitle:  { fontSize:'11px', fontWeight:600, color:'#4A6080', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:'14px' },
   callRow:    { display:'flex', alignItems:'center', gap:'10px', padding:'9px 0', borderBottom:'1px solid #F0F4F8' },
-  callDate:   { fontFamily:"'DM Mono',monospace", fontSize:'11px', color:'#8BA0B8', width:'50px', flexShrink:0 },
+  callDate:   { fontFamily:"'DM Mono',monospace", fontSize:'11px', color:'#5D768A', width:'50px', flexShrink:0 },
   callScenario:{ flex:1, fontSize:'13px', color:'#0D1B2A' },
   callScore:  { fontSize:'13px', fontWeight:700, padding:'2px 9px', borderRadius:'8px', fontFamily:"'DM Mono',monospace", flexShrink:0 },
   label:      { fontSize:'11px', fontWeight:600, color:'#4A6080', textTransform:'uppercase', letterSpacing:'0.06em', display:'block', marginBottom:'5px' },
   input:      { padding:'8px 10px', border:'1px solid #CBD8E6', borderRadius:'8px', fontSize:'13px', fontFamily:"'DM Sans',sans-serif", color:'#0D1B2A', background:'#fff', width:'100%' },
-  brief:      { background:'#F7F9FC', border:'1px solid #E8EFF6', borderRadius:'8px', padding:'12px', fontSize:'13px', color:'#8BA0B8', minHeight:'60px', lineHeight:'1.6' },
+  brief:      { background:'#F7F9FC', border:'1px solid #E8EFF6', borderRadius:'8px', padding:'12px', fontSize:'13px', color:'#5D768A', minHeight:'60px', lineHeight:'1.6' },
   briefLoaded:{ background:'#E6F1FB', borderColor:'#B5D4F4', color:'#0D1B2A' },
   errorBox:   { background:'#FAECE7', color:'#993C1D', borderRadius:'8px', padding:'10px 12px', fontSize:'12px', marginTop:'10px' },
   btn:        { padding:'8px 14px', border:'1px solid #CBD8E6', borderRadius:'8px', background:'#fff', color:'#0D1B2A', fontSize:'12px', fontWeight:500, cursor:'pointer', fontFamily:"'DM Sans',sans-serif" },
   btnPrimary: { padding:'8px 16px', border:'none', borderRadius:'8px', background:'#0D1B2A', color:'#fff', fontSize:'13px', fontWeight:500, cursor:'pointer', fontFamily:"'DM Sans',sans-serif" },
   btnTeal:    { padding:'8px 14px', border:'none', borderRadius:'8px', background:'#0F6E56', color:'#fff', fontSize:'12px', fontWeight:500, cursor:'pointer', fontFamily:"'DM Sans',sans-serif" },
-  empty:      { color:'#8BA0B8', fontSize:'13px', fontStyle:'italic' },
+  empty:      { color:'#5D768A', fontSize:'13px', fontStyle:'italic' },
 }

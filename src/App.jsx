@@ -1,15 +1,20 @@
 // src/App.jsx
 // ── Morpheus CRM — Root router with auth-aware routing ──────────
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
+import { TenantProvider } from './hooks/useTenant.jsx'
 import Login from './pages/Login.jsx'
 
 // Lazy-loaded shells (prevents bundle bloat on login screen)
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 const TrainerShell     = lazy(() => import('./pages/TrainerShell.jsx'))
 const ParticipantShell = lazy(() => import('./pages/ParticipantShell.jsx'))
 const ResetPassword    = lazy(() => import('./pages/ResetPassword.jsx'))
+const VerifyCredential = lazy(() => import('./pages/VerifyCredential.jsx'))
+// Legacy Path (CTS consumer module): legacy.morpheuscr.com, or /legacy/* here.
+const LegacyRoutes     = lazy(() => import('./legacy/LegacyRoutes.jsx'))
+const IS_LEGACY_HOST   = typeof window !== 'undefined' && window.location.hostname.startsWith('legacy.')
 
 function LoadingScreen() {
   return (
@@ -35,20 +40,87 @@ function RequireAuth({ children }) {
 function RoleRouter() {
   const { role, loading } = useAuth()
   if (loading) return <LoadingScreen />
+  // Legacy Path customers have no Morpheus access; send them to their app.
+  if (role === 'lp_customer') return <Navigate to="/legacy/app" replace />
   if (role === 'participant') return <ParticipantShell />
   if (role === 'trainer' || role === 'super_admin') return <TrainerShell />
   // Unknown role — sign out and back to login
   return <Navigate to="/login" replace />
 }
 
+/**
+ * A single-page app never reloads, so the document title stays frozen on the
+ * first page a user landed on and a screen reader is told nothing when the
+ * view changes. This keeps the title in step with the route and announces the
+ * new page, which is how a screen reader user knows navigation happened.
+ */
+function RouteAnnouncer() {
+  const location = useLocation()
+  const [page, setPage] = useState('')
+
+  useEffect(() => {
+    const name = PAGE_TITLES[location.pathname]
+      ?? Object.entries(PAGE_TITLES).find(([p]) => p !== '/' && location.pathname.startsWith(p))?.[1]
+      ?? 'Morpheus'
+    document.title = `${name} — Morpheus · Certified Training Standards`
+    setPage(name)
+
+    // Focus the main region so the next Tab press continues from the new page
+    // rather than from wherever the old page's focus happened to be.
+    const main = document.getElementById('main-content')
+    if (main) main.focus({ preventScroll: true })
+  }, [location.pathname])
+
+  return (
+    <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+      {page ? `${page} page loaded` : ''}
+    </div>
+  )
+}
+
+const PAGE_TITLES = {
+  '/': 'Dashboard',
+  '/simulator': 'AI Call Simulator',
+  '/calls': 'Practice calls',
+  '/academy': 'Claude Academy',
+  '/participants': 'Participants',
+  '/cohorts': 'Cohorts and reports',
+  '/matrix': 'Score Matrix',
+  '/admin': 'Admin panel',
+  '/login': 'Sign in',
+  '/reset-password': 'Reset password',
+  '/verify': 'Verify a credential',
+  '/legacy': 'Legacy Path',
+  '/campaigns': 'Campaign Studio',
+  '/creator-studio': 'Creator Studio',
+}
+
 export default function App() {
+  if (IS_LEGACY_HOST) {
+    return (
+      <BrowserRouter>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="/*" element={<LegacyRoutes base="" />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    )
+  }
   return (
     <AuthProvider>
+      <TenantProvider>
       <BrowserRouter>
+        <RouteAnnouncer />
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/login"          element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            {/* MORPHEUS.EDU — public credential verification (no auth) */}
+            <Route path="/verify"         element={<VerifyCredential />} />
+            <Route path="/verify/:code"   element={<VerifyCredential />} />
+            {/* Legacy Path — public module, its own sign-in and paywall */}
+            <Route path="/legacy/*"       element={<LegacyRoutes base="/legacy" />} />
             <Route
               path="/*"
               element={
@@ -60,6 +132,7 @@ export default function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
+      </TenantProvider>
     </AuthProvider>
   )
 }

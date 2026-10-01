@@ -1,0 +1,16 @@
+{
+  "name": "morpheus-video",
+  "private": true,
+  "description": "In-house video renderer for Campaign Studio scripts: Piper voice + branded HTML scenes + ffmpeg. No paid services.",
+  "type": "module",
+  "scripts": {
+    "setup": "node setup.mjs",
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "@fontsource/public-sans": "^5.0.0",
+    "@fontsource/spectral": "^5.0.0",
+    "ffmpeg-static": "^5.2.0",
+    "playwright": "1.56.1"
+  }
+}

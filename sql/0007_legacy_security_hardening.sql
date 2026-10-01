@@ -1,0 +1,20 @@
+-- Legacy Morpheus security hardening identified during MELRAH FIELD production review.
+drop policy if exists cohort_enrollments_own_read on public.cohort_enrollments;
+create policy cohort_enrollments_own_read on public.cohort_enrollments for select to authenticated using (participant_id = public.current_participant_id());
+drop policy if exists cohort_enrollments_staff_manage on public.cohort_enrollments;
+create policy cohort_enrollments_staff_manage on public.cohort_enrollments for all to authenticated using (public.current_user_role() in ('trainer','super_admin')) with check (public.current_user_role() in ('trainer','super_admin'));
+revoke execute on function public.current_vendor_id() from anon;
+revoke execute on function public.vendor_cohort_ids() from anon;
+revoke execute on function public.vendor_empowercare_status() from anon;
+revoke execute on function public.vendor_roster() from anon;
+revoke execute on function public.vendor_sees_ec_enrollment(uuid) from anon;
+revoke execute on function public.vendor_sees_participant(uuid) from anon;
+revoke execute on function public.enforce_admin_floor_override() from anon;
+revoke execute on function public.enforce_admin_floor_override() from authenticated;
+alter function public.generate_cts_id() set search_path = public, pg_temp;
+alter function public.generate_cert_number() set search_path = public, pg_temp;
+alter function public.touch_updated_at() set search_path = public, pg_temp;
+alter function public.current_user_role() set search_path = public, auth, pg_temp;
+alter function public.current_participant_id() set search_path = public, auth, pg_temp;
+alter function public.edu_next_credential_code(text,text) set search_path = public, pg_temp;
+alter function public.edu_touch_updated_at() set search_path = public, pg_temp;

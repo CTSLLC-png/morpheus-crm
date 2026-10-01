@@ -22,6 +22,12 @@ const SCENARIO_TYPES = [
 
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced']
 
+/** Human-readable names for the governance floors the assessor screens for. */
+const FLOOR_LABEL = {
+  verification_not_completed: 'Verification not completed',
+  prohibited_data_recorded:   'Prohibited data recorded',
+}
+
 const CATS = [
   { key: 'opening',    label: 'Opening / Greeting',  weight: 15 },
   { key: 'listening',  label: 'Active Listening',     weight: 20 },
@@ -34,7 +40,7 @@ const CATS = [
 function scoreColor(s) {
   if (s == null) return 'var(--color-border-secondary)'
   if (s >= 80) return '#0F6E56'
-  if (s >= 60) return '#BA7517'
+  if (s >= 60) return '#854F0B'
   return '#993C1D'
 }
 function scoreBg(s) {
@@ -137,8 +143,8 @@ export default function CallSimulator({
 
             {isTrainer && (
               <div style={s.fg}>
-                <label style={s.label}>Participant <span style={s.req}>*</span></label>
-                <select style={s.input}
+                <label style={s.label} htmlFor="callsimulator-participant">Participant <span style={s.req}>*</span></label>
+                <select id="callsimulator-participant" style={s.input}
                   value={selectedParticipantId ?? ''}
                   onChange={e => setSelectedParticipantId(e.target.value)}
                   disabled={call.isActive || call.isScoring}>
@@ -154,16 +160,16 @@ export default function CallSimulator({
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', margin:'12px 0' }}>
               <div style={s.fg}>
-                <label style={s.label}>Scenario type</label>
-                <select style={s.input} value={scenarioType}
+                <label style={s.label} htmlFor="callsimulator-scenario-type">Scenario type</label>
+                <select id="callsimulator-scenario-type" style={s.input} value={scenarioType}
                   onChange={e => setScenarioType(e.target.value)}
                   disabled={call.isActive || call.isScoring}>
                   {SCENARIO_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select>
               </div>
               <div style={s.fg}>
-                <label style={s.label}>Difficulty</label>
-                <select style={s.input} value={difficulty}
+                <label style={s.label} htmlFor="callsimulator-difficulty">Difficulty</label>
+                <select id="callsimulator-difficulty" style={s.input} value={difficulty}
                   onChange={e => setDifficulty(e.target.value)}
                   disabled={call.isActive || call.isScoring}>
                   {DIFFICULTIES.map(d => <option key={d}>{d}</option>)}
@@ -173,12 +179,17 @@ export default function CallSimulator({
 
             {/* Scenario brief */}
             <div style={s.fg}>
-              <label style={s.label}>Scenario brief</label>
-              <div style={{
-                ...s.brief,
-                ...(call.scenario ? s.briefLoaded : {}),
-                ...(call.isGenerating ? s.briefLoading : {}),
-              }}>
+              <div style={s.label} id="scenario-brief-label">Scenario brief</div>
+              <div
+                role="region"
+                aria-labelledby="scenario-brief-label"
+                aria-live="polite"
+                aria-busy={call.isGenerating || undefined}
+                style={{
+                  ...s.brief,
+                  ...(call.scenario ? s.briefLoaded : {}),
+                  ...(call.isGenerating ? s.briefLoading : {}),
+                }}>
                 {call.isGenerating
                   ? '⏳  Generating scenario…'
                   : call.scenario
@@ -288,9 +299,9 @@ export default function CallSimulator({
             {/* Trainer note (post-call) */}
             {isTrainer && call.isComplete && (
               <div style={{ marginTop:'12px', paddingTop:'12px', borderTop:'1px solid var(--color-border-tertiary)' }}>
-                <label style={s.label}>Trainer notes (optional — saved to participant record)</label>
+                <label style={s.label} htmlFor="trainer-note">Trainer notes (optional — saved to participant record)</label>
                 <div style={{ display:'flex', gap:'8px', marginTop:'6px' }}>
-                  <input style={{ ...s.input, flex:1 }}
+                  <input id="trainer-note" style={{ ...s.input, flex:1 }}
                     placeholder="Add observation or feedback for this session…"
                     value={trainerNote}
                     onChange={e => setTrainerNote(e.target.value)}
@@ -371,9 +382,30 @@ export default function CallSimulator({
                 Saved to Morpheus
               </div>
             )}
-            {call.certified && (
+            {/* A governance-floor breach fails the call outright, so it is
+                shown before anything else and states the consequence. */}
+            {call.scores?.floors?.length > 0 && (
+              <div style={s.floorAlert}>
+                <div style={{ fontWeight: 700, marginBottom: '4px' }}>
+                  Not yet ready — governance floor
+                </div>
+                {call.scores.floors.map((f, i) => (
+                  <div key={i} style={{ marginBottom: '6px' }}>
+                    <div style={{ fontWeight: 600 }}>{FLOOR_LABEL[f.code] ?? f.code}</div>
+                    {f.evidence && <div style={{ opacity: 0.85 }}>{f.evidence}</div>}
+                  </div>
+                ))}
+                <div style={{ opacity: 0.85 }}>
+                  This call does not count toward certification regardless of the score above.
+                  Retake it. If you believe this is wrong, ask your trainer to escalate — only
+                  an administrator can lift a governance floor, and the reason is recorded.
+                </div>
+              </div>
+            )}
+            {call.awaitingIssue && (
               <div style={s.certAlert}>
-                🎓 Certification threshold met — issue certificate from participant profile.
+                🎓 Threshold met — a trainer can review and issue the credential from the
+                participant profile. Issuance is a human step.
               </div>
             )}
           </div>
@@ -395,21 +427,22 @@ const s = {
   label:      { fontSize:'11px', fontWeight:600, color:'#4A6080', textTransform:'uppercase', letterSpacing:'0.06em' },
   req:        { color:'#993C1D' },
   input:      { padding:'8px 10px', border:'1px solid #CBD8E6', borderRadius:'8px', fontSize:'13px', fontFamily:"'DM Sans', sans-serif", color:'#0D1B2A', background:'#fff', width:'100%' },
-  brief:      { background:'#F7F9FC', border:'1px solid #E8EFF6', borderRadius:'8px', padding:'12px', fontSize:'13px', color:'#8BA0B8', minHeight:'65px', lineHeight:'1.6' },
+  brief:      { background:'#F7F9FC', border:'1px solid #E8EFF6', borderRadius:'8px', padding:'12px', fontSize:'13px', color:'#5D768A', minHeight:'65px', lineHeight:'1.6' },
   briefLoaded:{ background:'#E6F1FB', borderColor:'#B5D4F4', color:'#0D1B2A' },
   briefLoading:{ color:'#4A6080' },
   errorBox:   { background:'#FAECE7', color:'#993C1D', borderRadius:'8px', padding:'10px 12px', fontSize:'13px', marginTop:'10px', lineHeight:'1.5' },
-  sessionId:  { fontSize:'10px', color:'#8BA0B8', fontFamily:'monospace' },
+  sessionId:  { fontSize:'10px', color:'#5D768A', fontFamily:'monospace' },
   callBar:    { display:'flex', alignItems:'center', gap:'9px', marginBottom:'12px', paddingBottom:'12px', borderBottom:'1px solid #F0F4F8' },
   liveDot:    { width:'9px', height:'9px', borderRadius:'50%', flexShrink:0, transition:'all 0.3s' },
   callStatusText: { fontSize:'13px', fontWeight:500, color:'#4A6080', flex:1 },
   transcript: { flex:1, minHeight:'190px', maxHeight:'300px', overflowY:'auto', paddingRight:'4px' },
-  empty:      { color:'#8BA0B8', fontSize:'13px', fontStyle:'italic', paddingTop:'8px' },
+  empty:      { color:'#5D768A', fontSize:'13px', fontStyle:'italic', paddingTop:'8px' },
   btn:        { padding:'8px 14px', border:'1px solid #CBD8E6', borderRadius:'8px', background:'#fff', color:'#0D1B2A', fontSize:'12px', fontWeight:500, cursor:'pointer', fontFamily:"'DM Sans', sans-serif", whiteSpace:'nowrap' },
   btnPrimary: { padding:'8px 16px', border:'none', borderRadius:'8px', background:'#0D1B2A', color:'#fff', fontSize:'13px', fontWeight:500, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" },
   btnTeal:    { padding:'7px 14px', border:'none', borderRadius:'8px', background:'#0F6E56', color:'#fff', fontSize:'12px', fontWeight:500, cursor:'pointer', fontFamily:"'DM Sans', sans-serif" },
   totalBox:   { marginTop:'auto', paddingTop:'16px', borderTop:'1px solid #F0F4F8', textAlign:'center' },
   feedbackBox:{ background:'#F7F9FC', border:'1px solid #E8EFF6', borderRadius:'8px', padding:'10px 12px', fontSize:'12px', color:'#4A6080', lineHeight:'1.6', marginTop:'10px', textAlign:'left' },
   dbSaved:    { display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', marginTop:'10px', fontSize:'11px', color:'#0F6E56', background:'#E1F5EE', padding:'6px 12px', borderRadius:'20px' },
+  floorAlert: { marginTop:'10px', background:'#FAECE7', color:'#7A2E15', border:'1px solid #E8C4B8', borderRadius:'8px', padding:'10px 12px', fontSize:'12px', lineHeight:'1.55', textAlign:'left' },
   certAlert:  { marginTop:'10px', background:'#FAEEDA', color:'#854F0B', borderRadius:'8px', padding:'10px 12px', fontSize:'12px', lineHeight:'1.5', textAlign:'left' },
 }

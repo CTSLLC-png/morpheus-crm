@@ -168,26 +168,26 @@ export default function ParticipantIntake({ cohorts = [], staffProfiles = [] }) 
         {step === 0 && (
           <div style={s.formGrid}>
             <div style={s.formGroup}>
-              <label style={s.label}>Full name <span style={s.req}>*</span></label>
-              <input style={s.input} value={form.full_name}
+              <label style={s.label} htmlFor="participantintake-full-name">Full name <span style={s.req}>*</span></label>
+              <input id="participantintake-full-name" style={s.input} value={form.full_name}
                 onChange={e => set('full_name', e.target.value)}
                 placeholder="First and last name" />
             </div>
             <div style={s.formGroup}>
-              <label style={s.label}>Date of birth</label>
-              <input style={s.input} type="date" value={form.dob}
+              <label style={s.label} htmlFor="participantintake-date-of-birth">Date of birth</label>
+              <input id="participantintake-date-of-birth" style={s.input} type="date" value={form.dob}
                 onChange={e => set('dob', e.target.value)} />
             </div>
             <div style={{ ...s.formGroup, gridColumn: '1/-1' }}>
-              <label style={s.label}>Email address <span style={s.req}>*</span></label>
-              <input style={s.input} type="email" value={form.email}
+              <label style={s.label} htmlFor="participantintake-email-address">Email address <span style={s.req}>*</span></label>
+              <input id="participantintake-email-address" style={s.input} type="email" value={form.email}
                 onChange={e => set('email', e.target.value)}
                 placeholder="participant@example.com" />
               <div style={s.hint}>This will be their Morpheus login email.</div>
             </div>
             <div style={{ ...s.formGroup, gridColumn: '1/-1' }}>
-              <label style={s.label}>Temporary password <span style={s.req}>*</span></label>
-              <input style={s.input} type="password" value={form.temp_password}
+              <label style={s.label} htmlFor="participantintake-temporary-password">Temporary password <span style={s.req}>*</span></label>
+              <input id="participantintake-temporary-password" style={s.input} type="password" value={form.temp_password}
                 onChange={e => set('temp_password', e.target.value)}
                 placeholder="Min 8 characters" />
               <div style={s.hint}>Participant should change this on first login.</div>
@@ -199,34 +199,34 @@ export default function ParticipantIntake({ cohorts = [], staffProfiles = [] }) 
         {step === 1 && (
           <div style={s.formGrid}>
             <div style={s.formGroup}>
-              <label style={s.label}>Program source <span style={s.req}>*</span></label>
-              <select style={s.input} value={form.program_source}
+              <label style={s.label} htmlFor="participantintake-program-source">Program source <span style={s.req}>*</span></label>
+              <select id="participantintake-program-source" style={s.input} value={form.program_source}
                 onChange={e => set('program_source', e.target.value)}>
                 <option value="">Select source…</option>
                 {PROGRAM_SOURCES.map(p => <option key={p}>{p}</option>)}
               </select>
             </div>
             <div style={s.formGroup}>
-              <label style={s.label}>LDSS / program office</label>
-              <input style={s.input} value={form.ldss_office}
+              <label style={s.label} htmlFor="participantintake-ldss-program-office">LDSS / program office</label>
+              <input id="participantintake-ldss-program-office" style={s.input} value={form.ldss_office}
                 onChange={e => set('ldss_office', e.target.value)}
                 placeholder="Auto-filled from source" />
             </div>
             <div style={s.formGroup}>
-              <label style={s.label}>LDSS case number</label>
-              <input style={s.input} value={form.ldss_case_number}
+              <label style={s.label} htmlFor="participantintake-ldss-case-number">LDSS case number</label>
+              <input id="participantintake-ldss-case-number" style={s.input} value={form.ldss_case_number}
                 onChange={e => set('ldss_case_number', e.target.value)}
                 placeholder="e.g. ALB-WF-2025-1104" />
             </div>
             <div style={s.formGroup}>
-              <label style={s.label}>LDSS caseworker</label>
-              <input style={s.input} value={form.ldss_caseworker}
+              <label style={s.label} htmlFor="participantintake-ldss-caseworker">LDSS caseworker</label>
+              <input id="participantintake-ldss-caseworker" style={s.input} value={form.ldss_caseworker}
                 onChange={e => set('ldss_caseworker', e.target.value)}
                 placeholder="Caseworker full name" />
             </div>
             <div style={s.formGroup}>
-              <label style={s.label}>Assigned trainer</label>
-              <select style={s.input} value={form.assigned_trainer}
+              <label style={s.label} htmlFor="participantintake-assigned-trainer">Assigned trainer</label>
+              <select id="participantintake-assigned-trainer" style={s.input} value={form.assigned_trainer}
                 onChange={e => set('assigned_trainer', e.target.value)}>
                 <option value="">Select trainer…</option>
                 {staffProfiles.map(sp => (
@@ -235,8 +235,8 @@ export default function ParticipantIntake({ cohorts = [], staffProfiles = [] }) 
               </select>
             </div>
             <div style={s.formGroup}>
-              <label style={s.label}>Enroll in cohort</label>
-              <select style={s.input} value={form.cohort_id}
+              <label style={s.label} htmlFor="participantintake-enroll-in-cohort">Enroll in cohort</label>
+              <select id="participantintake-enroll-in-cohort" style={s.input} value={form.cohort_id}
                 onChange={e => set('cohort_id', e.target.value)}>
                 <option value="">Select cohort (optional)…</option>
                 {cohorts.filter(c => c.status === 'Active' || c.status === 'Scheduled').map(c => (
@@ -245,8 +245,8 @@ export default function ParticipantIntake({ cohorts = [], staffProfiles = [] }) 
               </select>
             </div>
             <div style={{ ...s.formGroup, gridColumn: '1/-1' }}>
-              <label style={s.label}>Notes</label>
-              <textarea style={{ ...s.input, height: '80px', resize: 'vertical' }}
+              <label style={s.label} htmlFor="participantintake-notes">Notes</label>
+              <textarea id="participantintake-notes" style={{ ...s.input, height: '80px', resize: 'vertical' }}
                 value={form.notes} onChange={e => set('notes', e.target.value)}
                 placeholder="Any relevant notes for this participant's record…" />
             </div>
@@ -316,9 +316,9 @@ const s = {
   subtitle: { fontSize: '13px', color: '#4A6080' },
   steps: { display: 'flex', alignItems: 'center', marginBottom: '24px', gap: '0' },
   stepItem: { display: 'flex', alignItems: 'center', gap: '8px', flex: 1 },
-  stepDot: { width: '28px', height: '28px', borderRadius: '50%', background: '#E8EFF6', color: '#8BA0B8', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' },
+  stepDot: { width: '28px', height: '28px', borderRadius: '50%', background: '#E8EFF6', color: '#4A5D73', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' },
   stepDotActive: { background: '#0D1B2A', color: '#fff' },
-  stepLabel: { fontSize: '12px', color: '#8BA0B8', whiteSpace: 'nowrap' },
+  stepLabel: { fontSize: '12px', color: '#5D768A', whiteSpace: 'nowrap' },
   stepLabelActive: { color: '#0D1B2A', fontWeight: 500 },
   stepLine: { flex: 1, height: '1px', background: '#E8EFF6', margin: '0 4px' },
   stepLineActive: { background: '#0D1B2A' },
@@ -328,7 +328,7 @@ const s = {
   label: { fontSize: '11px', fontWeight: 600, color: '#4A6080', textTransform: 'uppercase', letterSpacing: '0.06em' },
   req: { color: '#993C1D' },
   input: { padding: '9px 11px', border: '1px solid #CBD8E6', borderRadius: '8px', fontSize: '13px', fontFamily: "'DM Sans', sans-serif", color: '#0D1B2A', background: '#fff', width: '100%' },
-  hint: { fontSize: '11px', color: '#8BA0B8', marginTop: '3px' },
+  hint: { fontSize: '11px', color: '#5D768A', marginTop: '3px' },
   navRow: { display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '20px', borderTop: '1px solid #F0F4F8', marginTop: '8px' },
   btn: { padding: '9px 18px', border: '1px solid #CBD8E6', borderRadius: '8px', background: '#fff', color: '#0D1B2A', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" },
   btnPrimary: { padding: '9px 20px', border: 'none', borderRadius: '8px', background: '#0D1B2A', color: '#fff', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s' },
@@ -340,7 +340,7 @@ const s = {
   successCard: { background: '#fff', border: '1px solid #CBD8E6', borderRadius: '16px', padding: '44px', textAlign: 'center', maxWidth: '400px', margin: '40px auto' },
   successIcon: { width: '52px', height: '52px', borderRadius: '50%', background: '#E1F5EE', color: '#0F6E56', fontSize: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' },
   successTitle: { fontSize: '18px', fontWeight: 500, color: '#0D1B2A', marginBottom: '8px' },
-  successId: { fontFamily: "'DM Mono', monospace", fontSize: '13px', color: '#2176AE', background: '#E6F1FB', borderRadius: '6px', padding: '4px 10px', display: 'inline-block', marginBottom: '8px' },
+  successId: { fontFamily: "'DM Mono', monospace", fontSize: '13px', color: '#0C447C', background: '#E6F1FB', borderRadius: '6px', padding: '4px 10px', display: 'inline-block', marginBottom: '8px' },
   successName: { fontSize: '16px', fontWeight: 500, color: '#0D1B2A', marginBottom: '2px' },
   successSub: { fontSize: '13px', color: '#4A6080', marginBottom: '24px' },
   successActions: { display: 'flex', gap: '10px', justifyContent: 'center' },
