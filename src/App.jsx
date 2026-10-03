@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
 import { TenantProvider } from './hooks/useTenant.jsx'
 import Login from './pages/Login.jsx'
+import PublicHome from './pages/PublicHome.jsx'
 
 // Lazy-loaded shells (prevents bundle bloat on login screen)
 import { lazy, Suspense, useEffect, useState } from 'react'
@@ -79,7 +80,7 @@ function RouteAnnouncer() {
 }
 
 const PAGE_TITLES = {
-  '/': 'Dashboard',
+  '/': 'MorpheusCR',
   '/simulator': 'AI Call Simulator',
   '/calls': 'Practice calls',
   '/academy': 'Claude Academy',
@@ -114,6 +115,7 @@ export default function App() {
         <RouteAnnouncer />
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
+            <Route path="/"               element={<PublicHome />} />
             <Route path="/login"          element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             {/* MORPHEUS.EDU — public credential verification (no auth) */}
