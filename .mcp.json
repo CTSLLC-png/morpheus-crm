@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--caps", "devtools", "--viewport-size", "1920x1080"]
+    },
     "opus": {
       "type": "http",
       "url": "https://api.opus.pro/api/agent-mcp",
