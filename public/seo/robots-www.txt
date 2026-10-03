@@ -1,11 +1,14 @@
 User-agent: *
-Allow: /login
+Allow: /
 Allow: /verify
 Allow: /privacy
 Allow: /terms
 Allow: /refunds
-Disallow: /legacy/
 Disallow: /api/
-Disallow: /
+Disallow: /participants
+Disallow: /cohorts
+Disallow: /admin
+Disallow: /campaigns
+Disallow: /creator-studio
 
 Sitemap: https://www.morpheuscr.com/sitemap.xml
