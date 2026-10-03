@@ -12,9 +12,10 @@ const BASE_URL = '/api/claude'
 // retired ID fails — the whole simulator goes down on a date, not on a
 // deploy. The previous value here (Claude Sonnet 4) was retired on
 // 15 June 2026, which is what broke scenario generation.
+// Sonnet 5.5 launched 28 September 2026 and is the current recommended Sonnet.
 // Check before changing, and when the simulator breaks for no reason:
 // https://platform.claude.com/docs/en/about-claude/model-deprecations
-const MODEL    = 'claude-sonnet-5'
+const MODEL    = 'claude-sonnet-5-5'
 
 async function claudePost(body) {
   const res = await fetch(BASE_URL, {
