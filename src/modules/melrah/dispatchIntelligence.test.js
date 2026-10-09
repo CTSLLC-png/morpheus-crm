@@ -20,7 +20,7 @@ describe('Melrah dispatch advisory engine', () => {
   })
   it('rejects unknown programs and handles malformed schedules safely', () => {
     const result=analyzeDispatchQueue([{id:'x',program_key:'UNKNOWN'},{id:'y',program_key:'ORGANICS_COFFEE',scheduled_for:'invalid'}],now)
-    expect(result).toHaveLength(1)
+    assert.equal(result.length, 1)
     assert.ok(result[0].flags.includes('MISSING_SCHEDULE'))
   })
   it('does not assume missing fill means empty or high fill', () => {
