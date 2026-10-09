@@ -3,6 +3,7 @@ import { fromModuleSchema } from '../../lib/morpheus.js'
 import { supabase } from '../../lib/supabase.js'
 import { ModuleHeader, Pill, Table, styles } from '../common/ModuleFrame.jsx'
 import { programFor } from './programs.js'
+import { analyzeDispatchQueue } from './dispatchIntelligence.js'
 
 const SCHEMA = 'melrah'
 
@@ -28,6 +29,8 @@ export default function MelrahDispatch() {
   }, [])
 
   const drivers = resources.data.filter(r => r.role === 'DRIVER')
+  const advisory = useMemo(() => analyzeDispatchQueue(queue.data), [queue.data])
+  const flagged = advisory.filter(item => item.flags.length > 0)
 
   const stats = useMemo(() => ({
     unassigned: queue.data.filter(x => !x.assigned_resource_id).length,
@@ -53,6 +56,22 @@ export default function MelrahDispatch() {
         <Metric label="Active field resources" value={resources.data.length} sub="drivers / dispatch / ops" />
       </div>
 
+      <section aria-label="Dispatch intelligence recommendations" style={{marginBottom:20,padding:16,border:'1px solid #CBD8E6',borderRadius:12,background:'var(--color-background-primary)'}}>
+        <h3 style={{margin:'0 0 6px'}}>Dispatch intelligence <Pill tone="info">Advisory only</Pill></h3>
+        <p style={{fontSize:13,color:'var(--color-text-secondary)',margin:'0 0 12px'}}>Rules-based review of the current work queue. No automatic route or assignment changes.</p>
+        {queue.loading ? <p>Analyzing work orders…</p> : queue.error ? <p role="alert">Recommendations unavailable: {queue.error.message}</p> : flagged.length === 0 ? <p>No dispatch exceptions detected in the loaded queue.</p> :
+          <div style={{display:'grid',gap:8}}>
+            {flagged.slice(0,10).map(item => {
+              const order = queue.data.find(o => String(o.id) === item.workOrderId)
+              return <div key={item.workOrderId} style={{borderTop:'1px solid #CBD8E6',paddingTop:8}}>
+                <strong>{order?.wo_number ?? item.workOrderId}</strong>{' · '}<Pill tone={item.severity === 'high' ? 'bad' : 'warn'}>{item.severity}</Pill>{' · '}<span>{programFor(order).shortLabel}</span>
+                <div style={{fontSize:13,marginTop:4}}>{item.recommendation}</div>
+                <div style={{fontSize:12,color:'var(--color-text-secondary)'}}>{item.flags.join(' · ')}</div>
+              </div>
+            })}
+            {flagged.length > 10 && <p style={{fontSize:12}}>Showing 10 of {flagged.length} flagged work orders.</p>}
+          </div>}
+      </section>
       {notice&&<div style={{marginBottom:12,padding:10,borderRadius:8,background:'#E8EFF6'}}>{notice}</div>}
       <div className='dispatch-table' style={{overflowX:'auto'}}>
         <Table
