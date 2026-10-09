@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build && node -e \"require('fs').renameSync('dist/index.html','dist/app.html')\"",
     "preview": "vite preview",
-    "lint": "eslint src --ext js,jsx"
+    "lint": "eslint src --ext js,jsx",
+    "test:dispatch": "node --test src/modules/melrah/dispatchIntelligence.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.0",
