@@ -7,11 +7,25 @@ import { analyzeDispatchQueue } from './dispatchIntelligence.js'
 
 const SCHEMA = 'melrah'
 
+// Must match public.melrah_dispatch_set_status (sql/0017). Forward steps only,
+// plus cancel; CLOSED and CANCELLED are final.
+const NEXT_STATUSES = {
+  DRAFT:      ['RELEASED','CANCELLED'],
+  RELEASED:   ['IN_TRANSIT','CANCELLED'],
+  IN_TRANSIT: ['RECEIVED','CANCELLED'],
+  RECEIVED:   ['CLOSED','CANCELLED'],
+}
+const STATUS_LABELS = {
+  DRAFT:'Draft', RELEASED:'Released', IN_TRANSIT:'In transit',
+  RECEIVED:'Received', CLOSED:'Closed', CANCELLED:'Cancelled',
+}
+const FINAL_STATUSES = ['CLOSED','CANCELLED']
+
 function tone(status) {
   const s = String(status ?? '').toUpperCase()
-  if (['COMPLETED','CLOSED'].includes(s)) return 'good'
+  if (['COMPLETED','CLOSED','RECEIVED'].includes(s)) return 'good'
   if (['URGENT','EXCEPTION','CANCELLED'].includes(s)) return 'bad'
-  if (['DISPATCHED','EN_ROUTE','ARRIVED','IN_PROGRESS','HIGH'].includes(s)) return 'warn'
+  if (['DISPATCHED','EN_ROUTE','ARRIVED','IN_PROGRESS','IN_TRANSIT','HIGH'].includes(s)) return 'warn'
   return 'info'
 }
 
@@ -25,6 +39,20 @@ export default function MelrahDispatch() {
     if(error){ setNotice(`Could not save: ${error.message}`); return { error: error.message } }
     setNotice('Saved. The work order is dispatched and will appear in the collector\'s Route Briefcase.')
     setQueue(q=>({...q,data:q.data.map(x=>x.id===workOrderId?{...x,assigned_resource_id:resourceId,status:'RELEASED'}:x)}))
+    return { error: null }
+  }
+
+  async function setStatus(workOrderId,status,note){
+    const {error}=await supabase.rpc('melrah_dispatch_set_status',{p_work_order_id:workOrderId,p_status:status,p_note:note||null})
+    if(error){ setNotice(`Could not update status: ${error.message}`); return { error: error.message } }
+    const label = STATUS_LABELS[status] ?? status
+    setNotice(FINAL_STATUSES.includes(status)
+      ? `Work order ${label.toLowerCase()}. It has been removed from the open queue.`
+      : `Status updated to ${label}.`)
+    // Closed and cancelled orders leave the open dispatch queue.
+    setQueue(q=>({...q,data: FINAL_STATUSES.includes(status)
+      ? q.data.filter(x=>x.id!==workOrderId)
+      : q.data.map(x=>x.id===workOrderId?{...x,status}:x)}))
     return { error: null }
   }
 
@@ -82,7 +110,7 @@ export default function MelrahDispatch() {
       {notice&&<div style={{marginBottom:12,padding:10,borderRadius:8,background:'#E8EFF6'}}>{notice}</div>}
       <div className='dispatch-table' style={{overflowX:'auto'}}>
         <Table
-          columns={['Program','WO #','Location','City','Priority','Status','Scheduled','Fill','Score','Assignment']}
+          columns={['Program','WO #','Location','City','Priority','Status','Scheduled','Fill','Score','Assignment','Update status']}
           rows={queue.data}
           keyOf={o => o.id}
           renderRow={o => (
@@ -95,6 +123,7 @@ export default function MelrahDispatch() {
               <td style={styles.td}>{o.scheduled_for ?? '—'}</td>
               <td style={styles.td}><Pill tone={Number(o.max_fill_pct)>=90?'bad':Number(o.max_fill_pct)>=80?'warn':'neutral'}>{Number(o.max_fill_pct||0).toFixed(0)}%</Pill></td><td style={styles.td}><strong>{o.route_score??'—'}</strong></td>
               <td style={styles.td}><AssignmentSelect order={o} drivers={drivers} assign={assign}/></td>
+              <td style={styles.td}><StatusControl order={o} setStatus={setStatus}/></td>
             </>
           )}
         />
@@ -105,6 +134,7 @@ export default function MelrahDispatch() {
           <div className='dispatch-mobile-place'>{o.location_name ?? 'No location'}{o.city ? ` · ${o.city}` : ''}</div>
           <div className='dispatch-mobile-meta'><Pill tone={tone(o.status)}>{o.status ?? 'OPEN'}</Pill><span>{Number(o.max_fill_pct||0).toFixed(0)}% fill</span></div>
           <label className='dispatch-mobile-label'>Assign collector<AssignmentSelect order={o} drivers={drivers} assign={assign}/></label>
+          <div className='dispatch-mobile-label' style={{marginTop:12}}>Update status<StatusControl order={o} setStatus={setStatus}/></div>
         </div>)}
       </div>
       <style>{`.dispatch-mobile-cards{display:none}@media(max-width:720px){.dispatch-table{display:none!important}.dispatch-mobile-cards{display:grid;gap:12px}.dispatch-mobile-card{background:var(--color-background-primary);border:1px solid #CBD8E6;border-radius:14px;padding:14px;min-width:0}.dispatch-mobile-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.dispatch-mobile-head strong{font-family:monospace;font-size:16px}.dispatch-mobile-place{margin:10px 0;color:#42546A;font-size:14px}.dispatch-mobile-meta{display:flex;align-items:center;gap:8px;margin-bottom:12px;color:#5B6B7F;font-size:12px}.dispatch-mobile-label{display:grid;gap:6px;color:#42546A;font-size:12px;font-weight:700}.dispatch-mobile-label select{width:100%;min-height:46px;border:1px solid #AFC0D2;border-radius:10px;background:white;padding:0 10px;font-size:16px}}`}</style>
@@ -136,6 +166,47 @@ function AssignmentSelect({order,drivers,assign}) {
       {state.saving ? 'Saving…' : 'Save'}
     </button>
     {state.msg && <span role='status' style={{fontSize:12,fontWeight:600,color:state.error?'#B42318':'#0F6E56'}}>{state.error ? state.msg : '✓ Saved'}</span>}
+  </div>
+}
+
+function StatusControl({order,setStatus}) {
+  const current = String(order.status ?? 'DRAFT').toUpperCase()
+  const options = NEXT_STATUSES[current] ?? []
+  const [choice,setChoice] = useState('')
+  const [note,setNote] = useState('')
+  const [state,setState] = useState({ saving:false, msg:'', error:false })
+  useEffect(()=>{ setChoice(''); setNote('') },[current])
+  if (options.length === 0) return <span style={{fontSize:12,color:'#5B6B7F'}}>No further changes</span>
+  const needsAssign = choice === 'RELEASED' && !order.assigned_resource_id
+  const isCancel = choice === 'CANCELLED'
+  const disabled = !choice || state.saving || needsAssign || (isCancel && !note.trim())
+  async function save(){
+    if (FINAL_STATUSES.includes(choice) &&
+        !window.confirm(`${STATUS_LABELS[choice]} work order ${order.wo_number}? This cannot be undone.`)) return
+    setState({ saving:true, msg:'', error:false })
+    const { error } = await setStatus(order.id, choice, note)
+    setState(error ? { saving:false, msg:error, error:true } : { saving:false, msg:'', error:false })
+  }
+  return <div style={{display:'grid',gap:6,minWidth:170}}>
+    <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:6}}>
+      <select aria-label={`New status for ${order.wo_number}`} value={choice}
+        onChange={e=>{ setChoice(e.target.value); setState({saving:false,msg:'',error:false}) }}>
+        <option value=''>Change status…</option>
+        {options.map(st=><option key={st} value={st}>{STATUS_LABELS[st]}</option>)}
+      </select>
+      <button type='button' onClick={save} disabled={disabled}
+        aria-label={`Save status for ${order.wo_number}`}
+        style={{padding:'6px 12px',borderRadius:8,border:'none',fontWeight:600,cursor:disabled?'not-allowed':'pointer',
+          background:disabled?'#CBD8E6':(isCancel?'#B42318':'#0D1B2A'),color:disabled?'#5B6B7F':'#fff'}}>
+        {state.saving ? 'Saving…' : 'Save'}
+      </button>
+    </div>
+    {choice && <input type='text' value={note} onChange={e=>setNote(e.target.value)}
+      aria-label={`Note for ${order.wo_number}`}
+      placeholder={isCancel ? 'Reason for cancelling (required)' : 'Note (optional)'}
+      style={{padding:'6px 8px',border:'1px solid #AFC0D2',borderRadius:8,fontSize:13}}/>}
+    {needsAssign && <span style={{fontSize:12,color:'#B42318'}}>Assign a collector first.</span>}
+    {state.msg && <span role='status' style={{fontSize:12,fontWeight:600,color:'#B42318'}}>{state.msg}</span>}
   </div>
 }
 
