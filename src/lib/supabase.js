@@ -10,8 +10,28 @@ import { SITE_URL } from './site.js'
 const DEFAULT_URL  = 'https://ymavrmekxiwdphdyteau.supabase.co'
 const DEFAULT_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltYXZybWVreGl3ZHBoZHl0ZWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4Mjg0MDIsImV4cCI6MjA5ODQwNDQwMn0.EdXN9Bw90VuhFTmTnCK11woGBX1dS30H_jewetwuWi0'
 
-const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL  || DEFAULT_URL
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_ANON
+// Only accept env values that actually look like Supabase config. A
+// placeholder pasted into Vercel (e.g. "The active project's publishable
+// key") otherwise overrides the good default and every sign-in fails with
+// "Invalid API key".
+const ENV_URL  = (import.meta.env.VITE_SUPABASE_URL || '').trim()
+const ENV_ANON = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
+const isValidUrl  = (v) => /^https:\/\/[a-z0-9]+\.supabase\.co\/?$/.test(v)
+const isValidAnon = (v) =>
+  /^eyJ[\w-]+\.eyJ[\w-]+\.[\w-]+$/.test(v) || /^sb_publishable_[\w-]+$/.test(v)
+
+if (ENV_URL && !isValidUrl(ENV_URL)) {
+  console.warn('Morpheus: VITE_SUPABASE_URL is not a valid Supabase URL; using built-in default.')
+}
+if (ENV_ANON && !isValidAnon(ENV_ANON)) {
+  console.warn('Morpheus: VITE_SUPABASE_ANON_KEY is not a valid Supabase key; using built-in default.')
+}
+
+// URL and key must come from the same project, so only use the env pair
+// when both are valid; otherwise use the built-in pair.
+const useEnv = isValidUrl(ENV_URL) && isValidAnon(ENV_ANON)
+const SUPABASE_URL  = useEnv ? ENV_URL.replace(/\/$/, '')  : DEFAULT_URL
+const SUPABASE_ANON = useEnv ? ENV_ANON : DEFAULT_ANON
 
 // Never blank-screen: if config is somehow still missing, show a
 // readable diagnostic instead of crashing the whole app at load.
