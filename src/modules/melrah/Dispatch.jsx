@@ -19,7 +19,14 @@ export default function MelrahDispatch() {
   const [queue, setQueue] = useState({ loading: true, data: [] })
   const [resources, setResources] = useState({ loading: true, data: [] })
   const [notice,setNotice]=useState('')
-  async function assign(workOrderId,resourceId){if(!resourceId)return;const {error}=await supabase.rpc('melrah_dispatch_assign',{p_work_order_id:workOrderId,p_resource_id:resourceId});setNotice(error?error.message:'Dispatched to collector. It will appear in their Route Briefcase.');if(!error)setQueue(q=>({...q,data:q.data.map(x=>x.id===workOrderId?{...x,assigned_resource_id:resourceId,status:'RELEASED'}:x)}))}
+  async function assign(workOrderId,resourceId){
+    if(!resourceId) return { error: 'Choose a collector first.' }
+    const {error}=await supabase.rpc('melrah_dispatch_assign',{p_work_order_id:workOrderId,p_resource_id:resourceId})
+    if(error){ setNotice(`Could not save: ${error.message}`); return { error: error.message } }
+    setNotice('Saved. The work order is dispatched and will appear in the collector\'s Route Briefcase.')
+    setQueue(q=>({...q,data:q.data.map(x=>x.id===workOrderId?{...x,assigned_resource_id:resourceId,status:'RELEASED'}:x)}))
+    return { error: null }
+  }
 
   useEffect(() => {
     supabase.from('ml_dispatch_recommendations').select('*').order('route_score', { ascending: false }).order('scheduled_for', { ascending: true }).limit(200)
@@ -105,7 +112,32 @@ export default function MelrahDispatch() {
   )
 }
 
-function AssignmentSelect({order,drivers,assign}) { return <select aria-label={`Assign collector for ${order.wo_number}`} value={order.assigned_resource_id||''} onChange={e=>assign(order.id,e.target.value)}><option value=''>Unassigned</option>{drivers.map(r=><option key={r.id} value={r.id}>{r.display_name}</option>)}</select> }
+function AssignmentSelect({order,drivers,assign}) {
+  const saved = order.assigned_resource_id || ''
+  const [choice,setChoice] = useState(saved)
+  const [state,setState] = useState({ saving:false, msg:'', error:false })
+  useEffect(()=>{ setChoice(saved) },[saved])
+  const dirty = choice !== saved
+  async function save(){
+    setState({ saving:true, msg:'', error:false })
+    const { error } = await assign(order.id, choice)
+    setState(error ? { saving:false, msg:error, error:true } : { saving:false, msg:'Saved', error:false })
+  }
+  return <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:6}}>
+    <select aria-label={`Assign collector for ${order.wo_number}`} value={choice}
+      onChange={e=>{ setChoice(e.target.value); setState({saving:false,msg:'',error:false}) }}>
+      <option value=''>Unassigned</option>
+      {drivers.map(r=><option key={r.id} value={r.id}>{r.display_name}</option>)}
+    </select>
+    <button type='button' onClick={save} disabled={!dirty || !choice || state.saving}
+      aria-label={`Save assignment for ${order.wo_number}`}
+      style={{padding:'6px 12px',borderRadius:8,border:'none',fontWeight:600,cursor:(!dirty||!choice||state.saving)?'not-allowed':'pointer',
+        background:(!dirty||!choice)?'#CBD8E6':'#0D1B2A',color:(!dirty||!choice)?'#5B6B7F':'#fff'}}>
+      {state.saving ? 'Saving…' : 'Save'}
+    </button>
+    {state.msg && <span role='status' style={{fontSize:12,fontWeight:600,color:state.error?'#B42318':'#0F6E56'}}>{state.error ? state.msg : '✓ Saved'}</span>}
+  </div>
+}
 
 function Metric({label,value,sub}) {
   return <div style={{background:'var(--color-background-primary)',border:'1px solid #CBD8E6',borderRadius:12,padding:16}}>

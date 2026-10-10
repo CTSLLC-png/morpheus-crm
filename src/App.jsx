@@ -37,6 +37,27 @@ function RequireAuth({ children }) {
   return children
 }
 
+/**
+ * "/" is both the public home page and the staff/participant dashboard.
+ * Signed-in users get their workspace; everyone else sees the public page.
+ * Without this, signing in sent staff to "/" and showed the public page,
+ * so the workspace was only reachable by typing another URL.
+ */
+function HomeGate() {
+  const { session, loading } = useAuth()
+  if (loading) return <LoadingScreen />
+  if (!session) return <PublicHome />
+  return <RoleRouter />
+}
+
+/** Sends an already signed-in user straight to their workspace */
+function LoginGate() {
+  const { session, loading } = useAuth()
+  if (loading) return <LoadingScreen />
+  if (session) return <Navigate to="/" replace />
+  return <Login />
+}
+
 /** Routes trainer/admin to TrainerShell, participants to ParticipantShell */
 function RoleRouter() {
   const { role, loading } = useAuth()
@@ -115,8 +136,8 @@ export default function App() {
         <RouteAnnouncer />
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
-            <Route path="/"               element={<PublicHome />} />
-            <Route path="/login"          element={<Login />} />
+            <Route path="/"               element={<HomeGate />} />
+            <Route path="/login"          element={<LoginGate />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             {/* MORPHEUS.EDU — public credential verification (no auth) */}
             <Route path="/verify"         element={<VerifyCredential />} />
