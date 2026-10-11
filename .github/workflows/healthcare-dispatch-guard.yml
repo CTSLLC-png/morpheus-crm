@@ -51,5 +51,5 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_dispatch_guard_ci_bootstrap.sql
       - name: Install proposed guard on disposable database
         run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_server_guard.sql
-      - name: Execute six rollback-based regression checks
+      - name: Execute eleven rollback-based regression checks
         run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_dispatch_guard_isolated.sql
