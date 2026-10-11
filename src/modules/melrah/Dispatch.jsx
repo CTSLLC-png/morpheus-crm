@@ -35,6 +35,13 @@ export default function MelrahDispatch() {
   const [notice,setNotice]=useState('')
   async function assign(workOrderId,resourceId){
     if(!resourceId) return { error: 'Choose a collector first.' }
+    const order = queue.data.find(x => x.id === workOrderId)
+    if (!order) return { error: 'Work order not found in loaded queue.' }
+    if (order.program_key === 'HEALTHCARE_MDR') {
+      const error = 'Healthcare assignments are unavailable until server-side facility credential verification is enabled.'
+      setNotice(error)
+      return { error }
+    }
     const {error}=await supabase.rpc('melrah_dispatch_assign',{p_work_order_id:workOrderId,p_resource_id:resourceId})
     if(error){ setNotice(`Could not save: ${error.message}`); return { error: error.message } }
     setNotice('Saved. The work order is dispatched and will appear in the collector\'s Route Briefcase.')
@@ -43,6 +50,13 @@ export default function MelrahDispatch() {
   }
 
   async function setStatus(workOrderId,status,note){
+    const order = queue.data.find(x => x.id === workOrderId)
+    if (!order) return { error: 'Work order not found in loaded queue.' }
+    if (order.program_key === 'HEALTHCARE_MDR' && status !== 'CANCELLED') {
+      const error = 'Healthcare status progression is unavailable until server-side clearance enforcement is enabled.'
+      setNotice(error)
+      return { error }
+    }
     const {error}=await supabase.rpc('melrah_dispatch_set_status',{p_work_order_id:workOrderId,p_status:status,p_note:note||null})
     if(error){ setNotice(`Could not update status: ${error.message}`); return { error: error.message } }
     const label = STATUS_LABELS[status] ?? status
@@ -143,6 +157,7 @@ export default function MelrahDispatch() {
 }
 
 function AssignmentSelect({order,drivers,assign}) {
+  const healthcareBlocked = order.program_key === 'HEALTHCARE_MDR'
   const saved = order.assigned_resource_id || ''
   const [choice,setChoice] = useState(saved)
   const [state,setState] = useState({ saving:false, msg:'', error:false })
@@ -154,12 +169,13 @@ function AssignmentSelect({order,drivers,assign}) {
     setState(error ? { saving:false, msg:error, error:true } : { saving:false, msg:'Saved', error:false })
   }
   return <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:6}}>
-    <select aria-label={`Assign collector for ${order.wo_number}`} value={choice}
+    {healthcareBlocked && <span role='status' style={{color:'#B42318',fontSize:12}}>Hospital clearance gate pending</span>}
+    <select disabled={healthcareBlocked} aria-label={`Assign collector for ${order.wo_number}`} value={choice}
       onChange={e=>{ setChoice(e.target.value); setState({saving:false,msg:'',error:false}) }}>
       <option value=''>Unassigned</option>
       {drivers.map(r=><option key={r.id} value={r.id}>{r.display_name}</option>)}
     </select>
-    <button type='button' onClick={save} disabled={!dirty || !choice || state.saving}
+    <button type='button' onClick={save} disabled={healthcareBlocked || !dirty || !choice || state.saving}
       aria-label={`Save assignment for ${order.wo_number}`}
       style={{padding:'6px 12px',borderRadius:8,border:'none',fontWeight:600,cursor:(!dirty||!choice||state.saving)?'not-allowed':'pointer',
         background:(!dirty||!choice)?'#CBD8E6':'#0D1B2A',color:(!dirty||!choice)?'#5B6B7F':'#fff'}}>
@@ -170,6 +186,7 @@ function AssignmentSelect({order,drivers,assign}) {
 }
 
 function StatusControl({order,setStatus}) {
+  const healthcareBlocked = order.program_key === 'HEALTHCARE_MDR'
   const current = String(order.status ?? 'DRAFT').toUpperCase()
   const options = NEXT_STATUSES[current] ?? []
   const [choice,setChoice] = useState('')
@@ -179,7 +196,7 @@ function StatusControl({order,setStatus}) {
   if (options.length === 0) return <span style={{fontSize:12,color:'#5B6B7F'}}>No further changes</span>
   const needsAssign = choice === 'RELEASED' && !order.assigned_resource_id
   const isCancel = choice === 'CANCELLED'
-  const disabled = !choice || state.saving || needsAssign || (isCancel && !note.trim())
+  const disabled = !choice || state.saving || needsAssign || (isCancel && !note.trim()) || (healthcareBlocked && !isCancel)
   async function save(){
     if (FINAL_STATUSES.includes(choice) &&
         !window.confirm(`${STATUS_LABELS[choice]} work order ${order.wo_number}? This cannot be undone.`)) return
@@ -205,6 +222,7 @@ function StatusControl({order,setStatus}) {
       aria-label={`Note for ${order.wo_number}`}
       placeholder={isCancel ? 'Reason for cancelling (required)' : 'Note (optional)'}
       style={{padding:'6px 8px',border:'1px solid #AFC0D2',borderRadius:8,fontSize:13}}/>}
+    {healthcareBlocked && <span role='status' style={{fontSize:12,color:'#B42318'}}>Hospital clearance verification required before progression; cancellation remains available.</span>}
     {needsAssign && <span style={{fontSize:12,color:'#B42318'}}>Assign a collector first.</span>}
     {state.msg && <span role='status' style={{fontSize:12,fontWeight:600,color:'#B42318'}}>{state.msg}</span>}
   </div>
