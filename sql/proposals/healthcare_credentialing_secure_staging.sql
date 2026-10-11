@@ -12,7 +12,7 @@ begin;
 create or replace function melrah.healthcare_assert_facility_tenant()
 returns trigger language plpgsql security definer
 set search_path = pg_catalog, melrah
-as $
+as $body$
 begin
   if not exists (
     select 1 from melrah.facility f
@@ -24,14 +24,14 @@ begin
   end if;
   return new;
 end;
-$;
+$body$;
 revoke all on function melrah.healthcare_assert_facility_tenant() from public, anon, authenticated;
 -- Prevent account reassignment after a facility is enrolled. Check triggers
 -- on account/facility changes below, not just initial enrollment.
 create or replace function melrah.healthcare_prevent_facility_tenant_reassignment()
 returns trigger language plpgsql security definer
 set search_path = pg_catalog, melrah
-as $
+as $body$
 begin
   if exists (
     select 1 from melrah.healthcare_facility_scope s
@@ -43,12 +43,12 @@ begin
   end if;
   return new;
 end;
-$;
+$body$;
 revoke all on function melrah.healthcare_prevent_facility_tenant_reassignment() from public, anon, authenticated;
 create or replace function melrah.healthcare_prevent_facility_account_reassignment()
 returns trigger language plpgsql security definer
 set search_path = pg_catalog, melrah
-as $
+as $body$
 begin
   if exists (
     select 1 from melrah.healthcare_facility_scope s
@@ -60,7 +60,7 @@ begin
   end if;
   return new;
 end;
-$;
+$body$;
 revoke all on function melrah.healthcare_prevent_facility_account_reassignment() from public, anon, authenticated;
 -- Scoped facility registry: composite keys ensure clearance tenant cannot be
 -- changed independently of its facility. Enrollment must be administered.
