@@ -1,0 +1,26 @@
+name: Healthcare clearance eligibility tests
+on:
+  pull_request:
+    paths:
+      - 'src/modules/melrah/healthcareClearance.js'
+      - 'src/modules/melrah/healthcareClearance.test.js'
+      - '.github/workflows/healthcare-clearance-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/modules/melrah/healthcareClearance.js'
+      - 'src/modules/melrah/healthcareClearance.test.js'
+      - '.github/workflows/healthcare-clearance-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  eligibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test src/modules/melrah/healthcareClearance.test.js
