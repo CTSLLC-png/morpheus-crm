@@ -1,0 +1,55 @@
+name: Healthcare MDR PostgreSQL guard tests
+
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_dispatch_server_guard.sql'
+      - 'sql/tests/healthcare_dispatch_guard_*.sql'
+      - '.github/workflows/healthcare-dispatch-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_dispatch_server_guard.sql'
+      - 'sql/tests/healthcare_dispatch_guard_*.sql'
+      - '.github/workflows/healthcare-dispatch-guard.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guard-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_guard_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_test_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_guard_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_guard_test
+      PGUSER: postgres
+      PGPASSWORD: postgres_test_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Bootstrap isolated fixture schema
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_dispatch_guard_ci_bootstrap.sql
+      - name: Install proposed guard on disposable database
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_server_guard.sql
+      - name: Execute six rollback-based regression checks
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_dispatch_guard_isolated.sql
