@@ -25,3 +25,6 @@ Fields: technician_id, customer_id, facility_id, vendor_key, clearance_status (U
 
 ## Example
 A technician has a valid IntelliCentrics account for Hospital A but Hospital B requires Green Security and additional local clearance. Hospital B remains NOT CLEARED until independently verified.
+
+## Confirmed operating rule (founder, 2026-10-11)
+Each facility in the historical collection program had **one dedicated primary credentialing system**. Model `facility.primary_credentialing_vendor_key` as one required provider per facility. Retain an optional separate list of supplemental requirements or future provider transitions; do not assume cross-vendor clearance. The credentialing coordinator verifies the primary provider and each technician's facility-specific status.
