@@ -1,0 +1,56 @@
+name: Healthcare dispatch RPC PostgreSQL integration
+on:
+  pull_request:
+    paths:
+      - 'sql/tests/healthcare_rpc_guard_*.sql'
+      - 'sql/0017_melrah_dispatch_status_control.sql'
+      - 'sql/proposals/healthcare_dispatch_server_guard.sql'
+      - '.github/workflows/healthcare-rpc-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/tests/healthcare_rpc_guard_*.sql'
+      - 'sql/0017_melrah_dispatch_status_control.sql'
+      - 'sql/proposals/healthcare_dispatch_server_guard.sql'
+      - '.github/workflows/healthcare-rpc-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  status-rpc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_rpc_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_rpc_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_rpc_test
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable RPC fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_rpc_guard_bootstrap.sql
+      - name: Load actual dispatch status RPC
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/0017_melrah_dispatch_status_control.sql
+      - name: Install proposed healthcare block trigger
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_server_guard.sql
+      - name: Run RPC integration checks
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_rpc_guard_integration.sql
