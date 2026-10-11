@@ -1,0 +1,58 @@
+name: MDR dispatch RPC and preflight composition
+on:
+  pull_request:
+    paths:
+      - 'sql/tests/healthcare_rpc_preflight_composition_*'
+      - '.github/workflows/healthcare-rpc-preflight-composition.yml'
+      - 'sql/proposals/healthcare_dispatch_preflight_integrated_disabled.sql'
+      - 'sql/proposals/healthcare_dispatch_server_guard.sql'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/tests/healthcare_rpc_preflight_composition_*'
+      - '.github/workflows/healthcare-rpc-preflight-composition.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_rpc_compose
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_rpc_compose"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_rpc_compose
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create real RPC fixture
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_rpc_guard_bootstrap.sql
+      - name: Extend healthcare preflight fixture
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_rpc_preflight_composition_bootstrap.sql
+      - name: Install actual guard and assignment RPC
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_server_guard.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_assign_rpc_source.sql
+      - name: Install actual unified preflight
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_preflight_integrated_disabled.sql
+      - name: Verify RPC remains blocked after preflight
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_rpc_preflight_composition_integration.sql
