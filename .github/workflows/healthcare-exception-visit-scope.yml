@@ -1,0 +1,56 @@
+name: MDR exception visit scope
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_exception_visit_scope.sql'
+      - 'sql/tests/healthcare_exception_visit_scope_integration.sql'
+      - '.github/workflows/healthcare-exception-visit-scope.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_exception_visit_scope.sql'
+      - 'sql/tests/healthcare_exception_visit_scope_integration.sql'
+      - '.github/workflows/healthcare-exception-visit-scope.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  visit-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_scope_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_scope_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_scope_test
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable parent fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_bootstrap.sql
+      - name: Install proposed exception tables
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_access_exception_staging.sql
+      - name: Install approver gate
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_exception_authority_gate.sql
+      - name: Install visit scope gate
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_exception_visit_scope.sql
+      - name: Test exact visit binding
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_visit_scope_integration.sql
