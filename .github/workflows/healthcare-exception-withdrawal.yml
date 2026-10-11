@@ -1,0 +1,56 @@
+name: MDR hospital approval withdrawal concurrency
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_exception_withdrawal_lock.sql'
+      - 'sql/tests/healthcare_exception_withdrawal_*'
+      - '.github/workflows/healthcare-exception-withdrawal.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_exception_withdrawal_lock.sql'
+      - 'sql/tests/healthcare_exception_withdrawal_*'
+      - '.github/workflows/healthcare-exception-withdrawal.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  withdrawal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_withdrawal_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_withdrawal_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_withdrawal_test
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable parent fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_bootstrap.sql
+      - name: Install proposed exception tables
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_access_exception_staging.sql
+      - name: Install approval row-lock helper
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_exception_withdrawal_lock.sql
+      - name: Insert approved test exception
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_withdrawal_fixture.sql
+      - name: Verify two-session withdrawal ordering
+        run: bash sql/tests/healthcare_exception_withdrawal_concurrency.sh
