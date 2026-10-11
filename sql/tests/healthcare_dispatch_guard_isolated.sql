@@ -97,7 +97,41 @@ BEGIN
   END;
   IF NOT blocked THEN RAISE EXCEPTION 'FAIL: healthcare arrival timestamp allowed'; END IF;
 
-  RAISE NOTICE 'PASS: eleven isolated healthcare dispatch guard regression checks';
+  blocked := false;
+  BEGIN
+    UPDATE healthcare_dispatch_guard_fixture SET assigned_to='00000000-0000-0000-0000-000000000003' WHERE id=1;
+  EXCEPTION WHEN check_violation THEN blocked := true;
+  END;
+  IF NOT blocked THEN RAISE EXCEPTION 'FAIL: healthcare assigned_to bypass allowed'; END IF;
+
+  blocked := false;
+  BEGIN
+    UPDATE healthcare_dispatch_guard_fixture SET collection_started_at=now() WHERE id=1;
+  EXCEPTION WHEN check_violation THEN blocked := true;
+  END;
+  IF NOT blocked THEN RAISE EXCEPTION 'FAIL: healthcare collection start bypass allowed'; END IF;
+
+  blocked := false;
+  BEGIN
+    UPDATE healthcare_dispatch_guard_fixture SET closed_at=now() WHERE id=1;
+  EXCEPTION WHEN check_violation THEN blocked := true;
+  END;
+  IF NOT blocked THEN RAISE EXCEPTION 'FAIL: healthcare close timestamp bypass allowed'; END IF;
+
+  blocked := false;
+  BEGIN
+    INSERT INTO healthcare_dispatch_guard_fixture(id,program_key,status,dispatched_at)
+    VALUES (6,'HEALTHCARE_MDR','DRAFT',now());
+  EXCEPTION WHEN check_violation THEN blocked := true;
+  END;
+  IF NOT blocked THEN RAISE EXCEPTION 'FAIL: dispatched healthcare INSERT allowed'; END IF;
+
+  INSERT INTO healthcare_dispatch_guard_fixture(id,program_key,status)
+  VALUES (7,'HEALTHCARE_MDR','DRAFT');
+  IF (SELECT count(*) FROM healthcare_dispatch_guard_fixture WHERE id=7) <> 1
+    THEN RAISE EXCEPTION 'FAIL: safe healthcare draft INSERT blocked'; END IF;
+
+  RAISE NOTICE 'PASS: sixteen isolated healthcare dispatch guard regression checks';
 END
 $test$;
 ROLLBACK;
