@@ -1,0 +1,54 @@
+name: MDR facility approver authority integration
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_exception_authority_gate.sql'
+      - 'sql/tests/healthcare_exception_authority_integration.sql'
+      - '.github/workflows/healthcare-exception-authority.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_exception_authority_gate.sql'
+      - 'sql/tests/healthcare_exception_authority_integration.sql'
+      - '.github/workflows/healthcare-exception-authority.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_authority_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_authority_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_authority_test
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable parent fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_bootstrap.sql
+      - name: Install proposed exception tables
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_access_exception_staging.sql
+      - name: Install proposed facility authority gate
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_exception_authority_gate.sql
+      - name: Test authority and conduct exclusion
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_authority_integration.sql
