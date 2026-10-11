@@ -1,0 +1,52 @@
+name: MDR evidence revocation concurrency
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_evidence_revocation_locking.sql'
+      - 'sql/tests/healthcare_revocation_lock_*'
+      - '.github/workflows/healthcare-revocation-concurrency.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_evidence_revocation_locking.sql'
+      - 'sql/tests/healthcare_revocation_lock_*'
+      - '.github/workflows/healthcare-revocation-concurrency.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_lock_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_lock_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_lock_test
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Bootstrap disposable evidence
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_revocation_lock_bootstrap.sql
+      - name: Install proposed transaction lock and write trigger
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_evidence_revocation_locking.sql
+      - name: Exercise concurrent sessions
+        run: bash sql/tests/healthcare_revocation_lock_concurrency.sh
