@@ -5,6 +5,7 @@
 -- This proposal remains BLOCKED until staging tests and verifier controls pass.
 -- Tenant binding uses explicit scoped enrollment, not a global field_resource.tenant_id.
 -- All application roles are denied by default; service-side ingestion must be audited.
+-- Rerunnable DDL does not mean deployable: existing schema must be diff-reviewed.
 begin;
 -- Enforce the existing facility -> account -> tenant ownership at the
 -- database boundary. SECURITY DEFINER is used only for this invariant:
@@ -69,12 +70,15 @@ create table if not exists melrah.healthcare_facility_scope (
   facility_id uuid not null unique references melrah.facility(id) on delete cascade,
   primary key (tenant_id,facility_id)
 );
+drop trigger if exists healthcare_facility_scope_tenant_guard on melrah.healthcare_facility_scope;
 create trigger healthcare_facility_scope_tenant_guard
 before insert or update on melrah.healthcare_facility_scope
 for each row execute function melrah.healthcare_assert_facility_tenant();
+drop trigger if exists healthcare_account_tenant_change_guard on melrah.account;
 create trigger healthcare_account_tenant_change_guard
 before update of tenant_id on melrah.account
 for each row execute function melrah.healthcare_prevent_facility_tenant_reassignment();
+drop trigger if exists healthcare_facility_account_change_guard on melrah.facility;
 create trigger healthcare_facility_account_change_guard
 before update of account_id on melrah.facility
 for each row execute function melrah.healthcare_prevent_facility_account_reassignment();
@@ -128,6 +132,7 @@ alter table melrah.healthcare_technician_clearance enable row level security;
 -- Restrict reading to authorized tenant managers, not every tenant member.
 -- Membership roles must be confirmed before granting permissions.
 -- Do NOT grant INSERT/UPDATE/DELETE to authenticated users in this proposal.
+drop policy if exists healthcare_facility_credentialing_manager_read on melrah.healthcare_facility_credentialing;
 create policy healthcare_facility_credentialing_manager_read
 on melrah.healthcare_facility_credentialing for select to authenticated
 using (
@@ -140,6 +145,7 @@ using (
           and m.role = 'OWNER')
   )
 );
+drop policy if exists healthcare_technician_clearance_manager_read on melrah.healthcare_technician_clearance;
 create policy healthcare_technician_clearance_manager_read
 on melrah.healthcare_technician_clearance for select to authenticated
 using (
