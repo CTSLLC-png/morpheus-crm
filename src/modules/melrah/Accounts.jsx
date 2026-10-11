@@ -5,13 +5,15 @@
 // enforced in the database by melrah.enforce_activation_gate — so this screen
 // shows progress against those steps rather than offering a status dropdown.
 
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
+const HealthcareCredentialingPreview = lazy(() => import('./HealthcareCredentialingPreview.jsx'))
 import { fromModuleSchema } from '../../lib/morpheus.js'
 import { DataState, ModuleHeader, Pill, Table, styles } from '../common/ModuleFrame.jsx'
 
 const SCHEMA = 'melrah'
 
 export default function MelrahAccounts() {
+  const [showCredentialingDemo, setShowCredentialingDemo] = useState(false)
   const [accounts, setAccounts] = useState({ loading: true })
   const [steps, setSteps] = useState({ loading: true })
 
@@ -24,6 +26,8 @@ export default function MelrahAccounts() {
 
   return (
     <div>
+      <button type="button" aria-expanded={showCredentialingDemo} onClick={() => setShowCredentialingDemo(v => !v)} style={{marginBottom:16,padding:"10px 14px",cursor:"pointer"}}>{showCredentialingDemo ? "Hide credentialing demo" : "Preview healthcare credentialing (DEMO)"}</button>
+      {showCredentialingDemo && <Suspense fallback={<p>Loading demo…</p>}><HealthcareCredentialingPreview /></Suspense>}
       <ModuleHeader
         title="Provider Networks"
         subtitle="Health system accounts, facilities and the onboarding pipeline"
