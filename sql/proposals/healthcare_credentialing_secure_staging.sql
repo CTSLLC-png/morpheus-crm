@@ -6,6 +6,62 @@
 -- Tenant binding uses explicit scoped enrollment, not a global field_resource.tenant_id.
 -- All application roles are denied by default; service-side ingestion must be audited.
 begin;
+-- Enforce the existing facility -> account -> tenant ownership at the
+-- database boundary. SECURITY DEFINER is used only for this invariant:
+-- no exposed RPC, no auth/session reliance, fixed search_path.
+create or replace function melrah.healthcare_assert_facility_tenant()
+returns trigger language plpgsql security definer
+set search_path = pg_catalog, melrah
+as $
+begin
+  if not exists (
+    select 1 from melrah.facility f
+    join melrah.account a on a.id = f.account_id
+    where f.id = new.facility_id and a.tenant_id = new.tenant_id
+  ) then
+    raise exception 'Facility does not belong to specified tenant'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$;
+revoke all on function melrah.healthcare_assert_facility_tenant() from public, anon, authenticated;
+-- Prevent account reassignment after a facility is enrolled. Check triggers
+-- on account/facility changes below, not just initial enrollment.
+create or replace function melrah.healthcare_prevent_facility_tenant_reassignment()
+returns trigger language plpgsql security definer
+set search_path = pg_catalog, melrah
+as $
+begin
+  if exists (
+    select 1 from melrah.healthcare_facility_scope s
+    join melrah.facility f on f.id = s.facility_id
+    where f.account_id = new.id and s.tenant_id <> new.tenant_id
+  ) then
+    raise exception 'Account tenant change conflicts with enrolled healthcare facility'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$;
+revoke all on function melrah.healthcare_prevent_facility_tenant_reassignment() from public, anon, authenticated;
+create or replace function melrah.healthcare_prevent_facility_account_reassignment()
+returns trigger language plpgsql security definer
+set search_path = pg_catalog, melrah
+as $
+begin
+  if exists (
+    select 1 from melrah.healthcare_facility_scope s
+    join melrah.account a on a.id = new.account_id
+    where s.facility_id = new.id and s.tenant_id <> a.tenant_id
+  ) then
+    raise exception 'Facility account change conflicts with healthcare tenant'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$;
+revoke all on function melrah.healthcare_prevent_facility_account_reassignment() from public, anon, authenticated;
 -- Scoped facility registry: composite keys ensure clearance tenant cannot be
 -- changed independently of its facility. Enrollment must be administered.
 create table if not exists melrah.healthcare_facility_scope (
@@ -13,6 +69,15 @@ create table if not exists melrah.healthcare_facility_scope (
   facility_id uuid not null unique references melrah.facility(id) on delete cascade,
   primary key (tenant_id,facility_id)
 );
+create trigger healthcare_facility_scope_tenant_guard
+before insert or update on melrah.healthcare_facility_scope
+for each row execute function melrah.healthcare_assert_facility_tenant();
+create trigger healthcare_account_tenant_change_guard
+before update of tenant_id on melrah.account
+for each row execute function melrah.healthcare_prevent_facility_tenant_reassignment();
+create trigger healthcare_facility_account_change_guard
+before update of account_id on melrah.facility
+for each row execute function melrah.healthcare_prevent_facility_account_reassignment();
 -- A field resource may serve multiple tenants, but each enrollment is explicit.
 -- No client role has write privileges to this mapping.
 create table if not exists melrah.healthcare_technician_tenant (
@@ -95,8 +160,8 @@ revoke all on melrah.healthcare_technician_clearance from anon, authenticated;
 grant select on melrah.healthcare_facility_credentialing to authenticated;
 grant select on melrah.healthcare_technician_clearance to authenticated;
 commit;
--- OPEN GATES: facility_scope enrollment must validate the existing account tenant;
--- privileged writers must never register a facility under the wrong tenant.
+-- OPEN GATES: validate trigger security, concurrency, idempotent deployment,
+-- role privileges and all negative tests in an isolated staging database.
 -- Check actual core.membership roles, role grants, facility-account tenant
 -- integrity, field_resource tenant ownership (NO direct tenant_id or FK observed),
 -- RLS recursion, API schema exposure,
