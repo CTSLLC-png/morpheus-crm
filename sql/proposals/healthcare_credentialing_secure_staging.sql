@@ -1,6 +1,8 @@
 -- PROPOSAL ONLY: DO NOT APPLY TO PRODUCTION WITHOUT STAGING VERIFICATION.
 -- Uses existing melrah.account -> core.tenant and melrah.facility relationships.
 -- Credentialing coordinator workflows require a separate authorization design.
+-- Verified against existing core.membership data: role is uppercase OWNER.
+-- This proposal remains BLOCKED until technician-to-tenant binding is enforced.
 -- All application roles are denied by default; service-side ingestion must be audited.
 begin;
 create table if not exists melrah.healthcare_facility_credentialing (
@@ -48,7 +50,7 @@ using (
     where f.id=facility_id and a.tenant_id=healthcare_facility_credentialing.tenant_id
       and exists (select 1 from core.membership m
         where m.tenant_id=a.tenant_id and m.user_id=(select auth.uid())
-          and m.role in ('owner','admin'))
+          and m.role = 'OWNER')
   )
 );
 create policy healthcare_technician_clearance_manager_read
@@ -60,7 +62,7 @@ using (
     where f.id=facility_id and a.tenant_id=healthcare_technician_clearance.tenant_id
       and exists (select 1 from core.membership m
         where m.tenant_id=a.tenant_id and m.user_id=(select auth.uid())
-          and m.role in ('owner','admin'))
+          and m.role = 'OWNER')
   )
 );
 -- Explicit privileges needed if exposed through Data API. Keep writes server-only.
@@ -70,7 +72,8 @@ grant select on melrah.healthcare_facility_credentialing to authenticated;
 grant select on melrah.healthcare_technician_clearance to authenticated;
 commit;
 -- OPEN GATES: check actual core.membership roles, role grants, facility-account tenant
--- integrity, field_resource tenant ownership, RLS recursion, API schema exposure,
+-- integrity, field_resource tenant ownership (NO direct tenant_id or FK observed),
+-- RLS recursion, API schema exposure,
 -- and service-side verifier authentication before staging application.
 -- SECURITY GAP: verified status cannot yet be trusted for dispatch; no server-side
 -- eligibility RPC or evidence provenance/approval workflow exists.
