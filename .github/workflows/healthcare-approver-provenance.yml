@@ -1,0 +1,55 @@
+name: MDR hospital approver provenance
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_approver_verification_provenance.sql'
+      - 'sql/tests/healthcare_approver_verification_integration.sql'
+      - '.github/workflows/healthcare-approver-provenance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_approver_verification_provenance.sql'
+      - 'sql/tests/healthcare_approver_verification_integration.sql'
+      - '.github/workflows/healthcare-approver-provenance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_approver_provenance
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_approver_provenance"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_approver_provenance
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable parent schema
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_bootstrap.sql
+      - name: Install actual exception and approver SQL
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_access_exception_staging.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_exception_authority_gate.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_approver_verification_provenance.sql
+      - name: Test verification and revocation
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_approver_verification_integration.sql
