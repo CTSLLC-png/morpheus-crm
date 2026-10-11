@@ -62,6 +62,38 @@ BEGIN
  END;
  IF NOT blocked THEN RAISE EXCEPTION 'FAIL unverifiable VERIFIED evidence accepted'; END IF;
 
- RAISE NOTICE 'PASS: valid evidence, cross-tenant denial, wrong-provider denial, incomplete verification denial';
+ blocked:=false;
+ BEGIN
+ INSERT INTO melrah.healthcare_credential_evidence
+ (requirement_id,tenant_id,facility_id,provider_key,technician_id,status,
+  verified_at,expires_at,verified_by,source_system,external_reference)
+ VALUES ('00000000-0000-0000-0000-000000000031',
+ '00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000011',
+ 'SYMPLR','00000000-0000-0000-0000-000000000021','VERIFIED',
+ now(),now()-interval '1 day','00000000-0000-0000-0000-000000000010','fixture','bad-expiry');
+ EXCEPTION WHEN check_violation THEN blocked:=true;
+ END;
+ IF NOT blocked THEN RAISE EXCEPTION 'FAIL expiry before verification accepted'; END IF;
+
+ blocked:=false;
+ BEGIN
+ INSERT INTO melrah.healthcare_credential_evidence
+ (requirement_id,tenant_id,facility_id,provider_key,technician_id,status,
+  verified_at,expires_at,verified_by,source_system,external_reference)
+ VALUES ('00000000-0000-0000-0000-000000000031',
+ '00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000011',
+ 'SYMPLR','00000000-0000-0000-0000-000000000021','VERIFIED',
+ now(),now()+interval '1 day','00000000-0000-0000-0000-000000000010',null,'ref-missing-source');
+ EXCEPTION WHEN check_violation THEN blocked:=true;
+ END;
+ IF NOT blocked THEN RAISE EXCEPTION 'FAIL evidence without source accepted'; END IF;
+
+ UPDATE melrah.healthcare_credential_evidence SET status='REVOKED'
+ WHERE external_reference='ref-1';
+ IF (SELECT count(*) FROM melrah.healthcare_credential_evidence
+     WHERE external_reference='ref-1' AND status='REVOKED') <> 1
+ THEN RAISE EXCEPTION 'FAIL evidence revocation status update'; END IF;
+
+ RAISE NOTICE 'PASS: seven evidence schema checks including expiry, source, and revocation status storage';
 END $test$;
 ROLLBACK;
