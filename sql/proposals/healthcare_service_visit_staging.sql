@@ -31,3 +31,9 @@ alter table healthcare.service_visit enable row level security;
 -- DO NOT expose healthcare schema to Data API until authorization design,
 -- membership/client assignments, service RPCs, and cross-client negative tests pass.
 -- Server-side migration runners only; do not place service-role keys in frontend.
+
+-- Credentialing integration requirement:
+-- service_visit must not transition to ASSIGNED/IN_PROGRESS until a separate
+-- authorization service verifies technician qualification AND client/facility
+-- credentialing clearance for the actual visit date. This is NOT yet enforced.
+-- See docs/healthcare-credentialing-access-spec.md.
