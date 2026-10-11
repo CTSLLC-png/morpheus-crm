@@ -50,6 +50,30 @@ export function buildCredentialingDashboard({ facilities = [], technicians = [],
         status === 'EXPIRING' ? '60_DAY' : null,
     })
   }
+  // An assigned visit without any clearance record must be visible as blocked.
+  // Otherwise a missing registration disappears from the coordinator's dashboard.
+  const knownPairs = new Set(rows.map(r => JSON.stringify([r.clientId, r.facilityId, r.technicianId])))
+  for (const visit of visits) {
+    if (!day(visit.scheduledFor) || visit.scheduledFor < asOf || !visit.id) continue
+    const facility = facilityById.get(visit.facilityId)
+    const technician = technicianById.get(visit.technicianId)
+    if (!facility || !technician || !visit.clientId ||
+        facility.clientId !== visit.clientId || technician.clientId !== visit.clientId) continue
+    const key = JSON.stringify([visit.clientId, visit.facilityId, visit.technicianId])
+    if (knownPairs.has(key)) continue
+    knownPairs.add(key)
+    const provider = facility.primaryCredentialingProvider
+    rows.push({
+      clientId: visit.clientId, facilityId: facility.id, facilityName: facility.name,
+      technicianId: technician.id, technicianName: technician.name,
+      provider, providerName: CREDENTIALING_PROVIDERS[provider] ?? 'Unknown',
+      status: 'NOT_VERIFIED', expiresAt: null, daysRemaining: null,
+      atRiskVisitIds: visits.filter(v => v.clientId === visit.clientId &&
+        v.facilityId === visit.facilityId && v.technicianId === visit.technicianId &&
+        day(v.scheduledFor) && v.scheduledFor >= asOf).map(v => v.id),
+      renewalPriority: null,
+    })
+  }
   return {
     rows: rows.sort((a,b) => a.facilityName.localeCompare(b.facilityName) ||
       a.technicianName.localeCompare(b.technicianName)),
