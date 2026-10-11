@@ -1,0 +1,56 @@
+name: Healthcare evidence eligibility PostgreSQL integration
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_evidence_eligibility_readonly.sql'
+      - 'sql/proposals/healthcare_credential_evidence_staging.sql'
+      - 'sql/tests/healthcare_eligibility_*.sql'
+      - '.github/workflows/healthcare-eligibility-postgres.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_evidence_eligibility_readonly.sql'
+      - 'sql/proposals/healthcare_credential_evidence_staging.sql'
+      - 'sql/tests/healthcare_eligibility_*.sql'
+      - '.github/workflows/healthcare-eligibility-postgres.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  eligibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: eligibility_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d eligibility_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: eligibility_test
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_eligibility_bootstrap.sql
+      - name: Install proposed evidence schema
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_credential_evidence_staging.sql
+      - name: Install read-only eligibility evaluator
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_evidence_eligibility_readonly.sql
+      - name: Execute eligibility integration cases
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_eligibility_readonly_integration.sql
