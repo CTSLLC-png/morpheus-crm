@@ -1,0 +1,24 @@
+name: Healthcare server decision model tests
+on:
+  pull_request:
+    paths:
+      - 'src/modules/melrah/healthcareServerDecision*.js'
+      - '.github/workflows/healthcare-server-decision.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/modules/melrah/healthcareServerDecision*.js'
+      - '.github/workflows/healthcare-server-decision.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test src/modules/melrah/healthcareServerDecision.test.js
