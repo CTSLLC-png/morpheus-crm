@@ -1,0 +1,55 @@
+name: Healthcare checked assignment contract
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_dispatch_assign_checked_disabled.sql'
+      - 'sql/tests/healthcare_dispatch_checked_contract.sql'
+      - '.github/workflows/healthcare-dispatch-checked-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_dispatch_assign_checked_disabled.sql'
+      - 'sql/tests/healthcare_dispatch_checked_contract.sql'
+      - '.github/workflows/healthcare-dispatch-checked-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  disabled-assignment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_contract
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_contract"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_contract
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Prepare disposable fixture
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_eligibility_bootstrap.sql
+      - name: Stub tenant membership for isolated contract compilation
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -c "CREATE FUNCTION core.member_of(uuid) RETURNS boolean LANGUAGE sql AS 'SELECT false';"
+      - name: Install disabled assignment function
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_assign_checked_disabled.sql
+      - name: Validate disabled assignment contract
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_dispatch_checked_contract.sql
