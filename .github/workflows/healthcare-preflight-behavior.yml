@@ -1,0 +1,52 @@
+name: MDR integrated preflight behavioral matrix
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_dispatch_preflight_integrated_disabled.sql'
+      - 'sql/tests/healthcare_preflight_behavior_*'
+      - '.github/workflows/healthcare-preflight-behavior.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_dispatch_preflight_integrated_disabled.sql'
+      - 'sql/tests/healthcare_preflight_behavior_*'
+      - '.github/workflows/healthcare-preflight-behavior.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  behavioral:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_behavior_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_behavior_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_behavior_test
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create isolated test dependencies
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_preflight_behavior_bootstrap.sql
+      - name: Install actual integrated preflight SQL
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_preflight_integrated_disabled.sql
+      - name: Run behavioral denial matrix
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_preflight_behavior_integration.sql
