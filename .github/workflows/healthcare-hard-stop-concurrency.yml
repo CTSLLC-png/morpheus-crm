@@ -1,0 +1,56 @@
+name: MDR hospital hard-stop concurrency
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_hard_stop_serialization.sql'
+      - 'sql/tests/healthcare_hard_stop_*'
+      - '.github/workflows/healthcare-hard-stop-concurrency.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_hard_stop_serialization.sql'
+      - 'sql/tests/healthcare_hard_stop_*'
+      - '.github/workflows/healthcare-hard-stop-concurrency.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hard-stop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_hard_stop_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_hard_stop_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_hard_stop_test
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable parent fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_bootstrap.sql
+      - name: Install proposed exception and exclusion tables
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_access_exception_staging.sql
+      - name: Install proposed exclusion lock trigger
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_hard_stop_serialization.sql
+      - name: Insert facility technician fixture
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_hard_stop_fixture.sql
+      - name: Test concurrent hospital ban insertion
+        run: bash sql/tests/healthcare_hard_stop_concurrency.sh
