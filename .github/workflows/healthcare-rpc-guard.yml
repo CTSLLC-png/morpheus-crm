@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'sql/tests/healthcare_rpc_guard_*.sql'
+      - 'sql/tests/healthcare_assign_rpc_*.sql'
+      - 'sql/0010_melrah_field_evidence_dispatch_v2_2.sql'
       - 'sql/0017_melrah_dispatch_status_control.sql'
       - 'sql/proposals/healthcare_dispatch_server_guard.sql'
       - '.github/workflows/healthcare-rpc-guard.yml'
@@ -52,5 +54,9 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f sql/0017_melrah_dispatch_status_control.sql
       - name: Install proposed healthcare block trigger
         run: psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_server_guard.sql
-      - name: Run RPC integration checks
+      - name: Run status RPC integration checks
         run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_rpc_guard_integration.sql
+      - name: Load assignment RPC extracted from source migration
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_assign_rpc_source.sql
+      - name: Run assignment RPC integration checks
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_assign_rpc_integration.sql
