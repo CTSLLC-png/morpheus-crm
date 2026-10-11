@@ -17,11 +17,16 @@ CREATE TABLE melrah.work_order (
  completed_at timestamptz,
  closed_at timestamptz,
  cancelled_at timestamptz,
- dispatch_notes text
+ dispatch_notes text,
+ updated_at timestamptz
 );
 CREATE TABLE melrah.service_appointment (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  work_order_id uuid NOT NULL REFERENCES melrah.work_order(id),
+ resource_id uuid,
  status text NOT NULL,
+ scheduled_start timestamptz,
+ created_at timestamptz DEFAULT now(),
  updated_at timestamptz
 );
 CREATE OR REPLACE FUNCTION core.tenant_id(p_slug text)
