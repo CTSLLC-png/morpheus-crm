@@ -1,0 +1,56 @@
+name: MDR hospital verification record integrity
+on:
+  pull_request:
+    paths:
+      - 'sql/proposals/healthcare_approver_verification_integrity.sql'
+      - 'sql/tests/healthcare_approver_verification_integrity_integration.sql'
+      - '.github/workflows/healthcare-approver-verification-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/proposals/healthcare_approver_verification_integrity.sql'
+      - 'sql/tests/healthcare_approver_verification_integrity_integration.sql'
+      - '.github/workflows/healthcare-approver-verification-integrity.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_verification_integrity
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_verification_integrity"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_verification_integrity
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable parent schema
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_exception_bootstrap.sql
+      - name: Install actual verification tables and integrity trigger
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_access_exception_staging.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_exception_authority_gate.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_approver_verification_provenance.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_approver_verification_integrity.sql
+      - name: Test immutable verification and irreversible revocation
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_approver_verification_integrity_integration.sql
