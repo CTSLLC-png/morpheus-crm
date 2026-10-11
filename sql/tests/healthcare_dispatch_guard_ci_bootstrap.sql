@@ -7,5 +7,9 @@ CREATE TABLE melrah.work_order (
   assigned_resource_id uuid,
   dispatched_at timestamptz,
   en_route_at timestamptz,
-  completed_at timestamptz
+  completed_at timestamptz,
+  arrived_at timestamptz,
+  collection_started_at timestamptz,
+  closed_at timestamptz,
+  assigned_to uuid
 );
