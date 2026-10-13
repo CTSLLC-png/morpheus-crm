@@ -225,8 +225,7 @@ on conflict (track_id, take_url) do nothing;
 insert into public.music_video (artist_id, title, kind, youtube_id, channel, sort, is_public)
 select a.id, v.title, v.kind, v.yt, 'Pragmatic Thinking', v.sort, true
 from public.music_artist a, (values
-  ('Build It Back Home — Official Music Video (Premium Edition)', 'music-video', 'f9Maz5WG91s', 1),
-  ('Build It Back Home — Official Music Video',                   'music-video', 'X5PAjEgBaco', 2)
+  ('Build It Back Home — Official Music Video (Premium Edition)', 'music-video', 'f9Maz5WG91s', 1)
 ) as v(title, kind, yt, sort)
 where a.slug = 'jace'
 on conflict (artist_id, youtube_id) do nothing;

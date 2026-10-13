@@ -35,7 +35,6 @@ export const FALLBACK_CATALOG = {
     }],
     videos: [
       { title: 'Build It Back Home — Official Music Video (Premium Edition)', kind: 'music-video', youtube_id: 'f9Maz5WG91s', channel: 'Pragmatic Thinking' },
-      { title: 'Build It Back Home — Official Music Video', kind: 'music-video', youtube_id: 'X5PAjEgBaco', channel: 'Pragmatic Thinking' },
     ],
   },
 }
