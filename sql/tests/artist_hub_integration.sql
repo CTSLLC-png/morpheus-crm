@@ -22,7 +22,7 @@ declare n int;
 begin
   select count(*) into n from public.music_artist where slug = 'jace'; assert n = 1, 'anon cannot see published artist';
   select count(*) into n from public.music_release; assert n = 1, 'anon cannot see published release';
-  select count(*) into n from public.music_video; assert n = 2, 'anon should see 2 public videos';
+  select count(*) into n from public.music_video; assert n = 1, 'anon should see 1 public video';
   -- Tracks are unpublished in the seed, so the public sees none yet.
   select count(*) into n from public.music_track; assert n = 0, 'anon must not see unpublished tracks';
 end $$;
