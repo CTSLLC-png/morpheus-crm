@@ -1,0 +1,52 @@
+name: Artist Hub catalog security
+on:
+  pull_request:
+    paths:
+      - 'sql/0018_artist_hub.sql'
+      - 'sql/tests/artist_hub_*.sql'
+      - '.github/workflows/artist-hub.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/0018_artist_hub.sql'
+      - 'sql/tests/artist_hub_*.sql'
+      - '.github/workflows/artist-hub.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  artist-hub:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: artist_hub
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d artist_hub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: artist_hub
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable parent schema
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/artist_hub_bootstrap.sql
+      - name: Install Artist Hub migration
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/0018_artist_hub.sql
+      - name: Test public/staff access and re-run safety
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/artist_hub_integration.sql

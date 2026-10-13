@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
 import { TenantProvider } from './hooks/useTenant.jsx'
 import Login from './pages/Login.jsx'
 import PublicHome from './pages/PublicHome.jsx'
+import { artistSlugForHost } from './modules/artist/artistCatalog.js'
 
 // Lazy-loaded shells (prevents bundle bloat on login screen)
 import { lazy, Suspense, useEffect, useState } from 'react'
@@ -16,6 +17,9 @@ const VerifyCredential = lazy(() => import('./pages/VerifyCredential.jsx'))
 // Legacy Path (CTS consumer module): legacy.morpheuscr.com, or /legacy/* here.
 const LegacyRoutes     = lazy(() => import('./legacy/LegacyRoutes.jsx'))
 const IS_LEGACY_HOST   = typeof window !== 'undefined' && window.location.hostname.startsWith('legacy.')
+// Artist Hub public pages: <artist>.morpheuscr.com (e.g. jace.), or /artists/:slug here.
+const ArtistPublicPage = lazy(() => import('./modules/artist/ArtistPublicPage.jsx'))
+const ARTIST_HOST_SLUG = typeof window !== 'undefined' ? artistSlugForHost(window.location.hostname) : null
 
 function LoadingScreen() {
   return (
@@ -115,9 +119,22 @@ const PAGE_TITLES = {
   '/legacy': 'Legacy Path',
   '/campaigns': 'Campaign Studio',
   '/creator-studio': 'Creator Studio',
+  '/artist-hub': 'Artist Hub',
+  '/artists': 'Artist',
 }
 
 export default function App() {
+  if (ARTIST_HOST_SLUG) {
+    return (
+      <BrowserRouter>
+        <Suspense fallback={<LoadingScreen />}>
+          <Routes>
+            <Route path="*" element={<ArtistPublicPage slug={ARTIST_HOST_SLUG} />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    )
+  }
   if (IS_LEGACY_HOST) {
     return (
       <BrowserRouter>
@@ -144,6 +161,8 @@ export default function App() {
             <Route path="/verify/:code"   element={<VerifyCredential />} />
             {/* Legacy Path — public module, its own sign-in and paywall */}
             <Route path="/legacy/*"       element={<LegacyRoutes base="/legacy" />} />
+            {/* Artist Hub — public artist pages (no auth) */}
+            <Route path="/artists/:slug"  element={<ArtistPublicPage />} />
             <Route
               path="/*"
               element={

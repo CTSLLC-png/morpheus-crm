@@ -10,5 +10,7 @@ Disallow: /cohorts
 Disallow: /admin
 Disallow: /campaigns
 Disallow: /creator-studio
+Disallow: /artist-hub
+Allow: /artists/
 
 Sitemap: https://www.morpheuscr.com/sitemap.xml

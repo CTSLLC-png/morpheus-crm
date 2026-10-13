@@ -89,6 +89,16 @@
     },
     {
       "source": "/robots.txt",
+      "has": [
+        {
+          "type": "host",
+          "value": "jace.morpheuscr.com"
+        }
+      ],
+      "destination": "/seo/robots-artist.txt"
+    },
+    {
+      "source": "/robots.txt",
       "destination": "/seo/robots-www.txt"
     },
     {

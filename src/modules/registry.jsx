@@ -32,6 +32,10 @@ export const MODULE_REGISTRY = {
     nav: [{ path: '/creator-studio', label: 'Creator Studio', icon: 'monitor', order: 76 }],
     component: lazy(() => import('./studio/CreatorStudio.jsx')),
   },
+  'media.artist': {
+    nav: [{ path: '/artist-hub', label: 'Artist Hub', icon: 'monitor', order: 77 }],
+    component: lazy(() => import('./artist/ArtistHub.jsx')),
+  },
   'logistics.accounts': {
     nav: [{ path: '/networks', label: 'Provider Networks', icon: 'network', order: 80 }],
     component: lazy(() => import('./melrah/Accounts.jsx')),
