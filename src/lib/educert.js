@@ -4,7 +4,7 @@
 // Every certificate carries the registry code and the public verify
 // URL, so the paper is only ever as good as the live registry entry.
 
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import { SITE_HOST, verifyUrlFor } from './site.js'
 
 const NAVY  = [13,  27,  42]

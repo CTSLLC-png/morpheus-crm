@@ -6,6 +6,8 @@
 
 // All AI calls route through the secure serverless proxy at
 // /api/claude — the Anthropic API key never reaches the browser.
+import { supabase } from './supabase.js'
+
 const BASE_URL = '/api/claude'
 
 // Model IDs are retired on a published schedule, and every request to a
@@ -18,9 +20,17 @@ const BASE_URL = '/api/claude'
 const MODEL    = 'claude-sonnet-5-5'
 
 async function claudePost(body) {
+  // /api/claude only serves signed-in users: send this session's access token.
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) {
+    throw new Error('Your session has expired. Please sign in again to use AI features.')
+  }
   const res = await fetch(BASE_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
     body: JSON.stringify({ model: MODEL, max_tokens: 1000, ...body }),
   })
   if (!res.ok) {

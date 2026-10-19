@@ -4,7 +4,7 @@
 // profile. Generates branded PDF, saves cert record to Supabase,
 // and downloads the file to the trainer's machine.
 
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import { supabase } from './supabase.js'
 import { SITE_HOST } from './site.js'
 

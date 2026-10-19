@@ -3,7 +3,7 @@
 // Generates a proprietary Morpheus progress report PDF from live
 // Supabase data. Called from ParticipantProfile → "Export LDSS report"
 
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { SITE_HOST } from './site.js'
 
