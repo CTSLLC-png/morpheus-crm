@@ -44,3 +44,14 @@ export function artistSlugForHost(hostname) {
   const sub = String(hostname ?? '').toLowerCase().split('.')[0]
   return Object.prototype.hasOwnProperty.call(FALLBACK_CATALOG, sub) ? sub : null
 }
+
+/**
+ * Order releases for the public page: anything out now comes first, newest
+ * first, so a new single sits above an album that is still in production.
+ * Unreleased work follows, dated items before undated ones.
+ */
+export function sortReleasesForDisplay(releases = []) {
+  const rank = r => (r.status === 'released' ? 0 : 1)
+  const time = r => (r.release_date ? Date.parse(r.release_date) : -Infinity)
+  return [...releases].sort((a, b) => rank(a) - rank(b) || time(b) - time(a))
+}
