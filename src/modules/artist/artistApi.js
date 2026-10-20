@@ -5,7 +5,7 @@
 //    granted to anon in sql/0018_artist_hub.sql — never music_take.
 
 import { supabase } from '../../lib/supabase.js'
-import { FALLBACK_CATALOG } from './artistCatalog.js'
+import { FALLBACK_CATALOG, sortReleasesForDisplay } from './artistCatalog.js'
 
 export const TRACK_STATUSES = ['writing', 'generated', 'keeper-selected', 'mastered', 'released']
 export const RELEASE_STATUSES = ['in-production', 'mastering', 'scheduled', 'released', 'on-hold']
@@ -41,7 +41,7 @@ export async function loadPublicArtist(slug) {
       : []
     return {
       artist,
-      releases: releases.map(r => ({ ...r, tracks: tracks.filter(t => t.release_id === r.id) })),
+      releases: sortReleasesForDisplay(releases).map(r => ({ ...r, tracks: tracks.filter(t => t.release_id === r.id) })),
       videos,
       source: 'database',
     }
