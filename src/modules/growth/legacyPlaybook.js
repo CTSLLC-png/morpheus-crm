@@ -146,6 +146,25 @@ export function channelLink({ channel, campaign, audience, source, path = '' }) 
   return utmLink({ source: source || utm.source, medium: utm.medium, campaign, content: audience, path })
 }
 
+// ── Scheduled publishing ────────────────────────────────────────────────────
+// A super_admin schedules an approved asset to an account and time; the
+// publisher posts it at the first window at or after that time. Keep the
+// windows in step with the publisher's schedule.
+export const PUBLISH_TARGETS = [
+  { key: 'facebook',  label: 'Facebook Page',          needsMedia: false },
+  { key: 'linkedin',  label: 'LinkedIn',               needsMedia: false },
+  { key: 'instagram', label: 'Instagram Business',     needsMedia: true },
+  { key: 'tiktok',    label: 'TikTok',                 needsMedia: true },
+  { key: 'youtube',   label: 'YouTube',                needsMedia: true },
+]
+export const PUBLISH_WINDOWS_ET = ['9:07am', '12:07pm', '6:07pm']
+
+// Which account a channel's copy is written for, if it can be auto-posted.
+export const PUBLISH_TARGET_FOR = {
+  facebook: 'facebook', instagram: 'instagram', linkedin: 'linkedin',
+  tiktok: 'tiktok', youtube: 'youtube', 'video-script': 'youtube',
+}
+
 export function systemPrompt() {
   return `You write marketing copy for Legacy Path, sold by Certified Training Standards LLC (CTS).
 

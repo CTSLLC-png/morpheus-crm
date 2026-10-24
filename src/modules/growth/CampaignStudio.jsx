@@ -16,6 +16,7 @@ import {
   AUDIENCES, CHANNELS, ANGLES, SEASONAL, CHANNEL_UTM, LANDING,
   complianceCheck, utmLink, channelLink, systemPrompt, generationPrompt,
   PRODUCTION_CHANNELS, productionBrief,
+  PUBLISH_TARGETS, PUBLISH_TARGET_FOR, PUBLISH_WINDOWS_ET,
 } from './legacyPlaybook.js'
 
 
@@ -306,6 +307,22 @@ function Library() {
     if (error) setMsg(error.message); else { setOpen(null); load() }
   }
 
+  async function schedule(row, target, at) {
+    setMsg(null)
+    const { error } = await supabase.from('growth_campaign_asset')
+      .update({ status: 'scheduled', publish_target: target, publish_at: at, publish_error: null, publish_attempts: 0 })
+      .eq('id', row.id)
+    if (error) setMsg(error.message); else { setMsg('Scheduled. The publisher posts it at the first window after that time.'); setOpen(null); load() }
+  }
+
+  async function unschedule(row) {
+    setMsg(null)
+    const { error } = await supabase.from('growth_campaign_asset')
+      .update({ status: 'approved', publish_target: null, publish_at: null })
+      .eq('id', row.id)
+    if (error) setMsg(error.message); else load()
+  }
+
   async function copy(row) {
     try { await navigator.clipboard.writeText(row.body); setMsg('Copied. Paste it into the channel, then mark it published.') }
     catch { setMsg('Copy failed — select the text and copy it by hand.') }
@@ -348,7 +365,10 @@ function Library() {
               <div style={{ display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap' }}>
                 <Pill tone={STATUS_TONE[r.status]}>{r.status}</Pill>
                 <Pill tone="neutral">{CHANNELS.find(c => c.key === r.channel)?.label ?? r.channel}</Pill>
-                {r.scheduled_for && <span style={{ fontSize:'12px', color:'#5B6B7F' }}>{r.scheduled_for}</span>}
+                {r.status === 'scheduled' && r.publish_at
+                  ? <span style={{ fontSize:'12px', color:'#5B6B7F' }}>{targetLabel(r.publish_target)} · {fmtWhen(r.publish_at)}</span>
+                  : r.scheduled_for && <span style={{ fontSize:'12px', color:'#5B6B7F' }}>{r.scheduled_for}</span>}
+                {r.publish_error && <Pill tone="bad">post failed ×{r.publish_attempts}</Pill>}
                 {r.media_url && <Pill tone="good">media ready</Pill>}
                 {r.compliance_flags?.length > 0 && <Pill tone="bad">{r.compliance_flags.length} flag{r.compliance_flags.length > 1 ? 's' : ''}</Pill>}
                 <button style={{ ...f.btn, marginLeft:'auto' }} onClick={() => setOpen(open === r.id ? null : r.id)} aria-expanded={open === r.id}>
@@ -363,6 +383,9 @@ function Library() {
                   <Flags flags={r.compliance_flags ?? []} />
                   {r.landing_url && <div style={{ fontSize:'12px', wordBreak:'break-all' }}>Link: <code>{r.landing_url}</code></div>}
                   {canProduce(r) && <MediaLink row={r} onSave={saveMedia} />}
+                  {r.published_url && <div style={{ fontSize:'12px' }}>Live post: <a href={r.published_url} target="_blank" rel="noreferrer">{r.published_url}</a>{r.published_at && ` · ${fmtWhen(r.published_at)}`}</div>}
+                  {r.publish_error && <div style={{ fontSize:'12px', color:'#993C1D' }}>Last attempt failed ({r.publish_attempts}×): {r.publish_error}</div>}
+                  {isAdmin && ['approved', 'scheduled'].includes(r.status) && <ScheduleForm row={r} onSchedule={schedule} />}
                   {PRODUCTION_CHANNELS.includes(r.channel) && r.status === 'draft' && (
                     <div style={{ fontSize:'12px', color:'#5B6B7F' }}>Approve this draft to send it to Creator Studio for production.</div>
                   )}
@@ -371,7 +394,7 @@ function Library() {
                     {canProduce(r) && <button style={f.primary} onClick={() => sendToCreatorStudio(r)}>Send to Creator Studio</button>}
                     {canProduce(r) && <button style={f.btn} onClick={() => copyBrief(r)}>Copy brief</button>}
                     {isAdmin && r.status === 'draft' && <button style={f.primary} onClick={() => setAssetStatus(r, 'approved')}>Approve</button>}
-                    {isAdmin && r.status === 'approved' && <button style={f.btn} onClick={() => setAssetStatus(r, 'scheduled')}>Mark scheduled</button>}
+                    {isAdmin && r.status === 'scheduled' && <button style={f.btn} onClick={() => unschedule(r)}>Unschedule</button>}
                     {isAdmin && ['approved', 'scheduled'].includes(r.status) && <button style={f.primary} onClick={() => setAssetStatus(r, 'published')}>Mark published</button>}
                     {isAdmin && r.status !== 'retired' && <button style={f.btn} onClick={() => setAssetStatus(r, 'retired')}>Retire</button>}
                     {!isAdmin && r.status === 'draft' && <span style={{ fontSize:'12px', color:'#5B6B7F', alignSelf:'center' }}>A super_admin approves drafts.</span>}
@@ -432,6 +455,63 @@ function MediaLink({ row, onSave }) {
       <button style={f.btn} disabled={!valid || url === (row.media_url ?? '')} onClick={() => onSave(row, url)}>Save link</button>
       {row.media_url && <a href={row.media_url} target="_blank" rel="noreferrer" style={{ fontSize:'13px', alignSelf:'center' }}>Open media ↗</a>}
       {!valid && <div style={{ width:'100%', fontSize:'12px', color:'#993C1D' }}>Use a full https:// link.</div>}
+    </div>
+  )
+}
+
+// ── Scheduling ──────────────────────────────────────────────────────────────
+const targetLabel = k => PUBLISH_TARGETS.find(t => t.key === k)?.label ?? k
+const fmtWhen = ts => new Date(ts).toLocaleString([], { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })
+
+// datetime-local wants local "YYYY-MM-DDTHH:mm".
+function localInput(d) {
+  const p = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+// Default slot: the existing slot, else 9:00 on the planned day, else the next hour.
+function defaultSlot(row) {
+  if (row.publish_at) return localInput(new Date(row.publish_at))
+  if (row.scheduled_for) {
+    const d = new Date(`${row.scheduled_for}T09:00`)
+    if (d > new Date()) return localInput(d)
+  }
+  const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1)
+  return localInput(d)
+}
+
+function ScheduleForm({ row, onSchedule }) {
+  const [target, setTarget] = useState(row.publish_target ?? PUBLISH_TARGET_FOR[row.channel] ?? '')
+  const [when, setWhen] = useState(defaultSlot(row))
+  const t = PUBLISH_TARGETS.find(x => x.key === target)
+  const missingMedia = t?.needsMedia && !row.media_url
+  const at = when ? new Date(when) : null
+  const problem = !target ? 'Pick an account.'
+    : !at || isNaN(at) ? 'Pick a date and time.'
+    : missingMedia ? `${t.label} needs finished media. Add the media link first.`
+    : row.compliance_flags?.length ? 'Clear the compliance flags before scheduling.'
+    : null
+  return (
+    <div style={{ border:'1px solid #E3EAF2', borderRadius:'8px', padding:'10px 12px', display:'grid', gap:'8px' }}>
+      <div style={{ display:'flex', gap:'8px', alignItems:'flex-end', flexWrap:'wrap' }}>
+        <div style={{ flex:'1 1 180px' }}>
+          <Field label="Post to">
+            <select style={f.input} value={target} onChange={e => setTarget(e.target.value)}>
+              <option value="">Choose an account…</option>
+              {PUBLISH_TARGETS.map(x => <option key={x.key} value={x.key}>{x.label}</option>)}
+            </select>
+          </Field>
+        </div>
+        <div style={{ flex:'1 1 200px' }}>
+          <Field label="Not before"><input type="datetime-local" style={f.input} value={when} onChange={e => setWhen(e.target.value)} /></Field>
+        </div>
+        <button style={f.primary} disabled={!!problem} onClick={() => onSchedule(row, target, at.toISOString())}>
+          {row.status === 'scheduled' ? 'Reschedule' : 'Schedule'}
+        </button>
+      </div>
+      <div style={{ fontSize:'12px', color: problem ? '#993C1D' : '#5B6B7F' }}>
+        {problem ?? `Posts at the first publishing window after this time (${PUBLISH_WINDOWS_ET.join(', ')} Eastern) through the CTS ${t.label} connected in Zapier.`}
+      </div>
     </div>
   )
 }
