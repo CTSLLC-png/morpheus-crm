@@ -1,0 +1,59 @@
+name: MDR real schema exact assignment RPC
+on:
+  pull_request:
+    paths:
+      - 'sql/tests/healthcare_real_schema_rpc_*'
+      - 'sql/tests/healthcare_assign_rpc_source.sql'
+      - 'sql/proposals/healthcare_dispatch_server_guard.sql'
+      - '.github/workflows/healthcare-real-schema-rpc.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  assignment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: healthcare_real_rpc
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d healthcare_real_rpc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: healthcare_real_rpc
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Bootstrap disposable parents and exact RPC adapter
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_real_schema_smoke_bootstrap.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_real_schema_rpc_adapter.sql
+      - name: Install actual proposed credential, exception and eligibility schema
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_credentialing_secure_staging.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_credential_evidence_staging.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_access_exception_staging.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_exception_authority_gate.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_approver_verification_provenance.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_approver_verification_integrity.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_evidence_eligibility_readonly.sql
+      - name: Install proposed fail-closed guard and actual assignment RPC
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f sql/proposals/healthcare_dispatch_server_guard.sql
+          psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_assign_rpc_source.sql
+      - name: Test real RPC and no partial writes
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/healthcare_real_schema_rpc_integration.sql
