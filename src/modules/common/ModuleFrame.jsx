@@ -112,7 +112,7 @@ export class ModuleBoundary extends Component {
         <div style={{ marginTop:'6px', fontFamily:'monospace', fontSize:'12px' }}>
           {this.state.err.message}
         </div>
-        <div style={{ marginTop:'8px' }}>The rest of Morpheus is unaffected.</div>
+        <div style={{ marginTop:'8px' }}>The rest of Nguzo is unaffected.</div>
       </div>
     )
   }

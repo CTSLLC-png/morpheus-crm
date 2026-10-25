@@ -1,5 +1,5 @@
 // src/lib/certificate.js
-// ── Morpheus CRM — Certificate PDF Generator (Sprint 3) ─────────
+// ── Nguzo OS — Certificate PDF Generator (Sprint 3) ─────────
 // Manual trigger: trainer clicks "Issue Certificate" on participant
 // profile. Generates branded PDF, saves cert record to Supabase,
 // and downloads the file to the trainer's machine.
@@ -80,7 +80,7 @@ export async function generateCertificatePDF({ participant, certRecord }) {
   doc.setTextColor(...WHITE)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(22)
-  doc.text('MORPHEUS', 94, 58)
+  doc.text('NGUZO', 94, 58)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
   doc.setTextColor(139, 175, 200)
@@ -211,7 +211,7 @@ export async function generateCertificatePDF({ participant, certRecord }) {
   doc.setFontSize(7.5)
   doc.setTextColor(139, 175, 200)
   doc.text(
-    `Morpheus CRM  ·  Certified Training Standards  ·  Albany, NY  ·  ${SITE_HOST}`,
+    `Nguzo OS  ·  Certified Training Standards  ·  Albany, NY  ·  ${SITE_HOST}`,
     W / 2, H - 46, { align: 'center' }
   )
   doc.text(
@@ -220,7 +220,7 @@ export async function generateCertificatePDF({ participant, certRecord }) {
   )
 
   // ── Download ─────────────────────────────────────────────────
-  const filename = `Morpheus_Certificate_${participant.cts_id}_${certRecord.cert_number}.pdf`
+  const filename = `Nguzo_Certificate_${participant.cts_id}_${certRecord.cert_number}.pdf`
   doc.save(filename)
   return filename
 }

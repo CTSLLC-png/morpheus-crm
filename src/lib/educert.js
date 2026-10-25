@@ -1,5 +1,5 @@
 // src/lib/educert.js
-// ── MORPHEUS.EDU — credential certificate PDF ──────────────────
+// ── NGUZO.EDU — credential certificate PDF ──────────────────
 // Generates the branded certificate for an edu_credentials record.
 // Every certificate carries the registry code and the public verify
 // URL, so the paper is only ever as good as the live registry entry.
@@ -113,7 +113,7 @@ export function generateEduCertificatePDF(credential, verifyBase) {
   doc.setTextColor(...WHITE)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(22)
-  doc.text('MORPHEUS', 94, 58)
+  doc.text('NGUZO', 94, 58)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
   doc.setTextColor(139, 175, 200)
@@ -227,7 +227,7 @@ export function generateEduCertificatePDF(credential, verifyBase) {
 
   doc.setFontSize(8.5)
   doc.text(`Registry code: ${credential.credential_code}`, W / 2, sigY + 14, { align: 'center' })
-  doc.text('MORPHEUS.EDU credential registry', W / 2, sigY + 26, { align: 'center' })
+  doc.text('NGUZO.EDU credential registry', W / 2, sigY + 26, { align: 'center' })
 
   // ── Bottom band ──────────────────────────────────────────────
   doc.setFillColor(...NAVY)
@@ -236,7 +236,7 @@ export function generateEduCertificatePDF(credential, verifyBase) {
   doc.setFontSize(7.5)
   doc.setTextColor(139, 175, 200)
   doc.text(
-    `MORPHEUS.EDU  ·  ${credential.issuer_org}  ·  Albany, NY  ·  ${SITE_HOST}`,
+    `NGUZO.EDU  ·  ${credential.issuer_org}  ·  Albany, NY  ·  ${SITE_HOST}`,
     W / 2, H - 60, { align: 'center' }
   )
   // The disclaimer belongs to the issuing course. Hardcoding CAP-C's wording

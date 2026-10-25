@@ -1,6 +1,6 @@
 // src/legacy/LegacyRoutes.jsx
 // ── Legacy Path — routes for legacy.morpheuscr.com (base "") and the
-//    /legacy/* preview path on the main Morpheus domain (base "/legacy").
+//    /legacy/* preview path on the main Nguzo domain (base "/legacy").
 //    The public landing page and the Privacy/Terms/Refunds pages are static
 //    HTML in /public (served by Vercel), so reviewers and search engines see
 //    them without JavaScript. This SPA handles sign-in, the app and checkout.

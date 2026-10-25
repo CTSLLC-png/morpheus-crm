@@ -1,4 +1,4 @@
-// src/pages/TrainerShell.jsx  v3  (Morpheus OS module shell)
+// src/pages/TrainerShell.jsx  v3  (Nguzo OS module shell)
 import { useState, useEffect, Suspense } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from '../lib/supabase.js'
@@ -72,7 +72,7 @@ export default function TrainerShell() {
 
   const displayName = user?.email?.split('@')[0] ?? 'Trainer'
   const initials    = displayName.slice(0,2).toUpperCase()
-  const currentLabel = NAV.find(n => n.path==='/' ? location.pathname==='/' : location.pathname.startsWith(n.path))?.label ?? 'Morpheus'
+  const currentLabel = NAV.find(n => n.path==='/' ? location.pathname==='/' : location.pathname.startsWith(n.path))?.label ?? 'Nguzo'
 
   return (
     <div style={sh.app}>
@@ -204,7 +204,7 @@ function Dashboard({ stats, cohorts, navigate }) {
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px',marginBottom:'20px'}}>
         {[
           {label:'Active participants', value:stats.activeParts,  sub:`${cohorts.length} cohorts`},
-          {label:'Calls logged to DB',  value:stats.totalCalls,   sub:'Morpheus records'},
+          {label:'Calls logged to DB',  value:stats.totalCalls,   sub:'Nguzo records'},
           {label:'Avg score',           value:stats.avgScore,      sub:'all participants'},
           {label:'Certs issued',        value:stats.certsIssued,   sub:'threshold ≥ 80'},
         ].map((m,i) => (

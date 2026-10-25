@@ -1,5 +1,5 @@
 // src/pages/CohortManagement.jsx
-// ── Morpheus CRM — Cohort Management ───────────────────────────
+// ── Nguzo OS — Cohort Management ───────────────────────────
 
 import { useState, useEffect } from 'react'
 import { getCohortOverview, createCohort, enrollParticipant, getParticipantPerformance } from '../lib/db.js'

@@ -1,5 +1,5 @@
 // src/modules/studio/CreatorStudio.jsx
-// ── Creator Studio — production workspace inside Morpheus.
+// ── Creator Studio — production workspace inside Nguzo.
 //    Overview · Projects · Asset vault · Production queue, laid out like the
 //    stand-alone creator-studio-cinema site it replaces. Approved Campaign
 //    Studio assets arrive here as projects with their queue already filled.

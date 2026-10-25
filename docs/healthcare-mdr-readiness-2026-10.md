@@ -1,4 +1,4 @@
-# MorpheusOS Healthcare / MDR Readiness — PM Workstream
+# Nguzo OS Healthcare / MDR Readiness — PM Workstream
 Date: 2026-10-11 | Status: AUDIT / DESIGN ONLY | Owner: Melrah Environmental Services
 
 ## Verified baseline

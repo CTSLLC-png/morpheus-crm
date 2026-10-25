@@ -1,5 +1,5 @@
 // src/pages/CallSimulator.jsx
-// ── Morpheus CRM — AI Call Simulator (Sprint 3) ─────────────────
+// ── Nguzo OS — AI Call Simulator (Sprint 3) ─────────────────
 // Used by BOTH trainer shell and participant shell.
 // Props control which context it runs in.
 //
@@ -232,7 +232,7 @@ export default function CallSimulator({
                 {call.isReady      ? `Ready — caller: ${call.scenario?.caller_name}` : ''}
                 {call.isActive     ? `Live call · ${call.scenario?.caller_name} on the line` : ''}
                 {call.isScoring    ? 'Scoring call against rubric…'           : ''}
-                {call.isComplete   ? 'Call complete — scored & saved to Morpheus' : ''}
+                {call.isComplete   ? 'Call complete — scored & saved to Nguzo' : ''}
                 {call.isError      ? 'Error — see message above'              : ''}
               </span>
               <div style={{ display:'flex', gap:'7px' }}>
@@ -379,7 +379,7 @@ export default function CallSimulator({
                   <path d="M1 3.5v2.5c0 1.38 2.24 2.5 5 2.5s5-1.12 5-2.5V3.5" stroke="currentColor" strokeWidth="1" fill="none"/>
                   <path d="M1 6v2.5c0 1.38 2.24 2.5 5 2.5s5-1.12 5-2.5V6" stroke="currentColor" strokeWidth="1" fill="none"/>
                 </svg>
-                Saved to Morpheus
+                Saved to Nguzo
               </div>
             )}
             {/* A governance-floor breach fails the call outright, so it is

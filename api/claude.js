@@ -1,15 +1,15 @@
 // api/claude.js
-// ── Morpheus OS — Secure Anthropic proxy (Vercel serverless) ────
+// ── Nguzo OS — Secure Anthropic proxy (Vercel serverless) ────
 // The Anthropic API key lives ONLY here, server-side, read from
 // process.env.ANTHROPIC_API_KEY (no VITE_ prefix — never bundled
 // into the browser). The frontend calls /api/claude instead of
 // calling Anthropic directly.
 //
 // SECURITY (2026-10-19): this route spends CTS money on every call, so it
-//   1. requires a signed-in Morpheus participant, trainer or super_admin
+//   1. requires a signed-in Nguzo participant, trainer or super_admin
 //      (Supabase access token, verified with Supabase Auth — not just decoded),
 //   2. only forwards an allowlisted model and caps max_tokens,
-//   3. forwards only the fields Morpheus uses (model, max_tokens, system,
+//   3. forwards only the fields Nguzo uses (model, max_tokens, system,
 //      messages, temperature) — nothing else from the browser reaches Anthropic,
 //   4. caps request size and rate per user (best effort, per warm instance;
 //      the Vercel WAF rate-limit rule on /api/* is the hard limit).
@@ -90,7 +90,7 @@ export default async function handler(req, res) {
 
   const user = await verifyUser(req)
   if (!user) {
-    return res.status(401).json({ error: 'Sign in with a Morpheus training or staff account to use AI features.' })
+    return res.status(401).json({ error: 'Sign in with a Nguzo training or staff account to use AI features.' })
   }
 
   if (rateLimited(user.id)) {

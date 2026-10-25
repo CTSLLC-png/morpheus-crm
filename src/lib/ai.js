@@ -1,5 +1,5 @@
 // src/lib/ai.js
-// ── Morpheus CRM — Anthropic AI helpers ────────────────────────
+// ── Nguzo OS — Anthropic AI helpers ────────────────────────
 // All three AI call types: scenario generation, caller roleplay,
 // post-call scoring. Each writes nothing to DB — DB logging is
 // handled by the callers in src/lib/db.js after the AI returns.

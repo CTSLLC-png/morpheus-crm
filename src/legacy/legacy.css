@@ -1,4 +1,4 @@
-/* src/legacy/legacy.css — Legacy Path styles, scoped to .lp-app so they never touch Morpheus */
+/* src/legacy/legacy.css — Legacy Path styles, scoped to .lp-app so they never touch Nguzo */
 .lp-app{
   --bg:#F3F5F1; --surface:#FFFFFF; --surface-2:#E9EEE8; --ink:#17231F; --muted:#56655F; --line:#D5DDD6;
   --brand:#1C3D35; --brand-ink:#FFFFFF; --accent:#9C6A1E; --accent-soft:#F4E7CF;

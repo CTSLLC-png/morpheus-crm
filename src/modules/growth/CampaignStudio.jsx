@@ -329,7 +329,7 @@ function Library() {
   }
 
   // Approved production assets become Creator Studio projects with their
-  // queue filled in. Copy brief stays for tools outside Morpheus.
+  // queue filled in. Copy brief stays for tools outside Nguzo.
   async function sendToCreatorStudio(row) {
     setMsg(null)
     try {

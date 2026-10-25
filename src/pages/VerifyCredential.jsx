@@ -1,5 +1,5 @@
 // src/pages/VerifyCredential.jsx
-// ── MORPHEUS.EDU / EDU.VERIFY — public credential verification ──
+// ── NGUZO.EDU / EDU.VERIFY — public credential verification ──
 // No login required. Anyone with a credential code (from a résumé,
 // certificate, or LinkedIn) can confirm it against the live registry.
 
@@ -36,7 +36,7 @@ export default function VerifyCredential() {
     <div style={st.page}>
       <div style={st.card}>
         <div style={st.logo}>M<span style={{ color: '#0F6E56' }}>.</span>orpheus</div>
-        <div style={st.kicker}>MORPHEUS.EDU · CREDENTIAL VERIFICATION</div>
+        <div style={st.kicker}>NGUZO.EDU · CREDENTIAL VERIFICATION</div>
         <div style={st.title}>Verify a credential</div>
         <div style={st.sub}>
           Enter a credential code exactly as it appears on the certificate

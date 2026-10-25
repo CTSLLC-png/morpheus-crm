@@ -1,5 +1,5 @@
 // src/pages/AcademyAdmin.jsx
-// ── MORPHEUS.EDU — Claude Academy (trainer/admin view) ─────────
+// ── NGUZO.EDU — Claude Academy (trainer/admin view) ─────────
 // Cohort-wide course progress, checkpoint results, and the
 // EDU.REGISTRY credential registry with issue/revoke controls.
 
@@ -130,7 +130,7 @@ export default function AcademyAdmin({ staffProfileId }) {
         {[
           { label: 'Course', value: course.code, sub: course.credential_name },
           { label: 'Modules live', value: availableModules.length, sub: `${course.modules.length} total (rest post-pilot)` },
-          { label: 'Learners active', value: rows.filter(r => r.lessonsDone > 0).length, sub: `${rows.length} enrolled in Morpheus` },
+          { label: 'Learners active', value: rows.filter(r => r.lessonsDone > 0).length, sub: `${rows.length} enrolled in Nguzo` },
           { label: 'Credentials issued', value: courseRegistry.filter(r => r.status === 'active').length, sub: 'EDU.REGISTRY' },
         ].map((m, i) => (
           <div key={i} style={st.stat}>

@@ -173,7 +173,7 @@ Point your domain registrar's nameservers to Vercel, or add the CNAME record pro
 1. Log in as a **trainer** at \`www.morpheuscr.com\`
 2. Navigate to **AI Call Simulator**
 3. Select a participant, generate a scenario, complete a call
-4. Confirm scores appear and "Saved to Morpheus" indicator fires
+4. Confirm scores appear and "Saved to Nguzo" indicator fires
 5. Log out → log in as a **participant**
 6. Confirm their call history shows the session just completed
 7. Run a self-serve call as the participant
@@ -191,5 +191,5 @@ With Sprint 1 complete, Sprint 2 builds:
 
 ---
 
-*Morpheus CRM v1.0 · © 2025 Certified Training Standards · All rights reserved*
+*Nguzo OS v1.0 · © 2025 Certified Training Standards · All rights reserved*
 *This software is proprietary and confidential.*

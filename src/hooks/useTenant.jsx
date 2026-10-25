@@ -1,5 +1,5 @@
 // src/hooks/useTenant.jsx
-// ── Morpheus OS — tenant + module context ──────────────────────
+// ── Nguzo OS — tenant + module context ──────────────────────
 //
 // Resolves the signed-in user's tenants once, holds the selected one, and
 // exposes the modules that tenant has enabled. Components read from here

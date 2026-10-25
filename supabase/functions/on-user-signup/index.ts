@@ -1,5 +1,5 @@
 // supabase/functions/on-user-signup/index.ts
-// ── Morpheus CRM — Supabase Auth Hook (legacy / not currently deployed) ──
+// ── Nguzo OS — Supabase Auth Hook (legacy / not currently deployed) ──
 //
 // SUPERSEDED: as of the fix_role_authorization_use_app_metadata migration,
 // role defaulting is handled directly by a `set_default_participant_app_role`

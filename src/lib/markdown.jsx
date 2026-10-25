@@ -1,5 +1,5 @@
 // src/lib/markdown.jsx
-// ── MORPHEUS.EDU — tiny markdown renderer ──────────────────────
+// ── NGUZO.EDU — tiny markdown renderer ──────────────────────
 // Renders the subset of markdown used by EDU lesson content into
 // React elements (no dangerouslySetInnerHTML, no new dependencies).
 // Supports: ## / ### headings, paragraphs, **bold**, *italic*,

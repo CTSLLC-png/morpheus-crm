@@ -1,4 +1,4 @@
-# MorpheusOS v2.5 — Melrah Organics / Coffee Grounds
+# Nguzo OS v2.5 — Melrah Organics / Coffee Grounds
 
 ## Objective
 Extend the existing MELRAH FIELD recovery platform so one dispatch engine can manage cannabis-packaging recovery and spent-coffee-grounds recovery without duplicating logistics code.

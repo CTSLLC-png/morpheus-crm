@@ -78,7 +78,7 @@ export default function AdminContent({ base, Frame }) {
   }
 
   if (session === undefined) return <Frame base={base}><p className="muted">Loading…</p></Frame>
-  if (!isAdmin) return <Frame base={base}><h1>Admins only</h1><p>Sign in with the Morpheus super_admin account to manage Legacy Path content.</p><a className="btn" href={`${base}/signin?mode=signin`}>Sign in</a></Frame>
+  if (!isAdmin) return <Frame base={base}><h1>Admins only</h1><p>Sign in with the Nguzo super_admin account to manage Legacy Path content.</p><a className="btn" href={`${base}/signin?mode=signin`}>Sign in</a></Frame>
 
   const drafts = rows.filter((r) => r.status === 'draft')
   const live = CONTENT_KEYS.map((k) => rows.find((r) => r.content_key === k && r.status === 'published'))

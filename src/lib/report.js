@@ -1,6 +1,6 @@
 // src/lib/report.js
-// ── Morpheus CRM — LDSS Progress Report PDF Generator ──────────
-// Generates a proprietary Morpheus progress report PDF from live
+// ── Nguzo OS — LDSS Progress Report PDF Generator ──────────
+// Generates a proprietary Nguzo progress report PDF from live
 // Supabase data. Called from ParticipantProfile → "Export LDSS report"
 
 import { jsPDF } from 'jspdf'
@@ -36,7 +36,7 @@ function fmtDate(dateStr) {
 }
 
 /**
- * Generate and download a Morpheus Progress Report PDF.
+ * Generate and download a Nguzo Progress Report PDF.
  * @param {object} opts
  * @param {object} opts.participant  Full participant record from Supabase
  * @param {Array}  opts.calls        Completed call_sessions with call_scores joined
@@ -69,7 +69,7 @@ export async function generateProgressReportPDF({ participant, calls, eligibilit
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(18)
-  doc.text('MORPHEUS', lx + 34, 38)
+  doc.text('NGUZO', lx + 34, 38)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
   doc.setTextColor(139, 160, 184)
@@ -305,7 +305,7 @@ export async function generateProgressReportPDF({ participant, calls, eligibilit
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(6.5)
     doc.setTextColor(...GRAY)
-    doc.text(`MORPHEUS CRM  ·  Certified Training Standards  ·  Albany, NY  ·  ${SITE_HOST}`, MAR, PH - 30)
+    doc.text(`NGUZO OS  ·  Certified Training Standards  ·  Albany, NY  ·  ${SITE_HOST}`, MAR, PH - 30)
     doc.text('This report is proprietary and confidential. For official workforce documentation use only.', MAR, PH - 20)
     doc.text(`Report ID: ${reportId}  ·  Page ${i} of ${pageCount}`, PW - MAR, PH - 30, { align: 'right' })
     doc.text(`© ${today.getFullYear()} Certified Training Standards. All rights reserved.`, PW - MAR, PH - 20, { align: 'right' })
@@ -320,6 +320,6 @@ export async function generateProgressReportPDF({ participant, calls, eligibilit
   }
 
   // ── Save ─────────────────────────────────────────────────────
-  const filename = `Morpheus_Report_${participant.cts_id}_${today.getFullYear()}.pdf`
+  const filename = `Nguzo_Report_${participant.cts_id}_${today.getFullYear()}.pdf`
   doc.save(filename)
 }

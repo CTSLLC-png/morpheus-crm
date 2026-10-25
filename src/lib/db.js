@@ -1,5 +1,5 @@
 // src/lib/db.js
-// ── Morpheus CRM — Database operations ─────────────────────────
+// ── Nguzo OS — Database operations ─────────────────────────
 // All reads and writes to Supabase go through this file.
 // RLS on Supabase enforces access — these functions trust that.
 
