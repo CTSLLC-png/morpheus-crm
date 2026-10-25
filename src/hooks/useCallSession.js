@@ -1,5 +1,5 @@
 // src/hooks/useCallSession.js
-// ── Morpheus CRM — Call session hook ───────────────────────────
+// ── Nguzo OS — Call session hook ───────────────────────────
 // Manages the full lifecycle of a single AI mock call:
 //   idle → generating → ready → active → scoring → complete
 // On completion, saves transcript + scores to Supabase automatically.
@@ -153,7 +153,7 @@ export function useCallSession({ participantId, cohortId = null, scoredBy = null
       const aiScores = await scoreCall(transcriptText, w)
       setScores(aiScores)
 
-      // Save everything to Morpheus DB. Issuance is a separate, human step.
+      // Save everything to Nguzo DB. Issuance is a separate, human step.
       const result = await saveCompletedCall({
         sessionId,
         participantId,

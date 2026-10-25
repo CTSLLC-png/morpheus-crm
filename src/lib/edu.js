@@ -1,5 +1,5 @@
 // src/lib/edu.js
-// ── MORPHEUS.EDU — data operations for the Claude Academy module ──
+// ── NGUZO.EDU — data operations for the Claude Academy module ──
 // Courses, lessons, progress, checkpoints, and the credential registry.
 
 import { supabase } from './supabase.js'

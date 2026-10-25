@@ -1,5 +1,5 @@
 // src/App.jsx
-// ── Morpheus CRM — Root router with auth-aware routing ──────────
+// ── Nguzo OS — Root router with auth-aware routing ──────────
 
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
@@ -66,7 +66,7 @@ function LoginGate() {
 function RoleRouter() {
   const { role, loading } = useAuth()
   if (loading) return <LoadingScreen />
-  // Legacy Path customers have no Morpheus access; send them to their app.
+  // Legacy Path customers have no Nguzo access; send them to their app.
   if (role === 'lp_customer') return <Navigate to="/legacy/app" replace />
   if (role === 'participant') return <ParticipantShell />
   if (role === 'trainer' || role === 'super_admin') return <TrainerShell />
@@ -87,8 +87,8 @@ function RouteAnnouncer() {
   useEffect(() => {
     const name = PAGE_TITLES[location.pathname]
       ?? Object.entries(PAGE_TITLES).find(([p]) => p !== '/' && location.pathname.startsWith(p))?.[1]
-      ?? 'Morpheus'
-    document.title = `${name} — Morpheus · Certified Training Standards`
+      ?? 'Nguzo'
+    document.title = `${name} — Nguzo · Certified Training Standards`
     setPage(name)
 
     // Focus the main region so the next Tab press continues from the new page
@@ -105,7 +105,7 @@ function RouteAnnouncer() {
 }
 
 const PAGE_TITLES = {
-  '/': 'MorpheusCR',
+  '/': 'Nguzo OS',
   '/simulator': 'AI Call Simulator',
   '/calls': 'Practice calls',
   '/academy': 'Claude Academy',
@@ -156,7 +156,7 @@ export default function App() {
             <Route path="/"               element={<HomeGate />} />
             <Route path="/login"          element={<LoginGate />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            {/* MORPHEUS.EDU — public credential verification (no auth) */}
+            {/* NGUZO.EDU — public credential verification (no auth) */}
             <Route path="/verify"         element={<VerifyCredential />} />
             <Route path="/verify/:code"   element={<VerifyCredential />} />
             {/* Legacy Path — public module, its own sign-in and paywall */}

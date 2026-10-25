@@ -1,5 +1,5 @@
 // src/pages/AdminPanel.jsx
-// ── Morpheus CRM — Staff Admin Panel (Sprint 3) ─────────────────
+// ── Nguzo OS — Staff Admin Panel (Sprint 3) ─────────────────
 // Super admin only. Create participant and trainer accounts,
 // manage staff profiles, view system stats.
 
@@ -148,7 +148,7 @@ export default function AdminPanel() {
       {/* ── Create account ── */}
       {tab === 'accounts' && (
         <div style={s.card}>
-          <div style={s.cardTitle}>Create Morpheus account</div>
+          <div style={s.cardTitle}>Create Nguzo account</div>
 
           {/* Role selector */}
           <div role="radiogroup" aria-label="Account type"
@@ -318,7 +318,7 @@ function SystemStatus() {
         </div>
       ))}
       <div style={{ marginTop:'8px', fontSize:'12px', color:'var(--color-text-tertiary)', lineHeight:'1.6' }}>
-        Morpheus CRM v1.0 · Sprint 3 complete · {SITE_HOST}
+        Nguzo OS v1.0 · Sprint 3 complete · {SITE_HOST}
       </div>
     </div>
   )

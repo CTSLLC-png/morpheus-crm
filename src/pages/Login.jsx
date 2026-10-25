@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-// ── Morpheus CRM — Login page ───────────────────────────────────
+// ── Nguzo OS — Login page ───────────────────────────────────
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -53,7 +53,7 @@ export default function Login() {
 
         {mode === 'login' ? (
           <>
-            <h1 style={styles.heading}>Sign in to Morpheus</h1>
+            <h1 style={styles.heading}>Sign in to Nguzo</h1>
             <form onSubmit={handleLogin} style={styles.form}>
               <label style={styles.label} htmlFor="login-email-address">Email address</label>
               <input id="login-email-address"

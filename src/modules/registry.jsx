@@ -1,5 +1,5 @@
 // src/modules/registry.jsx
-// ── Morpheus OS — module registry ──────────────────────────────
+// ── Nguzo OS — module registry ──────────────────────────────
 
 import { lazy } from 'react'
 

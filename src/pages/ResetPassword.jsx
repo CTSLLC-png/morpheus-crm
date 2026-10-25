@@ -46,7 +46,7 @@ export default function ResetPassword() {
         <div style={s.sub}>Certified Training Standards</div>
         <h1 style={s.heading}>Set new password</h1>
         {done ? (
-          <div style={s.success}>Password updated. Redirecting you to Morpheus…</div>
+          <div style={s.success}>Password updated. Redirecting you to Nguzo…</div>
         ) : (
           <form onSubmit={handleSubmit} style={s.form}>
             <label style={s.label} htmlFor="resetpassword-new-password">New password</label>

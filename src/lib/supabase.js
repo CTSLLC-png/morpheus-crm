@@ -1,12 +1,12 @@
 // src/lib/supabase.js
-// ── Morpheus CRM — Supabase client + auth helpers ──────────────
+// ── Nguzo OS — Supabase client + auth helpers ──────────────
 
 import { createClient } from '@supabase/supabase-js'
 import { SITE_URL } from './site.js'
 
 // Baked-in defaults (public-by-design values — the anon key is the
 // browser key, protected by Row Level Security). Env vars, when set
-// in Vercel, override these. This guarantees Morpheus always boots.
+// in Vercel, override these. This guarantees Nguzo always boots.
 const DEFAULT_URL  = 'https://ymavrmekxiwdphdyteau.supabase.co'
 const DEFAULT_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltYXZybWVreGl3ZHBoZHl0ZWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4Mjg0MDIsImV4cCI6MjA5ODQwNDQwMn0.EdXN9Bw90VuhFTmTnCK11woGBX1dS30H_jewetwuWi0'
 
@@ -21,10 +21,10 @@ const isValidAnon = (v) =>
   /^eyJ[\w-]+\.eyJ[\w-]+\.[\w-]+$/.test(v) || /^sb_publishable_[\w-]+$/.test(v)
 
 if (ENV_URL && !isValidUrl(ENV_URL)) {
-  console.warn('Morpheus: VITE_SUPABASE_URL is not a valid Supabase URL; using built-in default.')
+  console.warn('Nguzo: VITE_SUPABASE_URL is not a valid Supabase URL; using built-in default.')
 }
 if (ENV_ANON && !isValidAnon(ENV_ANON)) {
-  console.warn('Morpheus: VITE_SUPABASE_ANON_KEY is not a valid Supabase key; using built-in default.')
+  console.warn('Nguzo: VITE_SUPABASE_ANON_KEY is not a valid Supabase key; using built-in default.')
 }
 
 // URL and key must come from the same project, so only use the env pair
@@ -40,10 +40,10 @@ if (!SUPABASE_URL || !SUPABASE_ANON) {
   if (el) {
     el.innerHTML =
       '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0D1B2A;color:#5DCAA5;font-family:monospace;padding:24px;text-align:center">' +
-      'Morpheus configuration error: Supabase connection values are missing.<br/>Contact your administrator.' +
+      'Nguzo configuration error: Supabase connection values are missing.<br/>Contact your administrator.' +
       '</div>'
   }
-  throw new Error('Morpheus: missing Supabase configuration')
+  throw new Error('Nguzo: missing Supabase configuration')
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {

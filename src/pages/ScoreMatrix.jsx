@@ -1,5 +1,5 @@
 // src/pages/ScoreMatrix.jsx
-// ── Morpheus CRM — Score Matrix Weight Editor (Sprint 3) ────────
+// ── Nguzo OS — Score Matrix Weight Editor (Sprint 3) ────────
 // Trainers and admins can adjust the six rubric category weights.
 // Supports global defaults and per-cohort overrides.
 // Weights must sum to 100 before saving.

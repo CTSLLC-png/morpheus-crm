@@ -1,6 +1,6 @@
 # MELRAH FIELD™ v1
 
-MELRAH FIELD is the field-service and recovery-intelligence layer for Melrah Environmental Services inside MorpheusOS.
+MELRAH FIELD is the field-service and recovery-intelligence layer for Melrah Environmental Services inside Nguzo OS.
 
 ## Core workflow
 
@@ -66,7 +66,7 @@ Do not represent material as recycled until the batch reaches a verified downstr
 
 ## Database setup
 
-Apply `sql/melrah_field_v1.sql` after the existing Morpheus core and Melrah database schema.
+Apply `sql/melrah_field_v1.sql` after the existing Nguzo core and Melrah database schema.
 
 ## Tenant modules
 

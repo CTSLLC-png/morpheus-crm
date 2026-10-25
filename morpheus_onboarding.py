@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Morpheus CRM — Trainer Onboarding Guide Generator
+Nguzo OS — Trainer Onboarding Guide Generator
 Sprint 4, Task 4-5
 Certified Training Standards · Albany, NY · morpheuscr.com
 """
@@ -41,7 +41,7 @@ def draw_header(c, page_num, total_pages, section=""):
     c.line(lx + 20, ly + 26, lx + 20, ly)
     c.setFont("Helvetica-Bold", 16)
     c.setFillColor(WHITE)
-    c.drawString(MAR + 28, H - 28, "MORPHEUS")
+    c.drawString(MAR + 28, H - 28, "NGUZO")
     c.setFont("Helvetica", 7.5)
     c.setFillColor(colors.HexColor("#8BAFC8"))
     c.drawString(MAR + 29, H - 41, "Trainer Onboarding Guide  ·  Certified Training Standards")
@@ -59,7 +59,7 @@ def draw_footer(c):
     c.line(MAR, 40, W - MAR, 40)
     c.setFont("Helvetica", 6.5)
     c.setFillColor(GRAY)
-    c.drawString(MAR, 28, "Morpheus CRM  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscr.com")
+    c.drawString(MAR, 28, "Nguzo OS  ·  Certified Training Standards  ·  Albany, NY  ·  morpheuscr.com")
     c.drawRightString(W - MAR, 28, f"© {datetime.date.today().year} Certified Training Standards. Proprietary & Confidential.")
 
 def section_header(c, y, text, color=NAVY):
@@ -138,7 +138,7 @@ def note_box(c, y, text, color=AMBER, bg=colors.HexColor("#FAEEDA")):
 
 def generate_guide(out_path):
     c = canvas.Canvas(out_path, pagesize=letter)
-    c.setTitle("Morpheus CRM — Trainer Onboarding Guide")
+    c.setTitle("Nguzo OS — Trainer Onboarding Guide")
     c.setAuthor("Certified Training Standards")
     today = datetime.date.today().strftime("%B %d, %Y")
 
@@ -158,7 +158,7 @@ def generate_guide(out_path):
     c.drawCentredString(W/2, H/2 + 100, "Trainer Onboarding Guide")
     c.setFont("Helvetica", 13)
     c.setFillColor(GRAY)
-    c.drawCentredString(W/2, H/2 + 76, "Morpheus CRM — Certified Training Standards")
+    c.drawCentredString(W/2, H/2 + 76, "Nguzo OS — Certified Training Standards")
     c.setFont("Helvetica", 10)
     c.drawCentredString(W/2, H/2 + 56, "Albany, NY  ·  morpheuscr.com")
 
@@ -191,7 +191,7 @@ def generate_guide(out_path):
     draw_footer(c)
     y = H - 80
 
-    y = section_header(c, y, "1. Logging into Morpheus")
+    y = section_header(c, y, "1. Logging into Nguzo")
     y = body_text(c, y, "Open your browser and go to morpheuscr.com", indent=4)
     y = bullet(c, y, "Enter your trainer email and temporary password")
     y = bullet(c, y, "You will be prompted to set a new password on first login")
@@ -202,9 +202,9 @@ def generate_guide(out_path):
 
     y -= 6
     y = section_header(c, y, "2. Dashboard overview")
-    y = body_text(c, y, "The dashboard shows four live metrics pulled from the Morpheus database:", indent=4)
+    y = body_text(c, y, "The dashboard shows four live metrics pulled from the Nguzo database:", indent=4)
     y = bullet(c, y, "Active participants — all enrolled participants across all cohorts")
-    y = bullet(c, y, "Calls logged to DB — every completed AI mock call session saved to Morpheus")
+    y = bullet(c, y, "Calls logged to DB — every completed AI mock call session saved to Nguzo")
     y = bullet(c, y, "Avg score — weighted average across all scored calls, all participants")
     y = bullet(c, y, "Certs issued — participants who have reached 80+ avg across 5+ calls")
     y -= 4
@@ -235,13 +235,13 @@ def generate_guide(out_path):
         ("Step 1 — Personal info", "Enter full name, date of birth, email address, and set a temporary password"),
         ("Step 2 — Program info",   "Select program source (LDSS Albany, LDSS Schenectady, Reentry, or Direct). LDSS office auto-fills. Add case number, caseworker, assigned trainer, and cohort"),
         ("Step 3 — Review",         "Confirm all details. Click 'Enroll participant' to create the account"),
-        ("Auto-generated CTS ID",   "Morpheus assigns a unique CTS-XXXXX identifier immediately on enrollment"),
+        ("Auto-generated CTS ID",   "Nguzo assigns a unique CTS-XXXXX identifier immediately on enrollment"),
     ]
     for i, (title, desc) in enumerate(steps, 1):
         y = step_box(c, y, i, title, desc)
 
     y -= 6
-    y = note_box(c, y, "The participant's email and temporary password are their Morpheus login credentials. They should change the password on first login.", color=BLUE, bg=colors.HexColor("#E6F1FB"))
+    y = note_box(c, y, "The participant's email and temporary password are their Nguzo login credentials. They should change the password on first login.", color=BLUE, bg=colors.HexColor("#E6F1FB"))
 
     y -= 6
     y = section_header(c, y, "5. Participant profile page")
@@ -250,7 +250,7 @@ def generate_guide(out_path):
     y = bullet(c, y, "Stats row — calls completed, average score, best score, certification threshold")
     y = bullet(c, y, "Category performance bars — average across all 6 rubric categories")
     y = bullet(c, y, "Call history — every session with expandable score detail and AI feedback")
-    y = bullet(c, y, "Export LDSS report — generates a proprietary Morpheus PDF for caseworker submission")
+    y = bullet(c, y, "Export LDSS report — generates a proprietary Nguzo PDF for caseworker submission")
     y = bullet(c, y, "Issue certificate — appears when participant meets 80+ avg across 5+ calls")
     y -= 4
     y = body_text(c, y, "You can add trainer notes to any individual call by expanding the call row and using the notes field.", indent=4)
@@ -262,7 +262,7 @@ def generate_guide(out_path):
     y = bullet(c, y, "Practice Calls — self-directed AI mock call simulator, scores shown immediately on completion")
     y = bullet(c, y, "My Progress — category averages and full call log")
     y -= 4
-    y = body_text(c, y, "Every call completed by a participant — whether trainer-run or self-directed — saves automatically to the Morpheus database and appears on their profile.", indent=4)
+    y = body_text(c, y, "Every call completed by a participant — whether trainer-run or self-directed — saves automatically to the Nguzo database and appears on their profile.", indent=4)
 
     c.showPage()
 
@@ -286,7 +286,7 @@ def generate_guide(out_path):
         y = step_box(c, y, i, title, desc)
 
     y -= 6
-    y = note_box(c, y, "The full transcript and all six category scores save automatically to Morpheus on completion. No manual save needed.")
+    y = note_box(c, y, "The full transcript and all six category scores save automatically to Nguzo on completion. No manual save needed.")
 
     y -= 10
     y = section_header(c, y, "8. Interpreting scores")
@@ -331,7 +331,7 @@ def generate_guide(out_path):
     y = H - 80
 
     y = section_header(c, y, "10. Exporting LDSS progress reports")
-    y = body_text(c, y, "Open a participant profile and click 'Export LDSS report'. Morpheus generates a proprietary PDF containing:", indent=4)
+    y = body_text(c, y, "Open a participant profile and click 'Export LDSS report'. Nguzo generates a proprietary PDF containing:", indent=4)
     y = bullet(c, y, "Participant information — name, CTS ID, DOB, enrollment date, trainer, LDSS office, case number, caseworker")
     y = bullet(c, y, "Call evaluation log — every scored session with all six category scores and color-coded totals")
     y = bullet(c, y, "Category performance summary — visual bars showing averages across all calls")
@@ -342,11 +342,11 @@ def generate_guide(out_path):
     y = body_text(c, y, "The PDF downloads automatically to your machine. Submit it to the LDSS caseworker as program documentation.", indent=4)
 
     y -= 10
-    y = note_box(c, y, "Each LDSS report carries a unique MPR-YYYY-XXXX report ID and a CONFIDENTIAL stamp. These are proprietary Morpheus documents.", color=TEAL, bg=colors.HexColor("#E1F5EE"))
+    y = note_box(c, y, "Each LDSS report carries a unique MPR-YYYY-XXXX report ID and a CONFIDENTIAL stamp. These are proprietary Nguzo documents.", color=TEAL, bg=colors.HexColor("#E1F5EE"))
 
     y -= 10
     y = section_header(c, y, "11. Issuing a certificate (manual route)")
-    y = body_text(c, y, "Morpheus monitors every participant's cumulative average automatically. When a participant:", indent=4)
+    y = body_text(c, y, "Nguzo monitors every participant's cumulative average automatically. When a participant:", indent=4)
     y = bullet(c, y, "Achieves a weighted average of 80 or above")
     y = bullet(c, y, "Across a minimum of 5 completed and scored calls")
     y -= 4
@@ -355,7 +355,7 @@ def generate_guide(out_path):
     y = body_text(c, y, "To issue the certificate:", indent=4, bold=True)
     y = bullet(c, y, "Open the participant's profile page")
     y = bullet(c, y, "Click 'Issue certificate' — only appears when eligibility is met")
-    y = bullet(c, y, "Morpheus saves the certification record to the database with a unique MPR-YYYY-XXXX certificate number")
+    y = bullet(c, y, "Nguzo saves the certification record to the database with a unique MPR-YYYY-XXXX certificate number")
     y = bullet(c, y, "The branded certificate PDF downloads automatically — landscape format, gold seal, signature lines")
     y = bullet(c, y, "The participant's portal immediately shows their certification badge")
     y -= 6
@@ -366,7 +366,7 @@ def generate_guide(out_path):
     y = body_text(c, y, "From Cohorts & Reports, each cohort card has an 'Export PDF' button that generates a cohort-level summary.", indent=4)
     y = bullet(c, y, "Shows all enrolled participants, individual averages, and cohort aggregate score")
     y = bullet(c, y, "Formatted for LDSS Albany and LDSS Schenectady submission requirements")
-    y = bullet(c, y, "Carry the same proprietary Morpheus branding and confidentiality footer")
+    y = bullet(c, y, "Carry the same proprietary Nguzo branding and confidentiality footer")
 
     c.showPage()
 
@@ -403,7 +403,7 @@ def generate_guide(out_path):
         ["Run AI mock call",          "AI Call Simulator",    "Select participant, generate, start"],
         ["Self-serve practice call",  "Participant portal",   "Participants run their own calls"],
         ["View profile + history",    "Participants → row",   "All calls, scores, category bars"],
-        ["Export LDSS report",        "Profile → Export PDF", "Proprietary Morpheus PDF"],
+        ["Export LDSS report",        "Profile → Export PDF", "Proprietary Nguzo PDF"],
         ["Issue certificate",         "Profile → Issue cert", "Auto-triggers at 80+ avg / 5+ calls"],
         ["Adjust scoring weights",    "Score Matrix",         "Must total 100%; global or per-cohort"],
         ["Create staff account",      "Admin Panel",          "Super admin only"],
@@ -431,7 +431,7 @@ def generate_guide(out_path):
 
     y -= 14
     y = section_header(c, y, "Support")
-    y = body_text(c, y, "Technical issues:   Contact your Morpheus super admin or program director.", indent=4)
+    y = body_text(c, y, "Technical issues:   Contact your Nguzo super admin or program director.", indent=4)
     y = body_text(c, y, "LDSS documentation: Contact LDSS Albany Workforce Solutions or LDSS Schenectady Workforce Solutions directly.", indent=4)
     y = body_text(c, y, "Platform:           morpheuscr.com  ·  Certified Training Standards  ·  Albany, NY", indent=4)
 
@@ -439,4 +439,4 @@ def generate_guide(out_path):
     print(f"Onboarding guide generated: {out_path}")
 
 if __name__ == "__main__":
-    generate_guide("/mnt/user-data/outputs/Morpheus_Trainer_Onboarding_Guide.pdf")
+    generate_guide("/mnt/user-data/outputs/Nguzo_Trainer_Onboarding_Guide.pdf")

@@ -42,7 +42,7 @@ Copy `scripts/legacy-path-explainer.json` and edit it. Each scene has a `kind` a
 
 ## After rendering
 
-1. Upload the MP4s and thumbnails in **Morpheus → Creator Studio → Asset vault → Upload files**.
+1. Upload the MP4s and thumbnails in **Nguzo → Creator Studio → Asset vault → Upload files**.
 2. Paste the hosted link as the project's **final cut**. It flows back to the campaign asset, so results can be tied to the video.
 3. When posting, use the draft's tracked link (for example `utm_source=youtube&utm_medium=video`). Change the source with the Link builder if you post it somewhere else.
 

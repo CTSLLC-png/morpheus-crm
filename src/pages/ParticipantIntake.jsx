@@ -1,5 +1,5 @@
 // src/pages/ParticipantIntake.jsx
-// ── Morpheus CRM — Participant Intake Form ──────────────────────
+// ── Nguzo OS — Participant Intake Form ──────────────────────
 // Multi-step intake form for enrolling new participants.
 // Step 1: Personal info  Step 2: Program info  Step 3: Confirm & create
 
@@ -145,7 +145,7 @@ export default function ParticipantIntake({ cohorts = [], staffProfiles = [] }) 
     <div style={s.page}>
       <div style={s.header}>
         <h1 style={s.title}>Enroll new participant</h1>
-        <p style={s.subtitle}>Complete all required fields to create a Morpheus account.</p>
+        <p style={s.subtitle}>Complete all required fields to create a Nguzo account.</p>
       </div>
 
       {/* Step indicators */}
@@ -183,7 +183,7 @@ export default function ParticipantIntake({ cohorts = [], staffProfiles = [] }) 
               <input id="participantintake-email-address" style={s.input} type="email" value={form.email}
                 onChange={e => set('email', e.target.value)}
                 placeholder="participant@example.com" />
-              <div style={s.hint}>This will be their Morpheus login email.</div>
+              <div style={s.hint}>This will be their Nguzo login email.</div>
             </div>
             <div style={{ ...s.formGroup, gridColumn: '1/-1' }}>
               <label style={s.label} htmlFor="participantintake-temporary-password">Temporary password <span style={s.req}>*</span></label>
@@ -272,7 +272,7 @@ export default function ParticipantIntake({ cohorts = [], staffProfiles = [] }) 
               <ReviewRow label="Cohort"          value={cohorts.find(c => c.id === form.cohort_id)?.name || '—'} />
             </div>
             <div style={s.reviewNote}>
-              Clicking <strong>Enroll participant</strong> will create a Morpheus account, assign a CTS ID, and log the enrollment. This action cannot be undone without contacting an admin.
+              Clicking <strong>Enroll participant</strong> will create a Nguzo account, assign a CTS ID, and log the enrollment. This action cannot be undone without contacting an admin.
             </div>
           </div>
         )}

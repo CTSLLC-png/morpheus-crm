@@ -1,5 +1,5 @@
 // src/lib/site.js
-// ── The canonical public address of MorpheusOS ────────────────
+// ── The canonical public address of Nguzo OS ────────────────
 // One place, because this string ends up in three kinds of place that must
 // agree: printed on credentials, sent to Supabase as an auth redirect, and
 // shown in the app chrome. When the domain changes, it changes here.

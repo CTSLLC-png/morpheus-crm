@@ -196,9 +196,9 @@ Return ONLY a JSON object, no preamble:
 }
 
 // ── Creator Studio handoff ─────────────────────────────────────────────────
-// An approved asset becomes a Creator Studio project (Morpheus module
+// An approved asset becomes a Creator Studio project (Nguzo module
 // growth.studio) with its production queue filled in. The same plan renders
-// as a plain-text brief for tools outside Morpheus.
+// as a plain-text brief for tools outside Nguzo.
 
 const PRODUCTION = {
   'video-script': { type: 'Explainer video',    specs: '60–90 s · 16:9 master + 9:16 cut · burned-in captions', kind: 'video', project: 'explainer' },

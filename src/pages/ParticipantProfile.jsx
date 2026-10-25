@@ -1,5 +1,5 @@
 // src/pages/ParticipantProfile.jsx
-// ── Morpheus CRM — Participant Profile Page ─────────────────────
+// ── Nguzo OS — Participant Profile Page ─────────────────────
 // Full profile view: stats, call history, category averages,
 // cert status, and trainer notes. Accessible by trainers.
 

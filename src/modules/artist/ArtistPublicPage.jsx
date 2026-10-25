@@ -43,7 +43,7 @@ export default function ArtistPublicPage({ slug: slugProp }) {
         <main id="main-content" tabIndex="-1" style={{ ...s.wrap, paddingTop: 120 }}>
           <h1 style={s.h2}>Artist not found</h1>
           <p style={s.body}>This page isn't published yet.</p>
-          <a href="https://www.morpheuscr.com/" style={s.link}>Go to MorpheusCR →</a>
+          <a href="https://www.morpheuscr.com/" style={s.link}>Go to Nguzo OS →</a>
         </main>
       </div>
     )
@@ -124,7 +124,7 @@ export default function ArtistPublicPage({ slug: slugProp }) {
       <footer style={{ borderTop: `1px solid ${C.line}`, padding: '28px 24px', color: C.muted, fontSize: 14 }}>
         <div style={{ ...s.wrap, display: 'flex', gap: 18, justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <span>© 2026 {artist.label ?? artist.name}. All rights reserved.</span>
-          <span>Powered by <a href="https://www.morpheuscr.com/" style={s.link}>MorpheusCR</a></span>
+          <span>Powered by <a href="https://www.morpheuscr.com/" style={s.link}>Nguzo OS</a></span>
         </div>
       </footer>
     </div>

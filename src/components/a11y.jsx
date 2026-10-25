@@ -1,7 +1,7 @@
 // src/components/a11y.jsx
 // ── Accessible primitives ──────────────────────────────────────
 //
-// Morpheus styles components with inline style objects. That is fine for
+// Nguzo styles components with inline style objects. That is fine for
 // looks, but it produced a habit of building controls out of <div onClick>,
 // which cannot be reached with a keyboard, has no role, and is invisible to a
 // screen reader. These primitives keep the same inline styling while giving

@@ -1,5 +1,5 @@
 // src/pages/Academy.jsx
-// ── MORPHEUS.EDU — Academy (participant course player) ─────────
+// ── NGUZO.EDU — Academy (participant course player) ─────────
 // Any course in the registry the participant may see: module list →
 // lesson viewer → checkpoint quizzes, progress, and their credentials.
 // Multi-course, so CAP-C and ClearCall CSR share one player.
@@ -140,7 +140,7 @@ export default function Academy() {
 
       {/* Course hero */}
       <div style={st.hero}>
-        <div style={st.heroKicker}>MORPHEUS.EDU · {course.issuer_org}</div>
+        <div style={st.heroKicker}>NGUZO.EDU · {course.issuer_org}</div>
         <div style={st.heroTitle}>{course.title}</div>
         <div style={st.heroSub}>{course.subtitle} · {course.hours} hours · {course.modules.length} modules</div>
         <div style={st.progressWrap}>

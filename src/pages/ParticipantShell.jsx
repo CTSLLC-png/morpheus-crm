@@ -1,5 +1,5 @@
 // src/pages/ParticipantShell.jsx
-// ── Morpheus CRM — Participant Self-Service Portal ──────────────
+// ── Nguzo OS — Participant Self-Service Portal ──────────────
 
 import { useState, useEffect } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
@@ -352,7 +352,7 @@ function PracticeCallsPage({ participantId, onComplete }) {
           {call.isComplete && (
             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'6px', marginTop:'10px', fontSize:'11px', color:'#0F6E56', background:'#E1F5EE', padding:'6px 12px', borderRadius:'20px' }}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1C3.24 1 1 2.12 1 3.5S3.24 6 6 6s5-1.12 5-2.5S8.76 1 6 1z" stroke="currentColor" strokeWidth="1"/><path d="M1 3.5v2C1 6.88 3.24 8 6 8s5-1.12 5-2.5v-2" stroke="currentColor" strokeWidth="1"/><path d="M1 5.5v2C1 8.88 3.24 10 6 10s5-1.12 5-2.5v-2" stroke="currentColor" strokeWidth="1"/></svg>
-              Saved to your Morpheus record
+              Saved to your Nguzo record
             </div>
           )}
         </div>

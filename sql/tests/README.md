@@ -1,7 +1,7 @@
-# Morpheus OS — database test suite
+# Nguzo OS — database test suite
 
 pgTAP suites that assert the business-rule invariants and the multi-tenant
-RLS boundaries of the Morpheus OS database.
+RLS boundaries of the Nguzo OS database.
 
 | File | Asserts | Tests |
 |---|---|---|

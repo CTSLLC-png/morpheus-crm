@@ -1,5 +1,5 @@
 // src/lib/morpheus.js
-// ── Morpheus OS — kernel access ────────────────────────────────
+// ── Nguzo OS — kernel access ────────────────────────────────
 //
 // The OS kernel lives in the `core` schema: core.tenant, core.module,
 // core.tenant_module and core.membership. A tab exists because a row exists

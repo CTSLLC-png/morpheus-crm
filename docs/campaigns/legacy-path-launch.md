@@ -2,7 +2,7 @@
 
 **Product:** Legacy Path, $20 one-time lifetime access · https://legacy.morpheuscr.com/
 **Owner:** Certified Training Standards LLC
-**Run it from:** Morpheus → **Campaign Studio** (`/campaigns`, module `growth.campaigns`)
+**Run it from:** Nguzo → **Campaign Studio** (`/campaigns`, module `growth.campaigns`)
 
 This playbook is the strategy. Campaign Studio does the day-to-day work: it writes drafts with AI, checks them for compliance, holds them until a super_admin approves, and reports which sources turn into paying families.
 
@@ -45,7 +45,7 @@ Why people buy (use these, in this order):
 | 3 | **First-generation wealth builders** | "The money talk nobody had with you." | TikTok/Reels, Instagram, YouTube |
 | 4 | **New and expecting parents** | "529, custodial Roth or Trump Account: what comes first?" | Instagram, Meta ads, pediatric/daycare partners |
 | 5 | **Pre-retirees and grandparents** | "Make sure the house goes where you meant it to." | Facebook, credit-union newsletters, senior centers |
-| 6 | **Workforce and reentry participants** | "A plan that fits your first paycheck." | CTS cohorts (existing Morpheus participants) |
+| 6 | **Workforce and reentry participants** | "A plan that fits your first paycheck." | CTS cohorts (existing Nguzo participants) |
 
 ## 4. 90-day launch sequence
 
@@ -134,7 +134,7 @@ Every email ends with:
 > *Education only — not investment, insurance, tax or legal advice. Talk to a licensed professional before acting.*
 > Certified Training Standards LLC · 418 Broadway Ste 8N, Albany, NY 12205 · [Unsubscribe]
 
-> ⚠️ **Sending needs an email service.** Morpheus doesn't send marketing email yet. Before sending, connect an ESP (Resend, Postmark, Mailchimp) with a consent checkbox at signup. Supabase auth emails must not be used for marketing.
+> ⚠️ **Sending needs an email service.** Nguzo doesn't send marketing email yet. Before sending, connect an ESP (Resend, Postmark, Mailchimp) with a consent checkbox at signup. Supabase auth emails must not be used for marketing.
 
 ### 6.7 Partner outreach (church / credit union / HR / funeral home)
 > **Subject:** A free family-money workshop for {ORG}

@@ -1,5 +1,5 @@
 // src/hooks/useAuth.jsx
-// ── Morpheus CRM — Auth context & hook ─────────────────────────
+// ── Nguzo OS — Auth context & hook ─────────────────────────
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase, getUserRole } from '../lib/supabase.js'

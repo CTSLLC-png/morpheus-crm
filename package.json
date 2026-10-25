@@ -2,7 +2,7 @@
   "name": "morpheus-crm",
   "version": "1.0.0",
   "private": true,
-  "description": "Morpheus CRM — Certified Training Standards · Albany, NY",
+  "description": "Nguzo OS — Certified Training Standards · Albany, NY",
   "type": "module",
   "scripts": {
     "dev": "vite",
