@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
 import { TenantProvider } from './hooks/useTenant.jsx'
 import Login from './pages/Login.jsx'
+import Register from './pages/Register.jsx'
 import PublicHome from './pages/PublicHome.jsx'
 import { artistSlugForHost } from './modules/artist/artistCatalog.js'
 
@@ -12,6 +13,8 @@ import { artistSlugForHost } from './modules/artist/artistCatalog.js'
 import { lazy, Suspense, useEffect, useState } from 'react'
 const TrainerShell     = lazy(() => import('./pages/TrainerShell.jsx'))
 const ParticipantShell = lazy(() => import('./pages/ParticipantShell.jsx'))
+const VendorShell      = lazy(() => import('./pages/VendorShell.jsx'))
+const FinishEnrolment  = lazy(() => import('./pages/FinishEnrolment.jsx'))
 const ResetPassword    = lazy(() => import('./pages/ResetPassword.jsx'))
 const VerifyCredential = lazy(() => import('./pages/VerifyCredential.jsx'))
 // Legacy Path (CTS consumer module): legacy.morpheuscr.com, or /legacy/* here.
@@ -62,16 +65,72 @@ function LoginGate() {
   return <Login />
 }
 
-/** Routes trainer/admin to TrainerShell, participants to ParticipantShell */
+/**
+ * Registration is for someone with no account, so a visitor who arrives here
+ * already signed in is sent to their workspace.
+ *
+ * But only if they were signed in when the screen OPENED. Registration signs
+ * the new account in at step 1 and redeems the enrolment code at step 2; a
+ * gate that redirected the moment a session appeared would tear the form away
+ * between the two and leave exactly the stranded account — signed in, no
+ * participants row, no cohort — that this work exists to prevent. So the
+ * answer is latched on first settle and does not change underneath the form.
+ */
+function RegisterGate() {
+  const { session, loading } = useAuth()
+  const [alreadySignedIn, setAlreadySignedIn] = useState(null)
+
+  useEffect(() => {
+    if (loading || alreadySignedIn !== null) return
+    setAlreadySignedIn(Boolean(session))
+  }, [loading, session, alreadySignedIn])
+
+  if (loading || alreadySignedIn === null) return <LoadingScreen />
+  if (alreadySignedIn) return <Navigate to="/" replace />
+  return <Register />
+}
+
+/**
+ * Sends a signed-in user to the workspace their role entitles them to.
+ *
+ * `role` is app_metadata.role and nothing else — see getUserRole() in
+ * lib/supabase.js. user_metadata is writable by the account holder with the
+ * anon key, so it is never consulted here.
+ *
+ * THE RULE THAT DOES NOT BEND: an unrecognised role is never granted access.
+ * It is also never sent to /login, which from a signed-in session is an
+ * infinite redirect — you are already authenticated, so /login bounces you
+ * straight back to "/". That loop was the previous behaviour for three
+ * different situations, and it is what the cases below replace:
+ *
+ *   * no role at all in app_metadata -> FinishEnrolment("no-role"). They can
+ *     redeem an enrolment code, which every authenticated session may already
+ *     do and which is itself the gate; it grants nothing a code would not.
+ *     If redemption succeeds and the account still has no routable role, that
+ *     screen says so plainly instead of looping.
+ *   * role 'participant' but no participants row (a registration whose code
+ *     never redeemed) -> FinishEnrolment("no-participant"), the same single
+ *     action. This is not a widening: the role is already theirs.
+ *   * any other role this build does not know -> FinishEnrolment
+ *     ("unknown-role"), which offers no code box at all, only an explanation
+ *     and a sign-out. A dead end is the correct outcome: access nobody
+ *     granted is not something a screen can fix.
+ */
 function RoleRouter() {
-  const { role, loading } = useAuth()
+  const { role, participantId, loading } = useAuth()
   if (loading) return <LoadingScreen />
+
   // Legacy Path customers have no Nguzo access; send them to their app.
   if (role === 'lp_customer') return <Navigate to="/legacy/app" replace />
-  if (role === 'participant') return <ParticipantShell />
   if (role === 'trainer' || role === 'super_admin') return <TrainerShell />
-  // Unknown role — sign out and back to login
-  return <Navigate to="/login" replace />
+  if (role === 'vendor') return <VendorShell />
+  if (role === 'participant') {
+    // ParticipantShell is built entirely around participants.id; without one
+    // it renders an empty portal with no way out.
+    return participantId ? <ParticipantShell /> : <FinishEnrolment reason="no-participant" />
+  }
+  if (!role) return <FinishEnrolment reason="no-role" />
+  return <FinishEnrolment reason="unknown-role" />
 }
 
 /**
@@ -113,7 +172,12 @@ const PAGE_TITLES = {
   '/cohorts': 'Cohorts and reports',
   '/matrix': 'Score Matrix',
   '/admin': 'Admin panel',
+  '/enrolment-codes': 'Enrolment codes',
+  '/partner-access': 'Partner access',
+  '/empowercare': 'EmpowerCare',
+  '/credentials': 'Credentials',
   '/login': 'Sign in',
+  '/register': 'Create an account',
   '/reset-password': 'Reset password',
   '/verify': 'Verify a credential',
   '/legacy': 'Legacy Path',
@@ -155,6 +219,8 @@ export default function App() {
           <Routes>
             <Route path="/"               element={<HomeGate />} />
             <Route path="/login"          element={<LoginGate />} />
+            {/* Invite-gated participant self-registration */}
+            <Route path="/register"       element={<RegisterGate />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             {/* NGUZO.EDU — public credential verification (no auth) */}
             <Route path="/verify"         element={<VerifyCredential />} />

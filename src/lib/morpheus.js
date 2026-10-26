@@ -32,6 +32,11 @@ function normalise(tenants) {
         description: m.description ?? '',
         schema: m.schema ?? m.schema_name ?? null,
         category: m.category ?? null,
+        // Brand grouping: core.module.family, e.g. 'clearcall' for
+        // workforce.cer and workforce.empowercare, NULL for everything else
+        // including workforce.academy. The sidebar groups on this, never on a
+        // hardcoded list of module keys.
+        family: m.family ?? null,
         status: m.status,
         sortOrder: m.sort_order ?? 999,
         enabled: m.enabled === true,
@@ -39,6 +44,18 @@ function normalise(tenants) {
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder),
   }))
+}
+
+/** Product families (core.product_family): the brand groupings, e.g. ClearCall. */
+function normaliseFamilies(families) {
+  return (families ?? [])
+    .map(f => ({
+      key: f.key,
+      name: f.name,
+      description: f.description ?? '',
+      sortOrder: f.sort_order ?? 999,
+    }))
+    .sort((a, b) => (a.sortOrder - b.sortOrder) || a.key.localeCompare(b.key))
 }
 
 /** Preferred path once `core` is exposed to the Data API. */
@@ -49,7 +66,7 @@ async function readKernelDirect() {
     .select(`
       enabled, config,
       tenant:tenant_id ( id, slug, name, legal_entity, industry, status ),
-      module:module_key ( key, name, description, schema_name, category, status, sort_order )
+      module:module_key ( key, name, description, schema_name, category, status, sort_order, family )
     `)
   if (error) throw error
 
@@ -60,14 +77,23 @@ async function readKernelDirect() {
     if (!byTenant.has(t.id)) byTenant.set(t.id, { ...t, modules: [] })
     byTenant.get(t.id).modules.push({ ...row.module, enabled: row.enabled, config: row.config })
   }
-  return normalise([...byTenant.values()])
+
+  // Family names are presentation only: if this read fails the sidebar still
+  // groups correctly, it just labels the group from the family key.
+  let families = []
+  try {
+    const fam = await supabase.schema('core').from('product_family').select('key, name, description, sort_order')
+    if (!fam.error) families = fam.data ?? []
+  } catch { /* fall through with no family names */ }
+
+  return { tenants: normalise([...byTenant.values()]), families: normaliseFamilies(families) }
 }
 
 /** Bridge path — works today with no project-settings change. */
 async function readKernelViaBridge() {
   const { data, error } = await supabase.rpc('morpheus_bootstrap')
   if (error) throw error
-  return normalise(data?.tenants)
+  return { tenants: normalise(data?.tenants), families: normaliseFamilies(data?.families) }
 }
 
 /**
@@ -141,13 +167,16 @@ export async function kernelDiagnostics() {
  */
 export async function loadWorkspace() {
   try {
-    return { tenants: await readKernelDirect(), source: 'core', error: null }
+    const { tenants, families } = await readKernelDirect()
+    return { tenants, families, source: 'core', error: null }
   } catch (directErr) {
     try {
-      return { tenants: await readKernelViaBridge(), source: 'bridge', error: null }
+      const { tenants, families } = await readKernelViaBridge()
+      return { tenants, families, source: 'bridge', error: null }
     } catch (bridgeErr) {
       return {
         tenants: [],
+        families: [],
         source: 'fallback',
         error: bridgeErr?.message ?? directErr?.message ?? 'kernel unreachable',
       }
