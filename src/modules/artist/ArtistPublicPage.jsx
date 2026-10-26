@@ -42,7 +42,7 @@ export default function ArtistPublicPage({ slug: slugProp }) {
       <div style={s.page}>
         <main id="main-content" tabIndex="-1" style={{ ...s.wrap, paddingTop: 120 }}>
           <h1 style={s.h2}>Artist not found</h1>
-          <p style={s.body}>This page isn't published yet.</p>
+          <p style={s.body}>This page isn&apos;t published yet.</p>
           <a href="https://www.morpheuscr.com/" style={s.link}>Go to Nguzo OS →</a>
         </main>
       </div>
