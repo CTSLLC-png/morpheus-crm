@@ -29,7 +29,12 @@ function fmt(v) {
 }
 
 export default function VendorAdmin({ cohorts = [] }) {
-  const { user } = useAuth()
+  // Granting partner access is a disclosure decision about an outside
+  // organisation, so it is super-admin only — enforced in RLS, mirrored here
+  // so a trainer is not shown controls whose writes the database refuses.
+  // Revoking stays available to every trainer: cutting access off is the
+  // safety-increasing direction and must not wait on one person.
+  const { user, isAdmin } = useAuth()
   const [vendors, setVendors]   = useState([])
   const [loading, setLoading]   = useState(true)
   const [loadError, setLoadError] = useState(null)
@@ -76,8 +81,19 @@ export default function VendorAdmin({ cohorts = [] }) {
   async function handleStatus(v) {
     const next = v.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
     setError(null); setNotice(null)
+
+    // Suspension records why, because it is an access decision about an
+    // outside organisation and will be asked about later. The server rejects
+    // a blank reason, so collect it here rather than letting the call fail.
+    let reason = null
+    if (next === 'SUSPENDED') {
+      reason = window.prompt(`Why is ${v.name} being suspended?`)
+      if (reason === null) return               // cancelled
+      if (!reason.trim()) { setError('A reason is required to suspend a partner.'); return }
+    }
+
     try {
-      await setVendorStatus(v.id, next)
+      await setVendorStatus(v.id, next, reason)
       setVendors(prev => prev.map(x => (x.id === v.id ? { ...x, status: next } : x)))
       setNotice(next === 'SUSPENDED'
         ? `${v.name} suspended. Every one of its users loses every row on their next request.`
@@ -98,10 +114,19 @@ export default function VendorAdmin({ cohorts = [] }) {
         participant&rsquo;s date of birth, case number or any program gate result.
       </p>
 
+      {!isAdmin && (
+        <div style={s.okBox} role="status">
+          You can review partners and withdraw access — suspend an organisation,
+          remove one of its users, or take back a cohort. Creating a partner and
+          granting new access is restricted to a super admin.
+        </div>
+      )}
+
       {error  && <div style={s.errorBox} role="alert">{error}</div>}
       {notice && <div style={s.okBox} role="status">{notice}</div>}
 
-      {/* ── Create ── */}
+      {/* ── Create ── Granting direction: super admin only. */}
+      {isAdmin && (
       <div style={s.card}>
         <div style={s.cardTitle}>Add a partner organisation</div>
         <form onSubmit={handleCreate} style={s.form}>
@@ -137,6 +162,7 @@ export default function VendorAdmin({ cohorts = [] }) {
           </button>
         </form>
       </div>
+      )}
 
       {/* ── List ── */}
       <div style={{ ...s.card, marginTop: '14px' }}>
@@ -205,6 +231,10 @@ export default function VendorAdmin({ cohorts = [] }) {
 // ── One organisation: users and cohort scope ────────────────────
 
 function VendorDetail({ vendor, cohorts, actorId, onError, onNotice }) {
+  // Same split as the parent: attaching a user and granting a cohort are the
+  // granting direction and are super-admin only; detaching and revoking stay
+  // open to trainers.
+  const { isAdmin } = useAuth()
   const [users, setUsers]   = useState([])
   const [grants, setGrants] = useState([])
   const [loading, setLoading] = useState(true)
@@ -307,18 +337,22 @@ function VendorDetail({ vendor, cohorts, actorId, onError, onNotice }) {
           {/* Users */}
           <div>
             <div style={s.subTitle}>Users ({users.length})</div>
-            <form onSubmit={addUser} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-              <input style={{ ...s.input, ...s.mono }} value={userId}
-                onChange={e => setUserId(e.target.value)}
-                placeholder="paste account user id (UUID)"
-                aria-label="Account user id" spellCheck={false} />
-              <button type="submit" style={s.btn}>Attach</button>
-            </form>
-            <div style={s.hint}>
-              Paste the account&rsquo;s user id from the Supabase dashboard. There is no
-              email lookup here on purpose: it would tell anyone who reached it which
-              addresses hold accounts.
-            </div>
+            {isAdmin && (
+              <>
+                <form onSubmit={addUser} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                  <input style={{ ...s.input, ...s.mono }} value={userId}
+                    onChange={e => setUserId(e.target.value)}
+                    placeholder="paste account user id (UUID)"
+                    aria-label="Account user id" spellCheck={false} />
+                  <button type="submit" style={s.btn}>Attach</button>
+                </form>
+                <div style={s.hint}>
+                  Paste the account&rsquo;s user id from the Supabase dashboard. There is no
+                  email lookup here on purpose: it would tell anyone who reached it which
+                  addresses hold accounts.
+                </div>
+              </>
+            )}
             <ul style={s.list}>
               {users.map(u => (
                 <li key={u.user_id} style={s.listRow}>
@@ -335,14 +369,16 @@ function VendorDetail({ vendor, cohorts, actorId, onError, onNotice }) {
           {/* Cohort scope */}
           <div>
             <div style={s.subTitle}>Cohort scope ({liveGrants.length})</div>
-            <form onSubmit={addCohort} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-              <select style={s.input} value={cohortId} onChange={e => setCohortId(e.target.value)}
-                aria-label="Cohort to grant">
-                <option value="">Select a cohort…</option>
-                {grantable.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <button type="submit" style={s.btn} disabled={grantable.length === 0}>Grant</button>
-            </form>
+            {isAdmin && (
+              <form onSubmit={addCohort} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                <select style={s.input} value={cohortId} onChange={e => setCohortId(e.target.value)}
+                  aria-label="Cohort to grant">
+                  <option value="">Select a cohort…</option>
+                  {grantable.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <button type="submit" style={s.btn} disabled={grantable.length === 0}>Grant</button>
+              </form>
+            )}
             <ul style={s.list}>
               {grants.map(g => (
                 <li key={g.cohort_id} style={s.listRow}>
@@ -350,8 +386,12 @@ function VendorDetail({ vendor, cohorts, actorId, onError, onNotice }) {
                   {g.revoked_at ? (
                     <>
                       <span style={{ ...s.pill, background: '#F1EFE8', color: '#5F5E5A' }}>Withdrawn</span>
-                      <button type="button" style={s.btnSmall}
-                        onClick={() => regrantCohort(g.cohort_id)}>Re-grant</button>
+                      {/* Re-granting restores access, so it is the granting
+                          direction and stays with a super admin. */}
+                      {isAdmin && (
+                        <button type="button" style={s.btnSmall}
+                          onClick={() => regrantCohort(g.cohort_id)}>Re-grant</button>
+                      )}
                     </>
                   ) : (
                     <button type="button" style={{ ...s.btnSmall, ...s.btnDanger }}

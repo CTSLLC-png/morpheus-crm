@@ -87,11 +87,26 @@ export async function createVendor({ name, slug, kind = 'VENDOR', contactEmail }
  * vendors, so every one of that partner's users loses every row on their next
  * request. No cache, no session to invalidate.
  */
-export async function setVendorStatus(vendorId, status) {
+export async function setVendorStatus(vendorId, status, reason = null) {
   if (!VENDOR_STATUSES.includes(status)) throw new Error('Unknown status.')
+
+  // Suspending goes through the RPC so a trainer can do it: cutting off a
+  // partner is the safety-increasing direction and must not wait on the one
+  // super admin. The function records who and why.
+  if (status === 'SUSPENDED') {
+    const { error } = await supabase.rpc('vendor_suspend', {
+      p_vendor_id: vendorId,
+      p_reason: reason ?? '',
+    })
+    if (error) throw error
+    return { id: vendorId, status }
+  }
+
+  // Reinstating is the granting direction, so it stays an ordinary write and
+  // RLS allows it only for a super admin.
   const { data, error } = await supabase
     .from('vendor')
-    .update({ status })
+    .update({ status, suspended_at: null, suspended_by: null, suspend_reason: null })
     .eq('id', vendorId)
     .select('id, status')
     .single()
@@ -135,11 +150,12 @@ export async function attachVendorUser(vendorId, userId, addedBy = null) {
  * request that account makes resolves no vendor and sees nothing.
  */
 export async function detachVendorUser(vendorId, userId) {
-  const { error } = await supabase
-    .from('vendor_user')
-    .delete()
-    .eq('vendor_id', vendorId)
-    .eq('user_id', userId)
+  // Through the RPC: removing someone's access is a revoke, so trainers may
+  // do it even though they cannot attach.
+  const { error } = await supabase.rpc('vendor_detach_user', {
+    p_vendor_id: vendorId,
+    p_user_id: userId,
+  })
   if (error) throw error
 }
 
@@ -188,13 +204,13 @@ export async function grantVendorCohort(vendorId, cohortId, grantedBy = null) {
  * row is kept rather than deleted so the grant history survives.
  */
 export async function revokeVendorCohort(vendorId, cohortId) {
-  const { data, error } = await supabase
-    .from('vendor_cohort')
-    .update({ revoked_at: new Date().toISOString() })
-    .eq('vendor_id', vendorId)
-    .eq('cohort_id', cohortId)
-    .select('vendor_id, cohort_id, granted_at, revoked_at')
-    .single()
+  // Through the RPC so trainers can withdraw a grant they cannot make. It
+  // stamps revoked_by as well as revoked_at — "when" without "who" is not an
+  // answer after an access question.
+  const { error } = await supabase.rpc('vendor_revoke_cohort', {
+    p_vendor_id: vendorId,
+    p_cohort_id: cohortId,
+  })
   if (error) throw error
-  return data
+  return { vendor_id: vendorId, cohort_id: cohortId }
 }
