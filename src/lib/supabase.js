@@ -63,8 +63,57 @@ export async function signIn(email, password) {
   return data
 }
 
-/** Sign out current user */
-export async function signOut() {
+/**
+ * Register a new account.
+ *
+ * SECURITY: the only thing put in options.data (which lands in
+ * user_metadata) is the person's own name. user_metadata is writable by the
+ * account holder with the anon key, so nothing here may ever carry a role,
+ * an entitlement, a cohort or a participant id — anything the client could
+ * forge must not be a thing the server reads. The account's role is set by
+ * the set_default_participant_app_role trigger on auth.users, into
+ * app_metadata, which only the service role can write.
+ *
+ * Returns { user, session }. `session` is null when the project requires
+ * email confirmation; the caller must handle that, because the enrolment-code
+ * RPC needs an authenticated session.
+ */
+export async function signUp(email, password, fullName) {
+  const { data, error } = await supabase.auth.signUp({
+    email:    email.trim(),
+    password,
+    options: {
+      data: { full_name: fullName?.trim() || null },
+      emailRedirectTo: `${SITE_URL}/login`,
+    },
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * Sign out current user.
+ *
+ * The SIGN_OUT engagement stamp has to be issued while the session that
+ * authorises it still exists, so it goes out first — but bounded, because a
+ * dead network must not leave someone stuck on a page they asked to leave.
+ * After the bound expires we sign out regardless and the stamp is simply
+ * lost; it is informational telemetry, not a record anyone relies on.
+ */
+export async function signOut({ participantId = null } = {}) {
+  try {
+    const { data } = await supabase.auth.getSession()
+    const userId = data?.session?.user?.id
+    if (userId) {
+      const { recordSignOut } = await import('./engagement.js')
+      await Promise.race([
+        recordSignOut(userId, participantId),
+        new Promise(resolve => setTimeout(resolve, 800)),
+      ])
+    }
+  } catch {
+    // Telemetry never blocks a sign-out.
+  }
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }
