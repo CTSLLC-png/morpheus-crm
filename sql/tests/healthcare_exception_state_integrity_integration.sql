@@ -55,9 +55,9 @@ UPDATE melrah.healthcare_access_exception SET used_at=now();
 SELECT pg_temp.assert_rejected(
  $$UPDATE melrah.healthcare_access_exception SET used_at=NULL$$,
  'Consumed healthcare exception cannot be reused');
-UPDATE melrah.healthcare_access_exception SET decision='WITHDRAWN';
-SELECT pg_temp.assert_rejected(
- $$UPDATE melrah.healthcare_access_exception SET decision='APPROVED'$$,
- 'Healthcare exception terminal decision cannot change');
+INSERT INTO melrah.healthcare_access_exception (id,tenant_id,account_id,facility_id,work_order_id,technician_id,requirement_id,provider_key,reason_code,melrah_requestor_id) VALUES ('00000000-0000-0000-0000-000000000011','00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000012','00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000004','SYMPLR','RENEWAL_PENDING','00000000-0000-0000-0000-000000000008');
+SELECT pg_temp.assert_rejected($$UPDATE melrah.healthcare_access_exception SET decision='WITHDRAWN' WHERE id='00000000-0000-0000-0000-000000000005'$$,'Only approved healthcare exceptions can be consumed');
+UPDATE melrah.healthcare_access_exception SET decision='WITHDRAWN' WHERE id='00000000-0000-0000-0000-000000000011';
+SELECT pg_temp.assert_rejected($$UPDATE melrah.healthcare_access_exception SET decision='APPROVED' WHERE id='00000000-0000-0000-0000-000000000011'$$,'Healthcare exception terminal decision cannot change');
 DO $$ BEGIN RAISE NOTICE 'PASS: scope immutable, approval provenance sealed, consumption one-way, withdrawal terminal'; END $$;
 ROLLBACK;

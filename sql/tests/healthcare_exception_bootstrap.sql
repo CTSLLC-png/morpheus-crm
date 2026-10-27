@@ -2,6 +2,7 @@
 CREATE SCHEMA core;
 CREATE SCHEMA auth;
 CREATE SCHEMA melrah;
+CREATE TABLE auth.users(id uuid PRIMARY KEY);
 CREATE TABLE melrah.healthcare_facility_scope (
  tenant_id uuid NOT NULL, facility_id uuid NOT NULL,
  PRIMARY KEY(tenant_id,facility_id));
