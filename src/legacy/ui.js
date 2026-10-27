@@ -327,7 +327,7 @@ function viewPlan(){
         <p class="why">Why this shows up: ${r.why}</p>
         <p>${r.action}</p>
         ${r.opts.length?`<div><div class="eyebrow" style="margin-bottom:6px">Options to explore</div><div class="chips">${HAS ? r.opts.map(optChip).join("") : lockChips(r.opts.length)}</div></div>`:""}
-        <div class="actions">${r.link?`<a class="btn small" href="#${r.link}">Open the guide</a>`:""}${askLink(r.title.replace(/<[^>]+>/g,"")+". "+r.action)}</div>
+        <div class="actions">${r.link?`<a class="btn small" href="#${r.link}">Open the guide</a>`:""}${askLink(r.title.replace(/<[^>]*>/g,"").replace(/[<>]/g,"")+". "+r.action)}</div>
       </div></article>`).join("")}</section>`; };
   const bandsHere = [...new Set(people(d).map(p=>bandFor(p.age).label))];
   return `${sampleNotice()}
@@ -510,11 +510,11 @@ function viewLocked(r){
 
 /* ---------- router ---------- */
 const VIEWS = {plan:viewPlan, screener:viewScreener, stages:viewStages, library:viewLibrary, estate:viewEstate, insurance:viewInsurance, burial:viewBurial, ask:viewAsk};
-function route(){ const h=(location.hash||"").slice(1); return VIEWS[h]?h:"plan"; }
+function route(){ const h=(location.hash||"").slice(1); return Object.prototype.hasOwnProperty.call(VIEWS,h)?h:"plan"; }
 function render(){
   const r = route(); renderNav(r);
   if (!HAS && PAID.includes(r)) { $("#view").innerHTML = viewLocked(r); return; }
-  $("#view").innerHTML = VIEWS[r]();
+  const view = Object.prototype.hasOwnProperty.call(VIEWS,r) ? VIEWS[r] : VIEWS.plan; $("#view").innerHTML = view();
   if (r==="screener") bindScreener();
   if (r==="stages") root.querySelectorAll("[data-band]").forEach(t=>t.onclick=()=>{ S.band=t.dataset.band; render(); });
   if (r==="insurance") root.querySelectorAll("[data-ins]").forEach(t=>t.onclick=()=>{ S.insTab=t.dataset.ins; render(); });
