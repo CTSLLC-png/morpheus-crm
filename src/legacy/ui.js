@@ -514,7 +514,7 @@ function route(){ const h=(location.hash||"").slice(1); return Object.prototype.
 function render(){
   const r = route(); renderNav(r);
   if (!HAS && PAID.includes(r)) { $("#view").innerHTML = viewLocked(r); return; }
-  const view = Object.prototype.hasOwnProperty.call(VIEWS,r) ? VIEWS[r] : null; $("#view").innerHTML = typeof view === "function" ? view() : viewPlan();
+  const view = new Map(Object.entries(VIEWS)).get(r); $("#view").innerHTML = typeof view === "function" ? view() : viewPlan();
   if (r==="screener") bindScreener();
   if (r==="stages") root.querySelectorAll("[data-band]").forEach(t=>t.onclick=()=>{ S.band=t.dataset.band; render(); });
   if (r==="insurance") root.querySelectorAll("[data-ins]").forEach(t=>t.onclick=()=>{ S.insTab=t.dataset.ins; render(); });
