@@ -22,7 +22,7 @@ export default function MelrahDriver() {
 
   return (
     <div style={{maxWidth:760,margin:'0 auto'}}>
-      <ModuleHeader title="MELRAH FIELD™" subtitle="Today's route · mobile collection workflow" right={<Pill tone="info">{appointments.length} stops</Pill>} />
+      <ModuleHeader title="NGUZO FIELD™" subtitle="Today's route · mobile collection workflow" right={<Pill tone="info">{appointments.length} stops</Pill>} />
       {!active ? <Empty /> : <>
         <div style={card}>
           <div style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'center'}}>
