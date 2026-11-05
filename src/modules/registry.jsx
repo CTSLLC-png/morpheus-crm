@@ -49,7 +49,7 @@ export const MODULE_REGISTRY = {
     component: lazy(() => import('./melrah/Dispatch.jsx')),
   },
   'logistics.field': {
-    nav: [{ path: '/field', label: 'MELRAH FIELD', icon: 'clipboard', order: 94 }],
+    nav: [{ path: '/field', label: 'NGUZO FIELD', icon: 'clipboard', order: 94 }],
     component: lazy(() => import('./melrah/FieldMobile.jsx')),
   },
   'logistics.stations': {
