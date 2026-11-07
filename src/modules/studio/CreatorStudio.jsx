@@ -4,7 +4,7 @@
 //    stand-alone creator-studio-cinema site it replaces. Approved Campaign
 //    Studio assets arrive here as projects with their queue already filled.
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.jsx'
 import { ModuleHeader, Pill, DataState, styles } from '../common/ModuleFrame.jsx'
@@ -14,7 +14,9 @@ import {
   createAssets, updateAsset, setFinalMedia, uploadAssetFile, signedUrls, parseBulkAssets, guessKind,
 } from './studioApi.js'
 
-const TABS = [['overview', 'Overview'], ['projects', 'Projects'], ['vault', 'Asset vault'], ['queue', 'Production queue']]
+const TABS = [['overview', 'Overview'], ['projects', 'Projects'], ['vault', 'Asset vault'], ['queue', 'Production queue'], ['render', 'Render']]
+// The render engine screen loads only when its tab is opened.
+const RenderEngine = lazy(() => import('./RenderEngine.jsx'))
 const PRIORITY_TONE = { critical: 'bad', high: 'warn', normal: 'info', low: 'neutral' }
 const STAGE_TONE = { delivered: 'good', 'final-cut': 'good', 'on-hold': 'neutral' }
 const label = s => s.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())
@@ -63,6 +65,11 @@ export default function CreatorStudio() {
         {tab === 'projects' && <Projects {...data} openId={openId} onOpen={openProject} reload={load} />}
         {tab === 'vault'    && <Vault {...data} reload={load} />}
         {tab === 'queue'    && <Queue {...data} onOpen={openProject} reload={load} />}
+        {tab === 'render'   && (
+          <Suspense fallback={<div style={styles.pad}>Loading…</div>}>
+            <RenderEngine studioProjects={data.projects} />
+          </Suspense>
+        )}
       </DataState>
     </div>
   )

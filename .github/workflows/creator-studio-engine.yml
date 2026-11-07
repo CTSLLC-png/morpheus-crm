@@ -1,0 +1,54 @@
+name: Creator Studio engine security
+on:
+  pull_request:
+    paths:
+      - 'sql/0020_creator_studio_engine.sql'
+      - 'sql/tests/creator_studio_engine_*.sql'
+      - '.github/workflows/creator-studio-engine.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/0020_creator_studio_engine.sql'
+      - 'sql/tests/creator_studio_engine_*.sql'
+      - '.github/workflows/creator-studio-engine.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  creator-studio-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: creator_studio
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d creator_studio"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: creator_studio
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Create disposable parent schema
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/creator_studio_engine_bootstrap.sql
+      - name: Install migration
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/0020_creator_studio_engine.sql
+      - name: Re-run migration (must be idempotent)
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/0020_creator_studio_engine.sql
+      - name: Tenant isolation, approval gate and double-spend checks
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/creator_studio_engine_integration.sql
