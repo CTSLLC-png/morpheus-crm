@@ -35,7 +35,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   render:
-    runs-on: ubuntu-latest
+    # Pinned: the renderer's Playwright version (1.56) has no browser build for newer Ubuntu images.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     defaults:
       run:
