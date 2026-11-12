@@ -1,0 +1,125 @@
+name: Creator Studio render
+# Cloud render worker for Creator Studio. Renders video scripts with the
+# in-house renderer (tools/video: Piper voice, HTML scenes, ffmpeg) on a
+# GitHub runner, so no one's computer has to be on.
+#
+#   push to render/**   → renders every script that differs from main, then
+#                         files the results in the Creator Studio asset vault
+#   workflow_dispatch   → renders one named script; filing is optional
+#   pull_request        → smoke test: renders the sample script, files nothing
+#
+# Filing needs the STUDIO_AGENT_KEY repository secret (see
+# docs/creator-studio-autonomy.md). Without it the render/** job stops before
+# rendering. No paid service is called anywhere in this workflow.
+on:
+  push:
+    branches: ['render/**']
+  pull_request:
+    paths:
+      - 'tools/video/**'
+      - '.github/workflows/studio-render.yml'
+  workflow_dispatch:
+    inputs:
+      script:
+        description: 'Script file name in tools/video/scripts (for example legacy-path-explainer.json)'
+        required: true
+        type: string
+      publish:
+        description: 'File the results in the Creator Studio vault'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: studio-render-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: tools/video
+    env:
+      EVENT: ${{ github.event_name }}
+      INPUT_SCRIPT: ${{ inputs.script }}
+      INPUT_PUBLISH: ${{ inputs.publish }}
+      HAS_KEY: ${{ secrets.STUDIO_AGENT_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Choose scripts and decide whether to file results
+        id: plan
+        run: |
+          set -euo pipefail
+          case "$EVENT" in
+            pull_request)
+              scripts="scripts/legacy-path-explainer.json"; publish=false ;;
+            workflow_dispatch)
+              name="$(basename -- "$INPUT_SCRIPT")"
+              case "$name" in *.json) ;; *) echo "::error::Script must be a .json file name"; exit 1 ;; esac
+              [ -f "scripts/$name" ] || { echo "::error::tools/video/scripts/$name not found"; exit 1; }
+              scripts="scripts/$name"; publish="$INPUT_PUBLISH" ;;
+            *)
+              git fetch --quiet origin main
+              scripts="$(git diff --name-only --diff-filter=AM origin/main...HEAD -- 'scripts/*.json' | sed 's#^tools/video/##' | tr '\n' ' ')"
+              publish=true ;;
+          esac
+          if [ "$publish" = "true" ] && [ "$HAS_KEY" != "true" ]; then
+            echo "::error::STUDIO_AGENT_KEY secret is not set, so results cannot be filed in the vault. See docs/creator-studio-autonomy.md."
+            exit 1
+          fi
+          echo "scripts=$scripts" >> "$GITHUB_OUTPUT"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+          echo "Scripts: ${scripts:-none}. File in vault: $publish" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        if: steps.plan.outputs.scripts != ''
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tools/video/package-lock.json
+      - uses: actions/setup-python@v5
+        if: steps.plan.outputs.scripts != ''
+        with:
+          python-version: '3.11'
+      - name: Restore voices
+        if: steps.plan.outputs.scripts != ''
+        uses: actions/cache@v4
+        with:
+          path: tools/video/voices
+          key: piper-voices-${{ hashFiles('tools/video/setup.mjs') }}
+      - name: Install renderer
+        if: steps.plan.outputs.scripts != ''
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run setup
+      - name: Test the vault publisher
+        if: steps.plan.outputs.scripts != ''
+        run: node --test publish.test.mjs
+      - name: Render
+        if: steps.plan.outputs.scripts != ''
+        env:
+          SCRIPTS: ${{ steps.plan.outputs.scripts }}
+        run: |
+          set -euo pipefail
+          for s in $SCRIPTS; do npm run render -- "$s"; done
+          ls -la out
+      - name: File results in the Creator Studio vault
+        if: steps.plan.outputs.scripts != '' && steps.plan.outputs.publish == 'true'
+        env:
+          SCRIPTS: ${{ steps.plan.outputs.scripts }}
+          STUDIO_AGENT_KEY: ${{ secrets.STUDIO_AGENT_KEY }}
+        run: |
+          set -euo pipefail
+          for s in $SCRIPTS; do node publish.mjs "$s"; done
+      # Smoke-test output only: the sample explainer, kept for three days.
+      # Vault-bound renders are never attached to the run.
+      - name: Keep the smoke-test render
+        if: steps.plan.outputs.scripts != '' && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-render-${{ github.run_id }}
+          path: tools/video/out
+          retention-days: 3
