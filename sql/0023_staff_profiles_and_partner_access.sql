@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0021_staff_profiles_and_partner_access.sql
+-- 0023_staff_profiles_and_partner_access.sql
 -- Restore the staff profile rows, and split partner administration so
 -- granting access is narrower than revoking it.
 --
