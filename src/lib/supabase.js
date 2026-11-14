@@ -33,9 +33,16 @@ const useEnv = isValidUrl(ENV_URL) && isValidAnon(ENV_ANON)
 const SUPABASE_URL  = useEnv ? ENV_URL.replace(/\/$/, '')  : DEFAULT_URL
 const SUPABASE_ANON = useEnv ? ENV_ANON : DEFAULT_ANON
 
-// Never blank-screen: if config is somehow still missing, show a
-// readable diagnostic instead of crashing the whole app at load.
-if (!SUPABASE_URL || !SUPABASE_ANON) {
+// Never blank-screen: if config is somehow unusable, show a readable
+// diagnostic instead of crashing the whole app at load.
+//
+// This checks the RESOLVED pair against the same validators used above, not
+// merely that the strings are non-empty. An emptiness check could never fire:
+// both values fall back to the non-empty literals at the top of this file, so
+// the guard read as protection while being unreachable. Validating instead
+// means it still catches the one failure that can actually happen here — a
+// built-in default edited into something malformed.
+if (!isValidUrl(SUPABASE_URL) || !isValidAnon(SUPABASE_ANON)) {
   const el = document.getElementById('root')
   if (el) {
     el.innerHTML =
@@ -126,7 +133,15 @@ export async function getSession() {
 }
 
 /**
- * Get role from app metadata: 'super_admin' | 'trainer' | 'participant'
+ * Get role from app metadata: 'super_admin' | 'trainer' | 'participant' |
+ * 'vendor' | 'lp_customer', or null.
+ *
+ * Returns the stored string as-is rather than filtering it. The list this
+ * build knows how to route is KNOWN_ROLES in hooks/useAuth.jsx, and the
+ * router treats anything outside it as unplaceable rather than as access —
+ * so an unrecognised role is already handled there, and silently mapping it
+ * to null here would hide the difference between "no role yet" and "a role
+ * this build does not understand".
  *
  * SECURITY: this reads app_metadata, NOT user_metadata. app_metadata can
  * only be written by a trusted server (the service_role key, used inside
