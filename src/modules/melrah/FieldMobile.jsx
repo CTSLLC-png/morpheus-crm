@@ -24,7 +24,7 @@ export default function FieldMobile(){
  const program=programFor(active)
  const coffee=isCoffee(active)
  return <main className='field-mobile'>
-  <header><div><small>MELRAH FIELD™</small><h2>Today’s Route</h2></div><b className={online?'field-online':'field-offline'}>{online?'ONLINE':'OFFLINE'} · {queued} QUEUED</b></header>
+  <header><div><small>NGUZO FIELD™</small><h2>Today’s Route</h2></div><b className={online?'field-online':'field-offline'}>{online?'ONLINE':'OFFLINE'} · {queued} QUEUED</b></header>
   {!active?<section className='field-card'>No assigned stops. {rows.length?'Route complete.':'Connect once to download the Route Briefcase.'}</section>:<>
    <section className='field-card'><small>NEXT STOP · {program.shortLabel}</small><h1>{active.route_name||'Collection Route'}</h1><p>{active.scheduled_start?new Date(active.scheduled_start).toLocaleString():'Unscheduled'} · Stop {active.sequence_no||'—'}</p><strong>{active.status.replace('_',' ')}</strong></section>
    <section className='field-card'><small>GUIDED WORKFLOW</small><p className='field-help'>One action at a time. Nguzo timestamps each step and keeps it in your Route Briefcase if service drops.</p>{next&&<button className='field-primary' onClick={step}>{LABEL[next]}</button>}</section>

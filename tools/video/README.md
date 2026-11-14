@@ -40,7 +40,13 @@ Copy `scripts/legacy-path-explainer.json` and edit it. Each scene has a `kind` a
 - **Voice:** set `"voice"` to `en-us-lessac-medium` (female) or `en-us-ryan-medium` (male). `"lengthScale"` above 1 slows the delivery.
 - **Copy:** narration and on-screen text must come from an **approved** Campaign Studio draft. The renderer produces video, not copy, so it adds nothing a reviewer hasn't seen.
 
+## Render in the cloud
+
+Push a script to a branch named `render/<anything>` and the **Creator Studio render** workflow renders it on a GitHub runner and files the results in the asset vault, with no computer of ours switched on. Add `"studioProjectId": "<project id>"` to the script to attach the files to a Creator Studio project. Setup and limits: [`docs/creator-studio-autonomy.md`](../../docs/creator-studio-autonomy.md).
+
 ## After rendering
+
+If you rendered on your own machine:
 
 1. Upload the MP4s and thumbnails in **Nguzo → Creator Studio → Asset vault → Upload files**.
 2. Paste the hosted link as the project's **final cut**. It flows back to the campaign asset, so results can be tied to the video.

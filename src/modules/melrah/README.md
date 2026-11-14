@@ -1,6 +1,6 @@
-# MELRAH FIELD™ v1
+# NGUZO FIELD™ v1
 
-MELRAH FIELD is the field-service and recovery-intelligence layer for Melrah Environmental Services inside Nguzo OS.
+NGUZO FIELD is the field-service and recovery-intelligence layer for Melrah Environmental Services inside Nguzo OS.
 
 ## Core workflow
 
@@ -9,7 +9,7 @@ Collection Station → Pickup Request / Work Order → Dispatch → Driver → C
 ## Included UI modules
 
 - **Operations Control** — dispatch queue, capacity alerts, field-resource overview
-- **MELRAH FIELD** — mobile-first route/appointment workflow
+- **NGUZO FIELD** — mobile-first route/appointment workflow
 - **Collection Stations** — service locations, station assets, stream containers, QR identity
 - **Work Orders** — existing work-order + custody ledger view
 - **Recovery Intelligence** — recovered weight, package counts, pouch recovery, contamination, disposition

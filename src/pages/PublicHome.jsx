@@ -47,7 +47,7 @@ export default function PublicHome() {
         </section>
       </main>
       <footer style={{borderTop:'1px solid #1f3945',padding:'28px 24px',color:'#8faab1'}}>
-        <div style={{maxWidth:1120,margin:'0 auto',display:'flex',gap:18,justifyContent:'space-between',flexWrap:'wrap'}}><span>© 2026 Certified Training Standards LLC · Nguzo OS</span><span>Albany, New York · (518) 363-1140</span></div>
+        <div style={{maxWidth:1120,margin:'0 auto',display:'flex',gap:18,justifyContent:'space-between',flexWrap:'wrap'}}><span>© 2026 Certified Training Standards LLC · Nguzo OS</span><span>Albany, New York · (518) 288-6193</span></div>
       </footer>
     </div>
   )

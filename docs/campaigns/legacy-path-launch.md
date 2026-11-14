@@ -149,7 +149,7 @@ Every email ends with:
 >
 > Could we find 15 minutes to talk this month?
 >
-> {SENDER} · Certified Training Standards LLC · (518) 363-1140
+> {SENDER} · Certified Training Standards LLC · (518) 288-6193
 
 ### 6.8 Explainer video (60 s): voiceover
 > "Most families don't have a money plan. Not because they don't care, but because nobody ever showed them one. *(beat)* Legacy Path is a plan for your family's money at every age. Start with a free five-minute screener. Ranges are fine, and it never asks for bank logins. You'll see what to do first, what to work on next, and what can wait. Then, for twenty dollars, once, your whole household gets every guide: savings and credit, retirement, a home, insurance, wills and trusts, and a funeral your family can afford, in your tradition. *(beat)* Legacy Path. From the cradle to the legacy years."

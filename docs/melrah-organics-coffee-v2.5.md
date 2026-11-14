@@ -1,7 +1,7 @@
 # Nguzo OS v2.5 — Melrah Organics / Coffee Grounds
 
 ## Objective
-Extend the existing MELRAH FIELD recovery platform so one dispatch engine can manage cannabis-packaging recovery and spent-coffee-grounds recovery without duplicating logistics code.
+Extend the existing NGUZO FIELD recovery platform so one dispatch engine can manage cannabis-packaging recovery and spent-coffee-grounds recovery without duplicating logistics code.
 
 ## Shared workflow
 Station / Generator → Pickup Request / Work Order → Dispatch → Driver → Collection Record → Material Batch → Final Disposition → Recovery Intelligence
@@ -101,7 +101,7 @@ Coffee recovery dashboard metrics:
 - contribution margin per stop (when cost data is available)
 
 ## Day-1 implementation principle
-Reuse the existing MELRAH FIELD status model and downstream batch chain. Do not represent coffee grounds as composted, recycled, or otherwise recovered until a verified final disposition exists.
+Reuse the existing NGUZO FIELD status model and downstream batch chain. Do not represent coffee grounds as composted, recycled, or otherwise recovered until a verified final disposition exists.
 
 ## Regression requirement
 Before enabling mixed-program production routes, confirm the authenticated Route Briefcase reliably returns assigned cannabis test work orders. The existing dispatch/RLS retrieval behavior must remain a regression test so the organics program does not reproduce a hidden-assignment defect.
@@ -110,7 +110,7 @@ Before enabling mixed-program production routes, confirm the authenticated Route
 1. Add `program_key` support to shared Melrah data objects.
 2. Seed `ORGANICS_COFFEE` program and coffee material-stream configuration.
 3. Add coffee-specific collection form fields and validation.
-4. Add program badge / form resolver to Dispatch and MELRAH FIELD.
+4. Add program badge / form resolver to Dispatch and NGUZO FIELD.
 5. Extend Recovery Intelligence filters and metrics by program.
 6. Add coffee pilot fixtures/tests.
 7. Enable mixed-program route optimization after single-program coffee pilot validation.
