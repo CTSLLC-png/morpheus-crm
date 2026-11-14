@@ -2,7 +2,7 @@
 // ── Nguzo OS — Login page ───────────────────────────────────
 
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { signIn, sendPasswordReset } from '../lib/supabase.js'
 
 export default function Login() {
@@ -74,12 +74,19 @@ export default function Login() {
                 {loading ? 'Signing in…' : 'Sign in'}
               </button>
             </form>
-            <button
-              style={styles.link}
-              onClick={() => { setMode('reset'); setError(null) }}
-            >
-              Forgot password?
-            </button>
+            <div style={styles.linkRow}>
+              <button
+                style={styles.link}
+                onClick={() => { setMode('reset'); setError(null) }}
+              >
+                Forgot password?
+              </button>
+              {/* Registration is gated by an enrolment code, so this link is
+                  safe to show publicly: without a code it goes nowhere. */}
+              <Link to="/register" style={styles.link}>
+                Have an enrolment code? Create your account
+              </Link>
+            </div>
           </>
         ) : (
           <>
@@ -159,6 +166,7 @@ const styles = {
   },
   error: { fontSize: '13px', color: '#993C1D', background: '#FAECE7', borderRadius: '8px', padding: '10px 12px' },
   success: { fontSize: '13px', color: '#0F6E56', background: '#E1F5EE', borderRadius: '8px', padding: '12px 14px', marginBottom: '14px', lineHeight: '1.6' },
-  link: { background: 'none', border: 'none', color: '#2176AE', fontSize: '13px', cursor: 'pointer', padding: '0', fontFamily: "'DM Sans', sans-serif" },
+  link: { background: 'none', border: 'none', color: '#2176AE', fontSize: '13px', cursor: 'pointer', padding: '0', fontFamily: "'DM Sans', sans-serif", textDecoration: 'none', textAlign: 'left' },
+  linkRow: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' },
   footer: { marginTop: '28px', paddingTop: '18px', borderTop: '1px solid #E8EFF6', fontSize: '12px', color: '#5D768A', textAlign: 'center', lineHeight: '1.6' },
 }

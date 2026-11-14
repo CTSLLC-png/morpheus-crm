@@ -41,6 +41,9 @@ const FALLBACK_TENANT = {
 export function TenantProvider({ children }) {
   const { session, loading: authLoading } = useAuth()
   const [tenants, setTenants] = useState([])
+  // core.product_family — the brand groupings (ClearCall today). Names only;
+  // which modules belong to which family comes from each module's `family`.
+  const [families, setFamilies] = useState([])
   const [tenantId, setTenantId] = useState(() => localStorage.getItem(STORAGE_KEY))
   const [source, setSource] = useState(null)
   const [kernelError, setKernelError] = useState(null)
@@ -49,13 +52,14 @@ export function TenantProvider({ children }) {
   useEffect(() => {
     let cancelled = false
     if (authLoading) return
-    if (!session) { setTenants([]); setLoading(false); return }
+    if (!session) { setTenants([]); setFamilies([]); setLoading(false); return }
 
     setLoading(true)
-    loadWorkspace().then(({ tenants, source, error }) => {
+    loadWorkspace().then(({ tenants, families, source, error }) => {
       if (cancelled) return
       const resolved = tenants.length ? tenants : [FALLBACK_TENANT]
       setTenants(resolved)
+      setFamilies(families ?? [])
       setSource(tenants.length ? source : 'fallback')
       setKernelError(error)
       setTenantId(prev =>
@@ -85,7 +89,7 @@ export function TenantProvider({ children }) {
   )
 
   const value = {
-    loading, tenants, tenant, tenantId, modules,
+    loading, tenants, tenant, tenantId, modules, families,
     source, kernelError,
     isMultiTenant: tenants.length > 1,
     selectTenant: setTenantId,

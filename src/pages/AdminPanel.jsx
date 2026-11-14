@@ -20,6 +20,9 @@ const ROLES = [
   { value: 'participant', label: 'Participant',  desc: 'Self-service portal, practice calls' },
   { value: 'trainer',     label: 'Trainer',      desc: 'Manage cohorts, run sessions, score calls' },
   { value: 'super_admin', label: 'Super Admin',  desc: 'Full access including this panel' },
+  // A partner is not staff and gets no staff_profiles row. What they can see
+  // comes from the cohorts granted in Partner access, nothing else.
+  { value: 'vendor',      label: 'Partner',      desc: 'View-only, limited to the cohorts you grant' },
 ]
 
 const PROGRAM_SOURCES = [
@@ -109,11 +112,17 @@ export default function AdminPanel() {
           if (data?.error) throw new Error(data.error)
 
       setSuccess(
-        `${form.role === 'participant' ? 'Participant' : 'Staff'} account created for ${form.email}` +
-        (form.role === 'participant' ? ` · CTS ID: ${data.cts_id}` : '')
+        `${ROLES.find(r => r.value === form.role)?.label ?? 'Account'} account created for ${form.email}` +
+        (form.role === 'participant' ? ` · CTS ID: ${data.cts_id}` : '') +
+        // A partner account is inert until it is attached to an organisation
+        // and granted cohorts, so say so rather than letting it look finished.
+        (form.role === 'vendor'
+          ? ' · Next: attach it to a partner organisation and grant cohorts in Partner access.'
+          : '')
       )
       setForm({ email:'', password:'', role:'participant', full_name:'', title:'', program_source:'LDSS Albany' })
-      if (form.role !== 'participant') loadStaff()
+      // Only staff appear in the staff directory; a partner has no profile row.
+      if (form.role === 'trainer' || form.role === 'super_admin') loadStaff()
     } catch(e) {
       setError(e.message)
     } finally {
@@ -152,7 +161,7 @@ export default function AdminPanel() {
 
           {/* Role selector */}
           <div role="radiogroup" aria-label="Account type"
-            style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'10px', marginBottom:'20px' }}>
+            style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:'10px', marginBottom:'20px' }}>
             {ROLES.map(r => (
               <RadioCard key={r.value}
                 name="account-role"
@@ -174,7 +183,10 @@ export default function AdminPanel() {
                   onChange={e => set('full_name', e.target.value)}
                   placeholder="First and last name" />
               </div>
-              {form.role !== 'participant' && (
+              {/* Staff only: a job title lands on staff_profiles, and a partner
+                  has no such row, so offering the field would collect input
+                  the server discards. */}
+              {(form.role === 'trainer' || form.role === 'super_admin') && (
                 <div style={s.fg}>
                   <label style={s.label} htmlFor="adminpanel-job-title">Job title</label>
                   <input id="adminpanel-job-title" style={s.input} value={form.title}

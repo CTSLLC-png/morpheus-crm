@@ -8,8 +8,28 @@ import { BARE_BUTTON, SkipLink } from '../components/a11y.jsx'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { getParticipantProfile, getCallHistory, checkCertEligibility } from '../lib/db.js'
 import { loadParticipantModules } from '../lib/morpheus.js'
+import { getEngagementHours } from '../lib/engagement.js'
+import { useEngagementTimer } from '../hooks/useEngagementTimer.js'
 import { useCallSession, CALL_STATES } from '../hooks/useCallSession.js'
 import Academy from './Academy.jsx'
+
+/**
+ * Which core.module a participant-facing route belongs to, for engagement
+ * telemetry. The keys are core.module keys because
+ * engagement_module_time.module_key is a foreign key to core.module.key.
+ *
+ * The dashboard is deliberately absent: it belongs to no module, and timing
+ * it would inflate a figure that is already soft.
+ */
+const ROUTE_MODULE = [
+  { prefix: '/academy',  moduleKey: 'workforce.academy' },
+  { prefix: '/calls',    moduleKey: 'workforce.cer' },
+  { prefix: '/progress', moduleKey: 'workforce.cer' },
+]
+
+function moduleKeyForPath(pathname) {
+  return ROUTE_MODULE.find(r => pathname.startsWith(r.prefix))?.moduleKey ?? null
+}
 
 const SCENARIO_TYPES = [
   'Billing dispute – frustrated customer',
@@ -38,6 +58,7 @@ export default function ParticipantShell() {
   // null = still resolving. Never render nav from a half-loaded state, or a
   // participant briefly sees tabs disappear.
   const [myModules, setMyModules] = useState(null)
+  const [engagement, setEngagement] = useState([])
 
   useEffect(() => {
     if (!participantId) return
@@ -53,7 +74,18 @@ export default function ParticipantShell() {
     }
     load()
     loadParticipantModules().then(setMyModules)
+    // Telemetry read: never allowed to fail the page, so it returns [].
+    getEngagementHours(participantId).then(setEngagement)
   }, [participantId])
+
+  // Engagement capture. Time on a module screen only, while the tab is
+  // visible. This is NOT attendance and NOT contact hours — see
+  // lib/engagement.js. Fire and forget: nothing on screen depends on it.
+  useEngagementTimer({
+    participantId,
+    moduleKey: moduleKeyForPath(location.pathname),
+    enabled: Boolean(moduleKeyForPath(location.pathname)),
+  })
 
   /**
    * While assignments are loading, and if the lookup fails outright, show
@@ -108,7 +140,7 @@ export default function ParticipantShell() {
         <div style={sh.userArea}>
           <div style={sh.userName}>{profile?.full_name ?? user?.email}</div>
           <div style={sh.userSub}>{profile?.cts_id} · {profile?.program_source}</div>
-          <button style={sh.signOutBtn} onClick={() => signOut().then(() => navigate('/login'))}>Sign out</button>
+          <button style={sh.signOutBtn} onClick={() => signOut({ participantId }).then(() => navigate('/login'))}>Sign out</button>
         </div>
       </aside>
 
@@ -132,6 +164,7 @@ export default function ParticipantShell() {
                 completedCalls={completedCalls}
                 avgScore={avgScore}
                 eligibility={eligibility}
+                engagement={engagement}
                 navigate={navigate}
               />
             } />
@@ -156,7 +189,7 @@ export default function ParticipantShell() {
 }
 
 // ── Portal dashboard ──────────────────────────────────────────
-function PortalDashboard({ firstName, profile, callHistory, completedCalls, avgScore, eligibility, navigate }) {
+function PortalDashboard({ firstName, profile, callHistory, completedCalls, avgScore, eligibility, engagement = [], navigate }) {
   const scoreColor = s => s >= 80 ? '#0F6E56' : s >= 60 ? '#854F0B' : '#993C1D'
   const isCert = eligibility?.already_certified
   const isElig = eligibility?.is_eligible && !isCert
@@ -195,6 +228,29 @@ function PortalDashboard({ firstName, profile, callHistory, completedCalls, avgS
       )}
 
       <button style={sh.startBtn} onClick={() => navigate('/calls')}>Start a practice call →</button>
+
+      {/* Engagement. Deliberately NOT called attendance or contact hours:
+          this is time a browser tab spent on a module screen, nobody
+          attested to it, and no caseworker can verify it. The attested
+          record is kept by staff in EmpowerCare attendance. */}
+      {engagement.length > 0 && (
+        <div style={sh.card}>
+          <div style={sh.cardTitle}>Your engagement time</div>
+          <div style={{ fontSize: '12px', color: '#5D768A', lineHeight: '1.6', marginBottom: '12px' }}>
+            Time this browser spent on your course screens. It is a rough guide for
+            you only — it is not attendance and it is not contact hours, and your
+            trainer keeps the official record separately.
+          </div>
+          {engagement.map(e => (
+            <div key={e.module_key} style={sh.callRow}>
+              <span style={sh.callScenario}>{e.module_key}</span>
+              <span style={{ ...sh.callScore, color: '#4A6080', background: '#F7F9FC' }}>
+                {Number(e.engagement_hours ?? 0).toFixed(1)} h
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Recent calls */}
       <div style={sh.card}>

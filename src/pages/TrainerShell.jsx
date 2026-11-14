@@ -5,7 +5,7 @@ import { signOut } from '../lib/supabase.js'
 import { SITE_HOST } from '../lib/site.js'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useTenant } from '../hooks/useTenant.jsx'
-import { navForModules, routableModules, plannedModules, missingModules } from '../modules/registry.jsx'
+import { navForModules, navGroupsForModules, routableModules, plannedModules, missingModules } from '../modules/registry.jsx'
 import { BARE_BUTTON, SkipLink } from '../components/a11y.jsx'
 import { ModuleBoundary } from '../modules/common/ModuleFrame.jsx'
 import { getDashboardStats, getCohortOverview, getParticipantPerformance } from '../lib/db.js'
@@ -16,6 +16,8 @@ import CallSimulator       from './CallSimulator.jsx'
 import ScoreMatrix         from './ScoreMatrix.jsx'
 import AdminPanel          from './AdminPanel.jsx'
 import AcademyAdmin        from './AcademyAdmin.jsx'
+import EnrolmentCodes      from './EnrolmentCodes.jsx'
+import VendorAdmin         from './VendorAdmin.jsx'
 
 // NAV_BASE used to live here. Navigation now comes from the module registry,
 // which reads core.tenant_module — Claude Academy included. Its nav item and
@@ -36,9 +38,21 @@ const ICONS = {
 
 function scoreColor(s) { return s >= 80 ? '#0F6E56' : s >= 60 ? '#854F0B' : '#993C1D' }
 
+function NavButton({ item, location, navigate }) {
+  const active = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
+  return (
+    <button type="button"
+      aria-current={active ? 'page' : undefined}
+      style={{ ...BARE_BUTTON, ...sh.navItem, ...(active ? sh.navActive : {}), width: '100%' }}
+      onClick={() => navigate(item.path)}>
+      <span aria-hidden="true" style={{ opacity: active ? 1 : 0.65 }}>{ICONS[item.icon]}</span>{item.label}
+    </button>
+  )
+}
+
 export default function TrainerShell() {
   const { user, role } = useAuth()
-  const { tenant, tenants, modules, isMultiTenant, selectTenant, loading: tenantLoading } = useTenant()
+  const { tenant, tenants, modules, families, isMultiTenant, selectTenant, loading: tenantLoading } = useTenant()
   const navigate = useNavigate()
   const location = useLocation()
   const isAdmin  = role === 'super_admin'
@@ -47,12 +61,23 @@ export default function TrainerShell() {
   // Navigation is data. Every item below comes from the modules this tenant
   // has enabled in core.tenant_module — nothing here is hardcoded per client.
   const moduleNav   = navForModules(modules)
+  // Module tabs grouped by core.module.family, so ClearCall (workforce.cer +
+  // workforce.empowercare) reads as one product and Claude Academy does not.
+  const moduleGroups = navGroupsForModules(modules, families)
   const moduleRoutes = routableModules(modules)
   const pending     = plannedModules(modules)
   const missing     = missingModules(modules)
-  const NAV = isAdmin
-    ? [...moduleNav, { path:'/admin', label:'Admin panel', icon:'shield' }]
-    : moduleNav
+
+  // Staff administration. Not module tabs: the RLS behind enrolment codes and
+  // partner access is current_user_role() IN ('trainer','super_admin'), which
+  // is what this shell already is, so these do not belong to any tenant
+  // module and sit outside the product-family grouping.
+  const ADMIN_NAV = [
+    { path: '/enrolment-codes', label: 'Enrolment codes', icon: 'badge' },
+    { path: '/partner-access',  label: 'Partner access',  icon: 'network' },
+    ...(isAdmin ? [{ path: '/admin', label: 'Admin panel', icon: 'shield' }] : []),
+  ]
+  const NAV = [...moduleNav, ...ADMIN_NAV]
 
   const [stats, setStats]               = useState(null)
   const [cohorts, setCohorts]           = useState([])
@@ -102,18 +127,25 @@ export default function TrainerShell() {
           {!tenantLoading && NAV.length === 0 && (
             <div style={sh.navHint}>No modules enabled for this organisation.</div>
           )}
-          {NAV.map(item => {
-            const active = item.path==='/' ? location.pathname==='/' : location.pathname.startsWith(item.path)
-            return (
-              <button key={`${item.moduleKey ?? 'core'}${item.path}`}
-                   type="button"
-                   aria-current={active ? 'page' : undefined}
-                   style={{...BARE_BUTTON, ...sh.navItem, ...(active?sh.navActive:{}), width:'100%'}}
-                   onClick={() => navigate(item.path)}>
-                <span aria-hidden="true" style={{opacity:active?1:0.65}}>{ICONS[item.icon]}</span>{item.label}
-              </button>
-            )
-          })}
+          {/* Grouped by product family. The heading exists because
+              core.module.family says so, not because it was typed here. */}
+          {moduleGroups.map((group, gi) => (
+            <div key={group.key ?? `solo-${gi}`}>
+              {group.name && <div style={sh.navFamily}>{group.name}</div>}
+              {group.items.map(item => (
+                <NavButton key={`${item.moduleKey ?? 'core'}${item.path}`}
+                  item={item} location={location} navigate={navigate} />
+              ))}
+            </div>
+          ))}
+          {ADMIN_NAV.length > 0 && (
+            <>
+              <div style={sh.navSec}>Administration</div>
+              {ADMIN_NAV.map(item => (
+                <NavButton key={item.path} item={item} location={location} navigate={navigate} />
+              ))}
+            </>
+          )}
           {missing.length > 0 && (
             <>
               <div style={{...sh.navSec, color:'#F0A868'}}>Not wired into this build</div>
@@ -167,6 +199,11 @@ export default function TrainerShell() {
             <Route path="/participants/:id" element={<ParticipantProfile/>}/>
             <Route path="/cohorts" element={<CohortManagement cohorts={cohorts}/>}/>
             <Route path="/matrix"  element={<ScoreMatrix/>}/>
+            {/* Staff access administration. Gated at the database by
+                current_user_role() IN ('trainer','super_admin'); these pages
+                authorise nothing by themselves. */}
+            <Route path="/enrolment-codes" element={<EnrolmentCodes cohorts={cohorts}/>}/>
+            <Route path="/partner-access"  element={<VendorAdmin cohorts={cohorts}/>}/>
             {isAdmin && <Route path="/admin" element={<AdminPanel/>}/>}
 
             {/* Registry-driven modules. A route exists only because the tenant
@@ -303,6 +340,7 @@ const sh = {
   logoSub:{fontSize:'10px',color:'rgba(255,255,255,0.60)',letterSpacing:'0.07em',marginTop:'2px'},
   nav:{padding:'12px 10px',flex:1,overflowY:'auto'},
   navSec:{fontSize:'10px',color:'rgba(255,255,255,0.60)',letterSpacing:'0.1em',textTransform:'uppercase',padding:'10px 8px 6px'},
+  navFamily:{fontSize:'10px',color:'#5DCAA5',letterSpacing:'0.12em',textTransform:'uppercase',padding:'10px 8px 5px',fontWeight:600},
   navHint:{fontSize:'11px',color:'rgba(255,255,255,0.62)',padding:'6px 10px',fontStyle:'italic'},
   navPending:{fontSize:'12px',color:'rgba(255,255,255,0.60)',padding:'7px 10px',cursor:'default'},
   navMissing:{fontSize:'12px',color:'#F0A868',padding:'7px 10px',cursor:'help',background:'rgba(240,168,104,0.10)',borderRadius:'7px',marginBottom:'2px'},

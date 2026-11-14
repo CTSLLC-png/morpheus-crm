@@ -33,9 +33,16 @@ const useEnv = isValidUrl(ENV_URL) && isValidAnon(ENV_ANON)
 const SUPABASE_URL  = useEnv ? ENV_URL.replace(/\/$/, '')  : DEFAULT_URL
 const SUPABASE_ANON = useEnv ? ENV_ANON : DEFAULT_ANON
 
-// Never blank-screen: if config is somehow still missing, show a
-// readable diagnostic instead of crashing the whole app at load.
-if (!SUPABASE_URL || !SUPABASE_ANON) {
+// Never blank-screen: if config is somehow unusable, show a readable
+// diagnostic instead of crashing the whole app at load.
+//
+// This checks the RESOLVED pair against the same validators used above, not
+// merely that the strings are non-empty. An emptiness check could never fire:
+// both values fall back to the non-empty literals at the top of this file, so
+// the guard read as protection while being unreachable. Validating instead
+// means it still catches the one failure that can actually happen here — a
+// built-in default edited into something malformed.
+if (!isValidUrl(SUPABASE_URL) || !isValidAnon(SUPABASE_ANON)) {
   const el = document.getElementById('root')
   if (el) {
     el.innerHTML =
@@ -63,8 +70,57 @@ export async function signIn(email, password) {
   return data
 }
 
-/** Sign out current user */
-export async function signOut() {
+/**
+ * Register a new account.
+ *
+ * SECURITY: the only thing put in options.data (which lands in
+ * user_metadata) is the person's own name. user_metadata is writable by the
+ * account holder with the anon key, so nothing here may ever carry a role,
+ * an entitlement, a cohort or a participant id — anything the client could
+ * forge must not be a thing the server reads. The account's role is set by
+ * the set_default_participant_app_role trigger on auth.users, into
+ * app_metadata, which only the service role can write.
+ *
+ * Returns { user, session }. `session` is null when the project requires
+ * email confirmation; the caller must handle that, because the enrolment-code
+ * RPC needs an authenticated session.
+ */
+export async function signUp(email, password, fullName) {
+  const { data, error } = await supabase.auth.signUp({
+    email:    email.trim(),
+    password,
+    options: {
+      data: { full_name: fullName?.trim() || null },
+      emailRedirectTo: `${SITE_URL}/login`,
+    },
+  })
+  if (error) throw error
+  return data
+}
+
+/**
+ * Sign out current user.
+ *
+ * The SIGN_OUT engagement stamp has to be issued while the session that
+ * authorises it still exists, so it goes out first — but bounded, because a
+ * dead network must not leave someone stuck on a page they asked to leave.
+ * After the bound expires we sign out regardless and the stamp is simply
+ * lost; it is informational telemetry, not a record anyone relies on.
+ */
+export async function signOut({ participantId = null } = {}) {
+  try {
+    const { data } = await supabase.auth.getSession()
+    const userId = data?.session?.user?.id
+    if (userId) {
+      const { recordSignOut } = await import('./engagement.js')
+      await Promise.race([
+        recordSignOut(userId, participantId),
+        new Promise(resolve => setTimeout(resolve, 800)),
+      ])
+    }
+  } catch {
+    // Telemetry never blocks a sign-out.
+  }
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }
@@ -77,7 +133,15 @@ export async function getSession() {
 }
 
 /**
- * Get role from app metadata: 'super_admin' | 'trainer' | 'participant'
+ * Get role from app metadata: 'super_admin' | 'trainer' | 'participant' |
+ * 'vendor' | 'lp_customer', or null.
+ *
+ * Returns the stored string as-is rather than filtering it. The list this
+ * build knows how to route is KNOWN_ROLES in hooks/useAuth.jsx, and the
+ * router treats anything outside it as unplaceable rather than as access —
+ * so an unrecognised role is already handled there, and silently mapping it
+ * to null here would hide the difference between "no role yet" and "a role
+ * this build does not understand".
  *
  * SECURITY: this reads app_metadata, NOT user_metadata. app_metadata can
  * only be written by a trusted server (the service_role key, used inside

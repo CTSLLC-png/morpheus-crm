@@ -93,8 +93,61 @@ export function missingModules(modules) {
 
 export function navForModules(modules) {
   return resolveModules(modules)
-    .flatMap(m => (m.impl.nav ?? []).map(item => ({ ...item, moduleKey: m.key, moduleName: m.name })))
+    .flatMap(m => (m.impl.nav ?? []).map(item => ({
+      ...item, moduleKey: m.key, moduleName: m.name, family: m.family ?? null,
+    })))
     .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999))
+}
+
+/**
+ * The same navigation, grouped by product family for the sidebar.
+ *
+ * The grouping is DATA: it comes from core.module.family, which is
+ * 'clearcall' for workforce.cer and workforce.empowercare and NULL for
+ * everything else including workforce.academy. There is deliberately no
+ * hardcoded list of module keys here — adding a module to ClearCall is a
+ * database change, not a code change.
+ *
+ * `families` is core.product_family, used only for the heading text. A family
+ * key with no row still groups correctly and labels itself from the key, so a
+ * missing or unreadable product_family row degrades the label and nothing
+ * else.
+ *
+ * Explicit nav `order` is preserved in two ways: items inside a group stay in
+ * order, and a group sits where its first item would have sat. So Dashboard
+ * (order 10, family clearcall) still comes first and Claude Academy (order
+ * 30, no family) still follows the CER items.
+ *
+ * Returns [{ key, name, items }] where key is null for the ungrouped block.
+ */
+export function navGroupsForModules(modules, families = []) {
+  const items = navForModules(modules)
+  const nameFor = new Map((families ?? []).map(f => [f.key, f.name]))
+
+  const groups = []
+  const byKey = new Map()
+
+  for (const item of items) {
+    const key = item.family ?? null
+    // Ungrouped items are not one block: each sits at its own position, so a
+    // family group cannot drag an unrelated tab along with it.
+    const bucketKey = key === null ? `__solo-${groups.length}` : key
+    if (!byKey.has(bucketKey)) {
+      const group = {
+        key,
+        name: key === null ? null : (nameFor.get(key) ?? titleise(key)),
+        items: [],
+      }
+      byKey.set(bucketKey, group)
+      groups.push(group)
+    }
+    byKey.get(bucketKey).items.push(item)
+  }
+  return groups
+}
+
+function titleise(key) {
+  return String(key).replace(/[-_.]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 export function routableModules(modules) {

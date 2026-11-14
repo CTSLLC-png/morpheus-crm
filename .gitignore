@@ -6,3 +6,9 @@ dist/
 .DS_Store
 .vercel
 /deliverables/
+
+# Claude Code creates isolated git worktrees here for background agents.
+# Transient infrastructure, not project content — and committing a nested
+# worktree corrupts clones. Scoped to worktrees/ so .claude/skills/ stays
+# tracked.
+.claude/worktrees/
