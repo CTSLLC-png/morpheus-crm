@@ -7,9 +7,11 @@
 //
 //    The script JSON may carry "studioProjectId" (a Creator Studio project id)
 //    to attach the files to that project. Without it they land in the vault
-//    unattached. Running twice for the same run id lists each file once.
+//    unattached. STUDIO_PROJECT_ID, when set (the render queue sets it from
+//    the job), overrides the script's own project. Running twice for the same
+//    run id lists each file once.
 
-import { readFileSync, existsSync, statSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, statSync } from 'node:fs'
 import { basename } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -33,10 +35,14 @@ export function vaultPath(name, runId, file) {
   return `renders/${clean(name)}/${clean(runId)}/${clean(basename(file))}`
 }
 
-export async function publish({ scriptPath, url = DEFAULT_URL, key, runId, outDir = 'out', fetchImpl = fetch, log = console.log }) {
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export async function publish({ scriptPath, url = DEFAULT_URL, key, runId, projectId, outDir = 'out', fetchImpl = fetch, log = console.log }) {
   if (!key) throw new Error('STUDIO_AGENT_KEY is not set')
   const script = JSON.parse(readFileSync(scriptPath, 'utf8'))
   const name = basename(scriptPath, '.json')
+  const project = projectId || script.studioProjectId || null
+  if (project && !UUID.test(project)) throw new Error('Project id must be a uuid')
 
   const call = async body => {
     const r = await fetchImpl(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-studio-key': key }, body: JSON.stringify(body) })
@@ -65,7 +71,7 @@ export async function publish({ scriptPath, url = DEFAULT_URL, key, runId, outDi
     assets.push({ path, name: o.label, tags: o.tags, notes: `Rendered from ${basename(scriptPath)}, run ${runId}` })
   }
 
-  const done = await call({ action: 'register', project_id: script.studioProjectId ?? null, assets })
+  const done = await call({ action: 'register', project_id: project, assets })
   log(`  ✓ ${done.registered} file(s) listed in the vault${done.project_id ? ` on project ${done.project_id}` : ''}`)
   return { assets, ...done }
 }
@@ -78,5 +84,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     url: process.env.STUDIO_AGENT_URL || DEFAULT_URL,
     key: process.env.STUDIO_AGENT_KEY,
     runId: process.env.GITHUB_RUN_ID || new Date().toISOString().replace(/[:.]/g, '-'),
+    projectId: process.env.STUDIO_PROJECT_ID || undefined,
+  }).then(r => {
+    // The render queue reports how many files were filed.
+    if (process.env.PUBLISH_COUNT_FILE) writeFileSync(process.env.PUBLISH_COUNT_FILE, String(r.assets.length))
   }).catch(e => { console.error(e.message); process.exit(1) })
 }

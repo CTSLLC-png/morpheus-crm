@@ -7,6 +7,8 @@
 //   ping         → confirm the key works
 //   sign_upload  → get a one-time upload link for a path under renders/
 //   register     → add vault rows (studio_asset) for files already uploaded
+//   claim_job    → take the oldest queued render job (studio_render_job)
+//   finish_job   → mark a running render job done or failed
 //
 // Auth: x-studio-key header, compared (by SHA-256, constant time) with the
 // STUDIO_AGENT_KEY function secret. The service-role key never leaves
@@ -27,6 +29,8 @@ const KIND_BY_EXT: Record<string, { kind: string; mime: string }> = {
   srt: { kind: "doc", mime: "text/plain" },
   txt: { kind: "doc", mime: "text/plain" },
 };
+const SCRIPT = /^[a-z0-9][a-z0-9-]{0,79}$/;
+const RUN_URL = /^https:\/\/github\.com\/[A-Za-z0-9_.\-\/]+$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const json = (body: unknown, status = 200) =>
@@ -119,5 +123,42 @@ Deno.serve(async (req) => {
     return json({ ok: true, registered: fresh.length, already_listed: rows.length - fresh.length, project_id: projectId });
   }
 
-  return json({ error: "action must be ping | sign_upload | register" }, 400);
+  if (body.action === "claim_job") {
+    let runUrl: string | null = null;
+    if (body.run_url != null && body.run_url !== "") {
+      if (typeof body.run_url !== "string" || body.run_url.length > 300 || !RUN_URL.test(body.run_url)) {
+        return json({ error: "run_url must be a https://github.com/ link" }, 400);
+      }
+      runUrl = body.run_url;
+    }
+    const { data, error } = await sb.rpc("studio_claim_render_job", { p_run_url: runUrl });
+    if (error) return json({ error: error.message }, 500);
+    const job = Array.isArray(data) ? data[0] : null;
+    if (!job) return json({ ok: true, job: null });
+    // The database already checks these; check again before a worker uses them in a shell.
+    if (!SCRIPT.test(job.script) || (job.project_id && !UUID.test(job.project_id))) {
+      await sb.rpc("studio_finish_render_job", { p_id: job.id, p_ok: false, p_asset_count: null, p_error: "Job failed validation." });
+      return json({ error: "claimed job failed validation" }, 500);
+    }
+    return json({ ok: true, job: { id: job.id, script: job.script, project_id: job.project_id, attempts: job.attempts } });
+  }
+
+  if (body.action === "finish_job") {
+    if (typeof body.job_id !== "string" || !UUID.test(body.job_id)) return json({ error: "job_id must be a uuid" }, 400);
+    if (typeof body.ok !== "boolean") return json({ error: "ok must be true or false" }, 400);
+    let count: number | null = null;
+    if (body.asset_count != null) {
+      if (!Number.isInteger(body.asset_count) || (body.asset_count as number) < 0 || (body.asset_count as number) > 100) {
+        return json({ error: "asset_count must be a whole number from 0 to 100" }, 400);
+      }
+      count = body.asset_count as number;
+    }
+    const { data, error } = await sb.rpc("studio_finish_render_job", {
+      p_id: body.job_id, p_ok: body.ok, p_asset_count: count, p_error: clip(body.error, 2000) || null,
+    });
+    if (error) return json({ error: error.message }, error.code === "P0002" ? 409 : 500);
+    return json({ ok: true, job_id: data?.id ?? body.job_id, status: data?.status });
+  }
+
+  return json({ error: "action must be ping | sign_upload | register | claim_job | finish_job" }, 400);
 });

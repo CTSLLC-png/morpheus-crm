@@ -11,6 +11,24 @@ Creator Studio can turn a script into finished, filed video with nobody signed i
 
 A script can also be rendered on demand from **Actions → Creator Studio render → Run workflow**.
 
+## Render queue: asking for a render from inside Nguzo
+
+Staff can queue a render without touching git:
+
+1. **Nguzo → Creator Studio → Render queue**: pick a script, optionally a project, and press **Queue render**.
+2. Every 30 minutes the **Creator Studio render** workflow checks the queue. It claims the oldest job, renders `tools/video/scripts/<script>.json` from `main`, files the output in the vault (attached to the chosen project) and marks the job **Done** with the file count, or **Failed** with a reason and a link to the run log.
+3. An empty queue costs one short step and renders nothing. To work the queue right away, run the workflow by hand with the script name left empty.
+
+Rules the database enforces (`sql/0022_creator_studio_render_queue.sql`):
+
+- Only staff (trainer, super_admin) can see or queue jobs. A staff member can cancel a job only while it is still queued, and can never mark one done or failed.
+- One open job per script and project, and at most 20 open jobs in all.
+- Script names are plain file names (`a-z`, `0-9`, dashes), so a job cannot point outside `tools/video/scripts`.
+- A job left running for over two hours is failed automatically on the next check.
+- Only the `studio-agent` function (service role) can claim or finish jobs. super_admin can delete finished history.
+
+The scheduled check runs only from `main`, so the queue starts working once this change is merged and `sql/0022_creator_studio_render_queue.sql` has been applied in Supabase.
+
 ## One-time setup
 
 The workflow files results through the `studio-agent` edge function, which checks a shared key. The key is entered by a person in two places and never appears in code, chat or logs.
@@ -28,6 +46,7 @@ To rotate the key, replace it in both places. To shut the door, delete the Supab
 | Upload files under `renders/` in `studio-assets` | Read, replace or delete anything outside `renders/` |
 | List those files in the asset vault | Read any table, or change projects, tasks or users |
 | Attach them to an existing project | Create or delete projects |
+| Claim the next queued render job and mark it done or failed | Queue, edit or cancel jobs, or change a finished job |
 
 The service-role key stays inside Supabase. The function sends no CORS headers, so a web page cannot call it.
 

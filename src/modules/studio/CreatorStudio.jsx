@@ -1,6 +1,6 @@
 // src/modules/studio/CreatorStudio.jsx
 // ── Creator Studio — production workspace inside Nguzo.
-//    Overview · Projects · Asset vault · Production queue, laid out like the
+//    Overview · Projects · Asset vault · Production queue · Render queue, laid out like the
 //    stand-alone creator-studio-cinema site it replaces. Approved Campaign
 //    Studio assets arrive here as projects with their queue already filled.
 
@@ -12,9 +12,10 @@ import {
   STAGES, PROJECT_KINDS, ASSET_KINDS, PRIORITIES,
   listProjects, listTasks, listAssets, createProject, updateProject, createTasks, updateTask,
   createAssets, updateAsset, setFinalMedia, uploadAssetFile, signedUrls, parseBulkAssets, guessKind,
+  KNOWN_SCRIPTS, cleanScriptName, jobTiming, listRenderJobs, requestRender, cancelRenderJob,
 } from './studioApi.js'
 
-const TABS = [['overview', 'Overview'], ['projects', 'Projects'], ['vault', 'Asset vault'], ['queue', 'Production queue']]
+const TABS = [['overview', 'Overview'], ['projects', 'Projects'], ['vault', 'Asset vault'], ['queue', 'Production queue'], ['renders', 'Render queue']]
 const PRIORITY_TONE = { critical: 'bad', high: 'warn', normal: 'info', low: 'neutral' }
 const STAGE_TONE = { delivered: 'good', 'final-cut': 'good', 'on-hold': 'neutral' }
 const label = s => s.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase())
@@ -63,6 +64,7 @@ export default function CreatorStudio() {
         {tab === 'projects' && <Projects {...data} openId={openId} onOpen={openProject} reload={load} />}
         {tab === 'vault'    && <Vault {...data} reload={load} />}
         {tab === 'queue'    && <Queue {...data} onOpen={openProject} reload={load} />}
+        {tab === 'renders'  && <Renders projects={data.projects} onOpen={openProject} />}
       </DataState>
     </div>
   )
@@ -291,6 +293,103 @@ function TaskList({ tasks, reload, projectOf, onOpen }) {
           <Pill tone={PRIORITY_TONE[t.priority]}>{label(t.priority)}</Pill>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ── Render queue ────────────────────────────────────────────────────────────
+// Queue a script for the cloud render worker. The worker checks the queue
+// every 30 minutes, files the finished video in the Asset vault (tagged
+// "render") and marks the job here.
+const JOB_TONE = { queued: 'info', running: 'warn', done: 'good', failed: 'bad', cancelled: 'neutral' }
+
+function Renders({ projects, onOpen }) {
+  const [jobs, setJobs] = useState({ loading: true, error: null, rows: [] })
+  const [v, setV] = useState({ script: KNOWN_SCRIPTS[0] ?? '', projectId: '', note: '' })
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState(null)
+  const byId = Object.fromEntries(projects.map(p => [p.id, p]))
+  const name = cleanScriptName(v.script)
+
+  const load = useCallback(async () => {
+    try { setJobs({ loading: false, error: null, rows: await listRenderJobs() }) }
+    catch (error) { setJobs(j => ({ ...j, loading: false, error })) }
+  }, [])
+  useEffect(() => { load() }, [load])
+  // Refresh while something is waiting or rendering.
+  const open = jobs.rows.some(j => ['queued', 'running'].includes(j.status))
+  useEffect(() => {
+    if (!open) return undefined
+    const t = setInterval(load, 60000)
+    return () => clearInterval(t)
+  }, [open, load])
+
+  async function queue() {
+    setBusy(true); setMsg(null)
+    try {
+      await requestRender({ script: v.script, projectId: v.projectId || null, note: v.note })
+      setV(x => ({ ...x, note: '' }))
+      setMsg({ ok: true, text: 'Queued. The render worker checks every 30 minutes; finished files appear in the Asset vault.' })
+      await load()
+    } catch (e) { setMsg({ ok: false, text: e.message }) } finally { setBusy(false) }
+  }
+  async function cancel(id) {
+    setMsg(null)
+    try { await cancelRenderJob(id); await load() } catch (e) { setMsg({ ok: false, text: e.message }) }
+  }
+
+  return (
+    <div style={{ display:'grid', gap:'12px' }}>
+      <div style={{ ...styles.card, padding:'16px', display:'grid', gap:'12px' }}>
+        <div style={styles.title}>Queue a render</div>
+        <div style={styles.sub}>Renders a video script from tools/video/scripts with the in-house renderer (voice, scenes, captions). No paid service is used. Copy must come from an approved Campaign Studio draft.</div>
+        <div style={f.grid}>
+          <Field label="Script">
+            <input style={f.input} list="studio-known-scripts" value={v.script} onChange={e => setV(x => ({ ...x, script: e.target.value }))} />
+            <datalist id="studio-known-scripts">{KNOWN_SCRIPTS.map(s => <option key={s} value={s} />)}</datalist>
+          </Field>
+          <Field label="Attach output to project (optional)">
+            <Select value={v.projectId} onChange={e => setV(x => ({ ...x, projectId: e.target.value }))} options={['', ...projects.map(p => p.id)]}
+              labels={{ '': '— Vault only —', ...Object.fromEntries(projects.map(p => [p.id, p.title])) }} />
+          </Field>
+          <Field label="Note (optional)">
+            <input style={f.input} maxLength={500} value={v.note} onChange={e => setV(x => ({ ...x, note: e.target.value }))} />
+          </Field>
+        </div>
+        {v.script && !name && <div style={{ fontSize:'12px', color:'#993C1D' }}>Use the script file name, lower case with dashes, for example legacy-path-explainer.</div>}
+        {msg && <div style={msg.ok ? styles.notice : styles.error} role="status">{msg.text}</div>}
+        <div><button style={f.primary} disabled={!name || busy} onClick={queue}>{busy ? 'Queueing…' : 'Queue render'}</button></div>
+      </div>
+
+      <div style={{ ...styles.card, padding:'16px' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div style={styles.title}>Recent renders</div>
+          <button style={f.btn} onClick={load}>Refresh</button>
+        </div>
+        <DataState loading={jobs.loading} error={jobs.error} rows={[1]}>
+          {jobs.rows.length === 0 && <div style={{ ...styles.sub, marginTop:'10px' }}>No renders yet.</div>}
+          {jobs.rows.map(j => (
+            <div key={j.id} style={{ display:'flex', gap:'10px', alignItems:'center', borderTop:'1px solid #F0F4F8', padding:'10px 0', flexWrap:'wrap' }}>
+              <div style={{ flex:'1 1 240px', minWidth:0 }}>
+                <div style={{ fontSize:'13px', color:'#0D1B2A', fontFamily:'monospace' }}>{j.script}</div>
+                <div style={styles.sub}>
+                  {j.project_id && byId[j.project_id]
+                    ? <button onClick={() => onOpen(j.project_id)} style={{ background:'none', border:'none', padding:0, color:'#0C447C', cursor:'pointer', fontSize:'12px' }}>{byId[j.project_id].title}</button>
+                    : 'Vault only'}
+                  {' · '}{new Date(j.requested_at).toLocaleString()}
+                  {jobTiming(j) ? ` · ${jobTiming(j)}` : ''}
+                  {j.status === 'done' && j.asset_count != null ? ` · ${j.asset_count} file(s) in the vault` : ''}
+                  {j.note ? ` · ${j.note}` : ''}
+                </div>
+                {j.status === 'failed' && j.error && <div style={{ fontSize:'12px', color:'#993C1D', marginTop:'3px' }}>{j.error}</div>}
+              </div>
+              {j.run_url && <a href={j.run_url} target="_blank" rel="noreferrer" style={{ fontSize:'12px' }}>Run log ↗</a>}
+              {j.status === 'queued' && <button style={f.btn} onClick={() => cancel(j.id)}>Cancel</button>}
+              <Pill tone={JOB_TONE[j.status]}>{label(j.status)}</Pill>
+            </div>
+          ))}
+        </DataState>
+      </div>
     </div>
   )
 }
