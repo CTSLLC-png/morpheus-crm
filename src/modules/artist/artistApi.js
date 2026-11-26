@@ -5,6 +5,7 @@
 //    granted to anon in sql/0018_artist_hub.sql — never music_take.
 
 import { supabase } from '../../lib/supabase.js'
+import { withTenant, scoped } from '../../lib/activeTenant.js'
 import { FALLBACK_CATALOG, sortReleasesForDisplay } from './artistCatalog.js'
 
 export const TRACK_STATUSES = ['writing', 'generated', 'keeper-selected', 'mastered', 'released']
@@ -56,7 +57,7 @@ function fallback(slug) {
 
 // ── Staff ───────────────────────────────────────────────────────────────────
 export const listArtists = () =>
-  supabase.from('music_artist').select('*').order('name').then(must)
+  scoped(supabase.from('music_artist').select('*')).order('name').then(must)
 
 export const listReleases = artistId =>
   supabase.from('music_release').select('*').eq('artist_id', artistId).order('created_at').then(must)
@@ -84,7 +85,7 @@ export const updateVideo = (id, patch) =>
   supabase.from('music_video').update(patch).eq('id', id).select().single().then(must)
 
 export const addVideo = row =>
-  supabase.from('music_video').insert(row).select().single().then(must)
+  supabase.from('music_video').insert(withTenant(row)).select().single().then(must)
 
 /**
  * Marks one take as the keeper. The partial unique index allows only one

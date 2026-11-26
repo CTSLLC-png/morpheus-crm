@@ -1,0 +1,70 @@
+name: Tenant isolation (growth and media modules)
+# Installs the real Campaign Studio, Creator Studio and Artist Hub migrations
+# into a disposable Postgres, files pre-existing rows, applies 0021 and checks
+# that one tenant can neither read nor write another tenant's rows or files.
+on:
+  pull_request:
+    paths:
+      - 'sql/0014_legacy_growth_campaigns.sql'
+      - 'sql/0015_growth_asset_media_url.sql'
+      - 'sql/0016_creator_studio.sql'
+      - 'sql/0018_artist_hub.sql'
+      - 'sql/0019_campaign_publishing.sql'
+      - 'sql/0021_tenant_scope_growth_modules.sql'
+      - 'sql/tests/tenant_scope_*.sql'
+      - 'src/lib/activeTenant*.js'
+      - '.github/workflows/tenant-scope.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sql/0021_tenant_scope_growth_modules.sql'
+      - 'sql/tests/tenant_scope_*.sql'
+      - '.github/workflows/tenant-scope.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tenant-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tenant_scope
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tenant_scope"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGDATABASE: tenant_scope
+      PGUSER: postgres
+      PGPASSWORD: disposable_only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+      - name: Kernel, auth and storage stand-ins
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/tenant_scope_bootstrap.sql
+      - name: Install the module migrations as they are in production
+        run: |
+          for f in 0014_legacy_growth_campaigns 0015_growth_asset_media_url 0016_creator_studio 0018_artist_hub 0019_campaign_publishing; do
+            psql -X -q -v ON_ERROR_STOP=1 -f "sql/$f.sql"
+          done
+      - name: Existing CTS rows
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/tenant_scope_seed.sql
+      - name: Apply tenant scoping
+        run: psql -X -q -v ON_ERROR_STOP=1 -f sql/0021_tenant_scope_growth_modules.sql
+      - name: Cross-tenant read, write and file checks (and re-run safety)
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/tenant_scope_integration.sql
+      - name: Active tenant helper unit test
+        run: node --test src/lib/activeTenant.test.js
