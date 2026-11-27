@@ -5,13 +5,21 @@ name: Creator Studio render
 #
 #   push to render/**   → renders every script that differs from main, then
 #                         files the results in the Creator Studio asset vault
-#   workflow_dispatch   → renders one named script; filing is optional
+#   schedule            → render queue: claims the oldest job queued in
+#                         Creator Studio → Render queue, renders it, files the
+#                         results and marks the job done or failed
+#   workflow_dispatch   → renders one named script (filing optional), or with
+#                         no script name works the render queue now
 #   pull_request        → smoke test: renders the sample script, files nothing
 #
 # Filing needs the STUDIO_AGENT_KEY repository secret (see
 # docs/creator-studio-autonomy.md). Without it the render/** job stops before
-# rendering. No paid service is called anywhere in this workflow.
+# rendering; the scheduled queue check does nothing. No paid service is
+# called anywhere in this workflow.
 on:
+  schedule:
+    # Every 30 minutes. An empty queue costs one short step and no rendering.
+    - cron: '*/30 * * * *'
   push:
     branches: ['render/**']
   pull_request:
@@ -21,8 +29,9 @@ on:
   workflow_dispatch:
     inputs:
       script:
-        description: 'Script file name in tools/video/scripts (for example legacy-path-explainer.json)'
-        required: true
+        description: 'Script file name in tools/video/scripts (for example legacy-path-explainer.json). Leave empty to work the render queue.'
+        required: false
+        default: ''
         type: string
       publish:
         description: 'File the results in the Creator Studio vault'
@@ -31,7 +40,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: studio-render-${{ github.ref }}
+  group: studio-render-${{ github.event_name == 'schedule' && 'queue' || github.ref }}
   cancel-in-progress: false
 jobs:
   render:
@@ -54,9 +63,28 @@ jobs:
         id: plan
         run: |
           set -euo pipefail
-          case "$EVENT" in
+          mode="$EVENT"
+          if [ "$EVENT" = "workflow_dispatch" ] && [ -z "$INPUT_SCRIPT" ]; then mode=queue; fi
+          case "$mode" in
             pull_request)
               scripts="scripts/legacy-path-explainer.json"; publish=false ;;
+            schedule|queue)
+              if [ "$HAS_KEY" != "true" ]; then
+                echo "STUDIO_AGENT_KEY is not set, so the render queue is off." >> "$GITHUB_STEP_SUMMARY"
+                echo "scripts=" >> "$GITHUB_OUTPUT"; exit 0
+              fi
+              claim="$RUNNER_TEMP/claim.txt"; : > "$claim"
+              GITHUB_OUTPUT="$claim" node queue.mjs claim
+              job_id="$(sed -n 's/^job_id=//p' "$claim")"
+              script="$(sed -n 's/^script=//p' "$claim")"
+              project_id="$(sed -n 's/^project_id=//p' "$claim")"
+              # queue.mjs has already checked these; check the shapes again before use.
+              [[ -z "$job_id" || "$job_id" =~ ^[0-9a-f-]{36}$ ]] || { echo "::error::bad job id"; exit 1; }
+              [[ -z "$script" || "$script" =~ ^scripts/[a-z0-9][a-z0-9-]{0,79}\.json$ ]] || { echo "::error::bad script"; exit 1; }
+              [[ -z "$project_id" || "$project_id" =~ ^[0-9a-f-]{36}$ ]] || { echo "::error::bad project id"; exit 1; }
+              echo "job_id=$job_id" >> "$GITHUB_OUTPUT"
+              echo "project_id=$project_id" >> "$GITHUB_OUTPUT"
+              scripts="$script"; publish=true ;;
             workflow_dispatch)
               name="$(basename -- "$INPUT_SCRIPT")"
               case "$name" in *.json) ;; *) echo "::error::Script must be a .json file name"; exit 1 ;; esac
@@ -96,9 +124,9 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
           npm run setup
-      - name: Test the vault publisher
+      - name: Test the vault publisher and render queue client
         if: steps.plan.outputs.scripts != ''
-        run: node --test publish.test.mjs
+        run: node --test publish.test.mjs queue.test.mjs
       - name: Render
         if: steps.plan.outputs.scripts != ''
         env:
@@ -112,9 +140,23 @@ jobs:
         env:
           SCRIPTS: ${{ steps.plan.outputs.scripts }}
           STUDIO_AGENT_KEY: ${{ secrets.STUDIO_AGENT_KEY }}
+          STUDIO_PROJECT_ID: ${{ steps.plan.outputs.project_id }}
+          PUBLISH_COUNT_FILE: ${{ runner.temp }}/published.txt
         run: |
           set -euo pipefail
           for s in $SCRIPTS; do node publish.mjs "$s"; done
+      - name: Mark the render job done
+        if: steps.plan.outputs.job_id != ''
+        env:
+          JOB_ID: ${{ steps.plan.outputs.job_id }}
+          STUDIO_AGENT_KEY: ${{ secrets.STUDIO_AGENT_KEY }}
+        run: node queue.mjs finish "$JOB_ID" done "$(cat "$RUNNER_TEMP/published.txt" 2>/dev/null || true)"
+      - name: Mark the render job failed
+        if: failure() && steps.plan.outputs.job_id != ''
+        env:
+          JOB_ID: ${{ steps.plan.outputs.job_id }}
+          STUDIO_AGENT_KEY: ${{ secrets.STUDIO_AGENT_KEY }}
+        run: node queue.mjs finish "$JOB_ID" failed "The render worker stopped with an error. Open the run for details."
       # Smoke-test output only: the sample explainer, kept for three days.
       # Vault-bound renders are never attached to the run.
       - name: Keep the smoke-test render

@@ -42,7 +42,9 @@ Copy `scripts/legacy-path-explainer.json` and edit it. Each scene has a `kind` a
 
 ## Render in the cloud
 
-Push a script to a branch named `render/<anything>` and the **Creator Studio render** workflow renders it on a GitHub runner and files the results in the asset vault, with no computer of ours switched on. Add `"studioProjectId": "<project id>"` to the script to attach the files to a Creator Studio project. Setup and limits: [`docs/creator-studio-autonomy.md`](../../docs/creator-studio-autonomy.md).
+Staff can queue a render from **Nguzo → Creator Studio → Render queue**; the workflow checks that queue every 30 minutes (see `queue.mjs`). When you add a script here, add its name to `KNOWN_SCRIPTS` in `src/modules/studio/renderQueue.js` too (a test checks they match).
+
+Or push a script to a branch named `render/<anything>` and the **Creator Studio render** workflow renders it on a GitHub runner and files the results in the asset vault, with no computer of ours switched on. Add `"studioProjectId": "<project id>"` to the script to attach the files to a Creator Studio project. Setup and limits: [`docs/creator-studio-autonomy.md`](../../docs/creator-studio-autonomy.md).
 
 ## After rendering
 

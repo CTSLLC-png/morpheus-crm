@@ -5,6 +5,7 @@
 import { supabase } from '../../lib/supabase.js'
 import { withTenant, scoped, tenantFolder } from '../../lib/activeTenant.js'
 import { productionPlan, productionBrief } from '../growth/legacyPlaybook.js'
+import { cleanScriptName, renderJobError } from './renderQueue.js'
 
 export const BUCKET = 'studio-assets'
 
@@ -124,3 +125,26 @@ export function guessKind(nameOrUrl) {
   if (['pdf', 'txt', 'doc', 'docx'].includes(ext)) return 'doc'
   return 'other'
 }
+
+// ── Render queue (studio_render_job) ────────────────────────────────────────
+// Staff queue a script by name; the cloud render worker claims it, files the
+// output in the vault and marks it done or failed. See sql/0022 and
+// docs/creator-studio-autonomy.md.
+
+export { SCRIPT_NAME, KNOWN_SCRIPTS, RENDER_STATUSES, cleanScriptName, renderJobError, jobTiming } from './renderQueue.js'
+
+export const listRenderJobs = () =>
+  scoped(supabase.from('studio_render_job').select('*')).order('requested_at', { ascending: false }).limit(100).then(must)
+
+export async function requestRender({ script, projectId = null, note = '' }) {
+  const name = cleanScriptName(script)
+  if (!name) throw new Error('Use the script file name from tools/video/scripts, for example legacy-path-explainer.')
+  const { data, error } = await supabase.from('studio_render_job')
+    .insert(withTenant({ script: name, project_id: projectId || null, note: note.trim().slice(0, 500) || null }))
+    .select().single()
+  if (error) throw new Error(renderJobError(error))
+  return data
+}
+
+export const cancelRenderJob = id =>
+  supabase.from('studio_render_job').update({ status: 'cancelled' }).eq('id', id).eq('status', 'queued').then(must)

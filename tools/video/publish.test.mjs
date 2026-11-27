@@ -73,3 +73,14 @@ test('stops with the agent error when a call is refused', async () => {
   const fetchImpl = async () => ({ ok: false, status: 401, json: async () => ({ error: 'unauthorized' }) })
   await assert.rejects(publish({ scriptPath, key: 'bad', runId: '1', outDir, fetchImpl, log: () => {} }), /401.*unauthorized/)
 })
+
+test('a project id from the render queue overrides the script, and must be a uuid', async () => {
+  const other = '99999999-8888-7777-6666-555555555555'
+  const { scriptPath, outDir } = fixture()
+  const { calls, fetchImpl } = fakeAgent()
+  await publish({ scriptPath, key: 'k'.repeat(40), runId: '78', outDir, url: 'https://agent.test', fetchImpl, log: () => {}, projectId: other })
+  assert.equal(calls.at(-1).project_id, other)
+  await assert.rejects(
+    publish({ scriptPath, key: 'k'.repeat(40), runId: '79', outDir, url: 'https://agent.test', fetchImpl, log: () => {}, projectId: 'nope' }),
+    /uuid/)
+})
