@@ -8,6 +8,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from './useAuth.jsx'
 import { loadWorkspace } from '../lib/morpheus.js'
+import { setActiveTenant } from '../lib/activeTenant.js'
 
 const TenantContext = createContext(null)
 const STORAGE_KEY = 'morpheus.tenant'
@@ -75,6 +76,9 @@ export function TenantProvider({ children }) {
     () => tenants.find(t => t.id === tenantId) ?? tenants[0] ?? null,
     [tenants, tenantId]
   )
+  // Set during render, not in an effect: module screens start loading in
+  // their own effects, which run before this provider's effects would.
+  setActiveTenant(tenant?.id ?? null)
 
   // Only modules the tenant enabled AND that are actually shippable.
   // A PLANNED module (ParentPlug today) has a registry row but no schema —
