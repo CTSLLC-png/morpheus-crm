@@ -1,7 +1,9 @@
 // src/modules/studio/studioApi.js
-// ── Creator Studio — Supabase calls (RLS: staff read/write, super_admin deletes)
+// ── Creator Studio — Supabase calls (RLS: staff of the row's tenant read/write,
+//    super_admin deletes; see sql/0021_tenant_scope_growth_modules.sql)
 
 import { supabase } from '../../lib/supabase.js'
+import { withTenant, scoped, tenantFolder } from '../../lib/activeTenant.js'
 import { productionPlan, productionBrief } from '../growth/legacyPlaybook.js'
 import { cleanScriptName, renderJobError } from './renderQueue.js'
 
@@ -15,28 +17,28 @@ export const PRIORITIES = ['critical', 'high', 'normal', 'low']
 const must = ({ data, error }) => { if (error) throw error; return data }
 
 export const listProjects = () =>
-  supabase.from('studio_project').select('*').order('updated_at', { ascending: false }).then(must)
+  scoped(supabase.from('studio_project').select('*')).order('updated_at', { ascending: false }).then(must)
 
 export const listTasks = () =>
-  supabase.from('studio_task').select('*').order('due_date', { ascending: true, nullsFirst: false }).order('sort').then(must)
+  scoped(supabase.from('studio_task').select('*')).order('due_date', { ascending: true, nullsFirst: false }).order('sort').then(must)
 
 export const listAssets = () =>
-  supabase.from('studio_asset').select('*').order('created_at', { ascending: false }).limit(500).then(must)
+  scoped(supabase.from('studio_asset').select('*')).order('created_at', { ascending: false }).limit(500).then(must)
 
 export const createProject = row =>
-  supabase.from('studio_project').insert(row).select().single().then(must)
+  supabase.from('studio_project').insert(withTenant(row)).select().single().then(must)
 
 export const updateProject = (id, patch) =>
   supabase.from('studio_project').update(patch).eq('id', id).select().single().then(must)
 
 export const createTasks = rows =>
-  rows.length ? supabase.from('studio_task').insert(rows).then(must) : Promise.resolve([])
+  rows.length ? supabase.from('studio_task').insert(withTenant(rows)).then(must) : Promise.resolve([])
 
 export const updateTask = (id, patch) =>
   supabase.from('studio_task').update(patch).eq('id', id).then(must)
 
 export const createAssets = rows =>
-  supabase.from('studio_asset').insert(rows).select().then(must)
+  supabase.from('studio_asset').insert(withTenant(rows)).select().then(must)
 
 export const updateAsset = (id, patch) =>
   supabase.from('studio_asset').update(patch).eq('id', id).then(must)
@@ -78,7 +80,7 @@ export async function uploadAssetFile(file) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Sign in required')
   const safe = file.name.toLowerCase().replace(/[^a-z0-9.]+/g, '-').slice(-80)
-  const path = `${user.id}/${Date.now()}-${safe}`
+  const path = `${tenantFolder()}${user.id}/${Date.now()}-${safe}`
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type || undefined })
   if (error) throw error
   return path

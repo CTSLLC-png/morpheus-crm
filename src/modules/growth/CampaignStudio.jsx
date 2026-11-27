@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase.js'
+import { withTenant, scoped } from '../../lib/activeTenant.js'
 import { useAuth } from '../../hooks/useAuth.jsx'
 import { generateCampaignCopy } from '../../lib/ai.js'
 import { projectFromCampaignAsset } from '../studio/studioApi.js'
@@ -204,10 +205,10 @@ function Generate({ onSaved }) {
 }
 
 function saveDraft({ campaign, channel, audience, title, body, link, scheduled_for = null }) {
-  return supabase.from('growth_campaign_asset').insert({
+  return supabase.from('growth_campaign_asset').insert(withTenant({
     campaign, channel, audience, title, body, landing_url: link, scheduled_for,
     generated_by: 'ai', status: 'draft', compliance_flags: complianceCheck(body, channel),
-  })
+  }))
 }
 
 // ── Autopilot: a full week of drafts in one run ─────────────────────────────
@@ -293,7 +294,7 @@ function Library() {
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, loading: true }))
-    let q = supabase.from('growth_campaign_asset').select('*').order('scheduled_for', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }).limit(200)
+    let q = scoped(supabase.from('growth_campaign_asset').select('*')).order('scheduled_for', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false }).limit(200)
     if (status !== 'all') q = q.eq('status', status)
     const { data, error } = await q
     setState({ loading: false, rows: data ?? [], error })
