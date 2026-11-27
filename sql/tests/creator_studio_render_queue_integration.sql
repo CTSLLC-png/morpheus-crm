@@ -1,17 +1,29 @@
 -- Creator Studio render queue: staff can queue and cancel but never fake a
--- finished job; participants and the public see nothing; only service_role can
--- claim and finish jobs; duplicate and flood guards hold; re-running the
--- migration is safe. Run after the bootstrap, 0016 and 0022.
+-- finished job; participants, the public and other clients see nothing; only
+-- service_role can claim and finish jobs; duplicate and flood guards hold;
+-- re-running the migration is safe.
+-- Run after sql/tests/tenant_scope_bootstrap.sql, the module migrations,
+-- sql/tests/tenant_scope_seed.sql, 0021 and 0022.
 \set ON_ERROR_STOP on
 
+-- service_role bypasses RLS, as on Supabase.
+do $$ begin
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role bypassrls; end if;
+end $$;
+grant usage on schema public, core, auth to service_role;
+grant execute on function auth.uid(), public.current_user_role(), core.member_of(uuid), core.tenant_id(text) to service_role;
+grant select on public.studio_project to service_role;
+
 -- Re-run safety.
-\i sql/0016_creator_studio.sql
 \i sql/0022_creator_studio_render_queue.sql
 
 reset role;
 insert into public.studio_project (id, title) values ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Render test project')
 on conflict do nothing;
-grant select on public.studio_project to service_role;
+do $$ begin
+  assert (select tenant_id from public.studio_project where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+         = '00000000-0000-0000-0000-0000000000c1', 'test project should be CTS';
+end $$;
 
 -- ── Public visitor ──────────────────────────────────────────────────────────
 set role anon;
@@ -24,7 +36,7 @@ reset role;
 
 -- ── Participant (signed in, not staff) ──────────────────────────────────────
 set role authenticated;
-select set_config('test.role', 'participant', false), set_config('test.uid', '22222222-2222-2222-2222-222222222222', false);
+select set_config('test.role', 'participant', false), set_config('test.uid', '33333333-3333-3333-3333-333333333333', false);
 do $$
 declare n int;
 begin
@@ -112,6 +124,26 @@ begin
 end $$;
 reset role;
 
+-- ── The other client's trainer sees no CTS jobs and cannot queue on a CTS project
+set role authenticated;
+select set_config('test.role', 'trainer', false), set_config('test.uid', '22222222-2222-2222-2222-222222222222', false);
+do $$
+declare n int;
+begin
+  select count(*) into n from public.studio_render_job; assert n = 0, 'other client saw CTS jobs';
+  begin
+    insert into public.studio_render_job (script, project_id, tenant_id)
+    values ('legacy-path-explainer', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '00000000-0000-0000-0000-0000000000c1');
+    raise exception 'other client queued into CTS';
+  exception when insufficient_privilege or check_violation or raise_exception then
+    if sqlerrm = 'other client queued into CTS' then raise; end if;
+  end;
+  -- Its own vault-only job is fine, and does not collide with CTS's.
+  insert into public.studio_render_job (script, tenant_id) values ('cancel-me', '00000000-0000-0000-0000-0000000000b2');
+  update public.studio_render_job set status = 'cancelled' where script = 'cancel-me';
+end $$;
+reset role;
+
 -- ── Worker (service_role) ───────────────────────────────────────────────────
 set role service_role;
 do $$
@@ -157,7 +189,7 @@ reset role;
 
 -- ── Flood guard ─────────────────────────────────────────────────────────────
 set role authenticated;
-select set_config('test.role', 'trainer', false);
+select set_config('test.role', 'trainer', false), set_config('test.uid', '11111111-1111-1111-1111-111111111111', false);
 do $$
 declare i int;
 begin
@@ -169,7 +201,7 @@ exception when check_violation then null;
 end $$;
 
 -- ── super_admin can clear finished history only ─────────────────────────────
-select set_config('test.role', 'super_admin', false);
+select set_config('test.role', 'super_admin', false), set_config('test.uid', '44444444-4444-4444-4444-444444444444', false);
 do $$
 declare before_n int; after_n int;
 begin

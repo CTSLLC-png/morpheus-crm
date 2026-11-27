@@ -21,8 +21,8 @@ Staff can queue a render without touching git:
 
 Rules the database enforces (`sql/0022_creator_studio_render_queue.sql`):
 
-- Only staff (trainer, super_admin) can see or queue jobs. A staff member can cancel a job only while it is still queued, and can never mark one done or failed.
-- One open job per script and project, and at most 20 open jobs in all.
+- Each client sees and queues only its own jobs (tenant scoping from `sql/0021`). Within a client, only staff (trainer, super_admin) can see or queue jobs. A staff member can cancel a job only while it is still queued, and can never mark one done or failed.
+- One open job per script and project, and at most 20 open jobs per client.
 - Script names are plain file names (`a-z`, `0-9`, dashes), so a job cannot point outside `tools/video/scripts`.
 - A job left running for over two hours is failed automatically on the next check.
 - Only the `studio-agent` function (service role) can claim or finish jobs. super_admin can delete finished history.

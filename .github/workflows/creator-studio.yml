@@ -5,6 +5,8 @@ on:
       - 'sql/0016_creator_studio.sql'
       - 'sql/0022_creator_studio_render_queue.sql'
       - 'sql/tests/creator_studio_*.sql'
+      - 'sql/0021_tenant_scope_growth_modules.sql'
+      - 'sql/tests/tenant_scope_*.sql'
       - 'src/modules/studio/**'
       - 'tools/video/queue*.mjs'
       - '.github/workflows/creator-studio.yml'
@@ -14,6 +16,8 @@ on:
       - 'sql/0016_creator_studio.sql'
       - 'sql/0022_creator_studio_render_queue.sql'
       - 'sql/tests/creator_studio_*.sql'
+      - 'sql/0021_tenant_scope_growth_modules.sql'
+      - 'sql/tests/tenant_scope_*.sql'
       - 'src/modules/studio/**'
       - 'tools/video/queue*.mjs'
       - '.github/workflows/creator-studio.yml'
@@ -55,11 +59,15 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y postgresql-client
-      - name: Create disposable parent schema
-        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/creator_studio_bootstrap.sql
-      - name: Install Creator Studio migrations
+      - name: Kernel, auth and storage stand-ins
+        run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/tenant_scope_bootstrap.sql
+      - name: Install the module migrations, existing CTS rows and tenant scoping
         run: |
-          psql -X -v ON_ERROR_STOP=1 -f sql/0016_creator_studio.sql
-          psql -X -v ON_ERROR_STOP=1 -f sql/0022_creator_studio_render_queue.sql
-      - name: Test staff, public and worker access and re-run safety
+          for f in 0014_legacy_growth_campaigns 0015_growth_asset_media_url 0016_creator_studio 0018_artist_hub 0019_campaign_publishing; do
+            psql -X -q -v ON_ERROR_STOP=1 -f "sql/$f.sql"
+          done
+          psql -X -q -v ON_ERROR_STOP=1 -f sql/tests/tenant_scope_seed.sql
+          psql -X -q -v ON_ERROR_STOP=1 -f sql/0021_tenant_scope_growth_modules.sql
+          psql -X -q -v ON_ERROR_STOP=1 -f sql/0022_creator_studio_render_queue.sql
+      - name: Test staff, public, other-client and worker access and re-run safety
         run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/creator_studio_render_queue_integration.sql

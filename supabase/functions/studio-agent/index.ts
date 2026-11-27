@@ -79,12 +79,16 @@ Deno.serve(async (req) => {
 
   if (body.action === "register") {
     let projectId: string | null = null;
+    // Files land in their project's client; unattached renders stay with the
+    // CTS default (sql/0021). The tenant guard rejects any mismatch.
+    let tenantId: string | null = null;
     if (body.project_id != null && body.project_id !== "") {
       if (typeof body.project_id !== "string" || !UUID.test(body.project_id)) return json({ error: "project_id must be a uuid" }, 400);
-      const { data: p, error } = await sb.from("studio_project").select("id").eq("id", body.project_id).maybeSingle();
+      const { data: p, error } = await sb.from("studio_project").select("id, tenant_id").eq("id", body.project_id).maybeSingle();
       if (error) return json({ error: error.message }, 500);
       if (!p) return json({ error: "project not found" }, 404);
       projectId = p.id;
+      tenantId = p.tenant_id ?? null;
     }
     const items = Array.isArray(body.assets) ? body.assets : [];
     if (!items.length || items.length > 20) return json({ error: "assets must list 1 to 20 files" }, 400);
@@ -101,6 +105,7 @@ Deno.serve(async (req) => {
       if (!found?.some((f) => f.name === path.slice(slash + 1))) return json({ error: `not uploaded yet: ${path}` }, 409);
       rows.push({
         project_id: projectId,
+        ...(tenantId ? { tenant_id: tenantId } : {}),
         name: clip(item.name, 200) || path.slice(slash + 1),
         kind: KIND_BY_EXT[extOf(path)].kind,
         storage_path: path,

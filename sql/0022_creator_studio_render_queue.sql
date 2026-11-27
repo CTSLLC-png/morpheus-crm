@@ -10,9 +10,9 @@
 --   super_admin                   also delete old jobs
 --   service_role (studio-agent)   claim the next job and finish it, via two
 --                                 functions nobody else can execute
--- Staff can only write script, project_id and note on insert, and only the
+-- Staff can only write script, project_id, note and tenant_id on insert, and only the
 -- status (queued → cancelled) on update, so they cannot fake a finished job.
--- Requires sql/0016_creator_studio.sql.
+-- Requires sql/0016_creator_studio.sql and sql/0021_tenant_scope_growth_modules.sql.
 
 create table if not exists public.studio_render_job (
   id            uuid primary key default gen_random_uuid(),
@@ -33,17 +33,26 @@ create table if not exists public.studio_render_job (
 comment on table public.studio_render_job is
   'Creator Studio render queue. Staff queue a script; the cloud render worker claims it through studio-agent, files the output in the asset vault and marks it done or failed.';
 
--- One open job per script and project, so pressing Render twice is harmless.
-create unique index if not exists studio_render_job_open_uq
-  on public.studio_render_job (script, coalesce(project_id, '00000000-0000-0000-0000-000000000000'::uuid))
+-- Each client's jobs stay in that client (sql/0021): adds tenant_id, the
+-- restrictive core.member_of policies and the guard that keeps a job in its
+-- project's tenant.
+do $$ begin
+  perform public.apply_tenant_scope('studio_render_job', 'studio_project', 'project_id');
+end $$;
+
+-- One open job per client, script and project, so pressing Render twice is harmless.
+drop index if exists public.studio_render_job_open_uq;
+create unique index studio_render_job_open_uq
+  on public.studio_render_job (tenant_id, script, coalesce(project_id, '00000000-0000-0000-0000-000000000000'::uuid))
   where status in ('queued', 'running');
 create index if not exists studio_render_job_status_idx on public.studio_render_job (status, requested_at);
 
--- ── Flood guard: at most 20 jobs waiting or running at once ─────────────────
+-- ── Flood guard: at most 20 jobs waiting or running per client ──────────────
 create or replace function public.studio_render_job_guard()
 returns trigger language plpgsql security definer set search_path = public, pg_temp as $$
 begin
-  if (select count(*) from public.studio_render_job where status in ('queued','running')) >= 20 then
+  if (select count(*) from public.studio_render_job
+       where tenant_id = new.tenant_id and status in ('queued','running')) >= 20 then
     raise exception 'The render queue is full (20 open jobs). Wait for some to finish or cancel one.'
       using errcode = 'check_violation';
   end if;
@@ -92,7 +101,7 @@ create policy studio_render_job_admin_delete on public.studio_render_job for del
 
 revoke all on public.studio_render_job from anon, authenticated;
 grant select, delete on public.studio_render_job to authenticated;
-grant insert (script, project_id, note) on public.studio_render_job to authenticated;
+grant insert (script, project_id, note, tenant_id) on public.studio_render_job to authenticated;
 grant update (status) on public.studio_render_job to authenticated;
 
 -- ── Worker functions (service_role only, called by studio-agent) ────────────

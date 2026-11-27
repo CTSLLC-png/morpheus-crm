@@ -13,12 +13,14 @@ on:
       - 'sql/0021_tenant_scope_growth_modules.sql'
       - 'sql/tests/tenant_scope_*.sql'
       - 'src/lib/activeTenant*.js'
+      - 'sql/0022_creator_studio_render_queue.sql'
       - '.github/workflows/tenant-scope.yml'
   push:
     branches: [main]
     paths:
       - 'sql/0021_tenant_scope_growth_modules.sql'
       - 'sql/tests/tenant_scope_*.sql'
+      - 'sql/0022_creator_studio_render_queue.sql'
       - '.github/workflows/tenant-scope.yml'
   workflow_dispatch:
 permissions:
@@ -63,7 +65,9 @@ jobs:
       - name: Existing CTS rows
         run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/tenant_scope_seed.sql
       - name: Apply tenant scoping
-        run: psql -X -q -v ON_ERROR_STOP=1 -f sql/0021_tenant_scope_growth_modules.sql
+        run: |
+          psql -X -q -v ON_ERROR_STOP=1 -f sql/0021_tenant_scope_growth_modules.sql
+          psql -X -q -v ON_ERROR_STOP=1 -f sql/0022_creator_studio_render_queue.sql
       - name: Cross-tenant read, write and file checks (and re-run safety)
         run: psql -X -v ON_ERROR_STOP=1 -f sql/tests/tenant_scope_integration.sql
       - name: Active tenant helper unit test

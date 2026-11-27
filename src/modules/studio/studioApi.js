@@ -134,13 +134,13 @@ export function guessKind(nameOrUrl) {
 export { SCRIPT_NAME, KNOWN_SCRIPTS, RENDER_STATUSES, cleanScriptName, renderJobError, jobTiming } from './renderQueue.js'
 
 export const listRenderJobs = () =>
-  supabase.from('studio_render_job').select('*').order('requested_at', { ascending: false }).limit(100).then(must)
+  scoped(supabase.from('studio_render_job').select('*')).order('requested_at', { ascending: false }).limit(100).then(must)
 
 export async function requestRender({ script, projectId = null, note = '' }) {
   const name = cleanScriptName(script)
   if (!name) throw new Error('Use the script file name from tools/video/scripts, for example legacy-path-explainer.')
   const { data, error } = await supabase.from('studio_render_job')
-    .insert({ script: name, project_id: projectId || null, note: note.trim().slice(0, 500) || null })
+    .insert(withTenant({ script: name, project_id: projectId || null, note: note.trim().slice(0, 500) || null }))
     .select().single()
   if (error) throw new Error(renderJobError(error))
   return data
