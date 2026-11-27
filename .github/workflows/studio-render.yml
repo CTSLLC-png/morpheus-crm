@@ -61,6 +61,9 @@ jobs:
           fetch-depth: 0
       - name: Choose scripts and decide whether to file results
         id: plan
+        env:
+          # The queue branch claims a job here, before rendering.
+          STUDIO_AGENT_KEY: ${{ secrets.STUDIO_AGENT_KEY }}
         run: |
           set -euo pipefail
           mode="$EVENT"
