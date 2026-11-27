@@ -8,6 +8,8 @@ create schema if not exists storage;
 do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon; end if;
   if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated; end if;
+  -- Supabase's server-side role; it bypasses RLS there too. 0022 grants to it.
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role bypassrls; end if;
 end $$;
 grant usage on schema public, core, auth, storage to anon, authenticated;
 
